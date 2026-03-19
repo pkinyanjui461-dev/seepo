@@ -1,0 +1,266 @@
+{% extends "pdf/report_base.html" %}
+{% load finance_extras %}
+
+{% block page_class %}portrait{% endblock %}
+
+{% block header %}{% endblock %}
+{% block metadata %}{% endblock %}
+
+{% block main_content %}
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 0.5cm;
+    }
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 7pt;
+        line-height: 1.2;
+        color: #000;
+        margin: 0;
+        padding: 0;
+    }
+    table.full-width {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2pt;
+    }
+    table.border-table td, table.border-table th {
+        border: 0.5pt solid #000;
+        padding: 2pt;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .text-left { text-align: left !important; padding-left: 4pt !important; }
+    .bg-gray { background-color: #eeeeee; }
+    .bold { font-weight: bold; }
+    .title { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 5pt; }
+    .label-header { font-size: 6.5pt; font-weight: bold; }
+</style>
+
+<div class="title">GROUP'S MONTHLY PERFORMANCE</div>
+
+{# --- TOP INFO --- #}
+<table class="full-width border-table">
+    <tr>
+        <td width="35%" class="text-left">
+            PREMISES/OFFICE ADDRESS: <br/>
+            MONTH: <span class="bold">{{ mform.get_month_name|upper }} {{ mform.year }}</span><br/>
+            CASH RECEIVED OUT TODAY:
+        </td>
+        <td width="30%" class="bold">
+            FIREB & <br/> STATION <br/> TODAY
+        </td>
+        <td width="35%" class="text-left">
+            CASH GIVEN OUT TODAY: <br/>
+            DATE: <span class="bold">{{ mform.updated_at|date:"d/m/Y" }}</span>
+        </td>
+    </tr>
+</table>
+
+{# --- SECTION A & B SIDE BY SIDE --- #}
+<table class="full-width" style="margin-bottom: 5pt;">
+    <tr>
+        {# --- SECTION A --- #}
+        <td width="42%" valign="top" style="padding-right: 5pt;">
+            <table class="full-width border-table">
+                <tr class="bg-gray bold">
+                    <td colspan="4">SECTION A (ADVANCES)</td>
+                </tr>
+                <tr class="bg-gray label-header">
+                    <td width="15%">M NO.</td>
+                    <td width="35%">AMOUNT</td>
+                    <td width="15%">M NO.</td>
+                    <td width="35%">AMOUNT</td>
+                </tr>
+                {% with entries_a=sections.A %}
+                {% with chunks_a=entries_a|chunks:2 %}
+                {% for chunk in chunks_a %}
+                <tr>
+                    <td>{{ member_num_map|get_item:chunk.0.description|default:"-" }}</td>
+                    <td>{% if chunk.0.amount %}{{ chunk.0.amount|floatformat:0 }}{% endif %}</td>
+                    <td>{% if chunk.1 %}{{ member_num_map|get_item:chunk.1.description|default:"-" }}{% endif %}</td>
+                    <td>{% if chunk.1.amount %}{{ chunk.1.amount|floatformat:0 }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+                {% if chunks_a|length < 15 %}
+                    {% for i in "123456789012345"|make_list %}
+                        {% if forloop.counter > chunks_a|length %}
+                        <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+                {% endwith %}
+                <tr class="bold label-header">
+                    <td class="bg-gray">TOTAL</td>
+                    <td>{% if section_totals.A %}{{ section_totals.A|floatformat:0 }}{% endif %}</td>
+                    <td class="bg-gray">TOTAL OF</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr class="bold label-header">
+                    <td colspan="2">TOTAL PAID</td>
+                    <td class="bg-gray">TOTAL PAID</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr class="bold label-header">
+                    <td colspan="2">PAID THROUGH SAVINGS</td>
+                    <td class="bg-gray">PAID THROUGH SAVINGS</td>
+                    <td>&nbsp;</td>
+                </tr>
+            </table>
+        </td>
+        
+        {# --- SECTION B --- #}
+        <td width="58%" valign="top">
+            <table class="full-width border-table">
+                <tr class="bg-gray bold">
+                    <td colspan="6">SECTION B (CASH OUT)</td>
+                </tr>
+                <tr class="bold bg-gray label-header" style="font-size: 6pt;">
+                    <td colspan="2">WITHDRAWAL</td>
+                    <td colspan="2">LOANS</td>
+                    <td colspan="2">ADVANCE</td>
+                </tr>
+                <tr class="bold label-header" style="font-size: 6pt;">
+                    <td width="12%">M NO.</td><td width="21%">AMOUNT</td>
+                    <td width="12%">M NO.</td><td width="21%">AMOUNT</td>
+                    <td width="12%">M NO.</td><td width="22%">AMOUNT</td>
+                </tr>
+                {% for e in sections.B %}
+                <tr>
+                    <td>{{ member_num_map|get_item:e.description|default:"-" }}</td>
+                    <td>{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}</td>
+                    <td>{{ member_num_map|get_item:e.description|default:"-" }}</td>
+                    <td>{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}</td>
+                    <td>{{ member_num_map|get_item:e.description|default:"-" }}</td>
+                    <td>{% if e.tertiary_amount %}{{ e.tertiary_amount|floatformat:0 }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+                {% if sections.B|length < 18 %}
+                    {% for i in "123456789012345678"|make_list %}
+                        {% if forloop.counter > sections.B|length %}
+                        <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <tr class="bold label-header">
+                    <td class="bg-gray">TOTAL</td>
+                    <td>{% if section_totals.B_with %}{{ section_totals.B_with|floatformat:0 }}{% endif %}</td>
+                    <td colspan="4">&nbsp;</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+{# --- SECTIONS C, D, E --- #}
+<table class="full-width" style="margin-bottom: 0;">
+    <tr class="bg-gray bold">
+        <td width="30%">SECTION C</td>
+        <td width="30%">SECTION D</td>
+        <td width="40%">SECTION E</td>
+    </tr>
+</table>
+<table class="full-width">
+    <tr>
+        <td width="30%" valign="top" style="padding-right: 2pt;">
+            <table class="full-width border-table">
+                <tr class="label-header">
+                    <td width="15%">#</td><td width="55%">DETAILS</td><td width="20%">Shs</td><td width="10%">Cts</td>
+                </tr>
+                {% for e in sections.C %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="text-left" style="font-size: 6.5pt;">{{ e.description|upper }}</td>
+                    <td>{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}</td>
+                    <td>00</td>
+                </tr>
+                {% endfor %}
+                {% if sections.C|length < 8 %}
+                {% for i in "12345678"|make_list %}
+                    {% if forloop.counter > sections.C|length %}
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
+                <tr class="bold label-header">
+                    <td colspan="2">GRAND TOTAL</td>
+                    <td>{% if section_totals.C %}{{ section_totals.C|floatformat:0 }}{% endif %}</td>
+                    <td>00</td>
+                </tr>
+            </table>
+        </td>
+        <td width="30%" valign="top" style="padding-right: 2pt;">
+            <table class="full-width border-table">
+                <tr class="label-header">
+                    <td width="15%">#</td><td width="55%">DETAILS</td><td width="20%">Shs</td><td width="10%">Cts</td>
+                </tr>
+                {% for e in sections.D %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="text-left" style="font-size: 6.5pt;">{{ e.description|upper }}</td>
+                    <td>{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}</td>
+                    <td>00</td>
+                </tr>
+                {% endfor %}
+                {% if sections.D|length < 8 %}
+                {% for i in "12345678"|make_list %}
+                    {% if forloop.counter > sections.D|length %}
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
+                <tr class="bold label-header">
+                    <td colspan="2">GRAND TOTAL</td>
+                    <td>{% if section_totals.D %}{{ section_totals.D|floatformat:0 }}{% endif %}</td>
+                    <td>00</td>
+                </tr>
+            </table>
+        </td>
+        <td width="40%" valign="top">
+            <table class="full-width border-table">
+                <tr class="label-header"><td>DETAILS</td></tr>
+                {% for e in sections.E %}
+                <tr>
+                    <td class="text-left" style="padding-bottom: 20pt;">
+                        <span class="bold" style="font-size: 7pt;">{{ e.description|upper }}</span><br/>
+                        <div style="text-align: right; padding-right: 10pt; font-weight: bold; font-size: 10pt;">{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}</div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if sections.E|length < 2 %}
+                 <tr><td style="padding-bottom: 20pt;">&nbsp;</td></tr>
+                {% endif %}
+                <tr class="bold label-header"><td class="text-left">BANK WITHDRAWAL</td></tr>
+                <tr class="bold label-header"><td class="text-left">TOTAL IN BANK</td></tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+{# --- FOOTER --- #}
+<table class="full-width border-table" style="margin-top: 5pt;">
+    <tr><td width="15%" class="bg-gray bold">NOTE</td><td width="85%" class="text-left" style="height: 15pt;">{{ perf_form.notes|default:"&nbsp;" }}</td></tr>
+</table>
+
+<table class="full-width" style="margin-top: 5pt;">
+    <tr>
+        <td width="45%" valign="top">
+            <table class="full-width border-table">
+                <tr><td width="50%" class="bold bg-gray">NEXT MEETING DATE</td><td>{{ perf_form.next_meeting_date|date:"d/m/Y"|default:"&nbsp;" }}</td></tr>
+                <tr><td class="bold bg-gray">TIME:</td><td>{{ perf_form.next_meeting_time|time:"H:i"|default:"&nbsp;" }}</td></tr>
+                <tr><td class="bold bg-gray">VENUE:</td><td>{{ perf_form.next_meeting_venue|default:"&nbsp;" }}</td></tr>
+                <tr><td class="bold">BUS NO:</td><td>&nbsp;</td></tr>
+                <tr><td class="bold">STAGE:</td><td>&nbsp;</td></tr>
+                <tr><td class="bold">AREA:</td><td>&nbsp;</td></tr>
+                <tr><td class="bold">LANDMARK:</td><td>&nbsp;</td></tr>
+            </table>
+        </td>
+        <td width="55%" valign="bottom" style="text-align: right; font-style: italic; color: #666; font-size: 7pt; padding-bottom: 5pt;">
+            Integrated Organization - Social Economic Empowerment Program (R.L.F)
+        </td>
+    </tr>
+</table>
+
+{% endblock %}

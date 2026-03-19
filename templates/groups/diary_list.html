@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Group Diary{% endblock %}
+{% block page_title %}Casted Groups Dates (Diary){% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Table Styling matched to dashboard aesthetics */
+    .table-custom {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: none;
+        margin-bottom: 0;
+    }
+    .table-custom thead th {
+        background-color: #f8f9fc;
+        color: #6C5DD3;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #edf1f7;
+        padding: 1rem;
+        white-space: nowrap;
+    }
+    .table-custom tbody tr {
+    }
+    .table-custom tbody tr:hover {
+        background-color: #fdfdff;
+    }
+    .table-custom tbody td {
+        vertical-align: middle;
+        color: #4a5568;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #edf1f7;
+        padding: 1rem;
+    }
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .fw-medium {
+        font-weight: 600;
+        color: #2d3748;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold" style="color: #2d3748;">Annual Meeting Schedule</h5>
+                <button id="toggle-edit" class="btn btn-sm px-3 shadow-sm" style="background: #fff; border: 1px solid #6C5DD3; color: #6C5DD3; border-radius: 8px;">
+                    <i class="fas fa-edit me-1"></i> <span id="edit-text">Enable Edit Mode</span>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover" id="diary-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th style="min-width: 250px;">GROUPS NAME</th>
+                                <th style="min-width: 200px;">VENUE</th>
+                                <th style="min-width: 120px;">TIME</th>
+                                <th>JANUARY</th>
+                                <th>FEBRUARY</th>
+                                <th>MARCH</th>
+                                <th>APRIL</th>
+                                <th>MAY</th>
+                                <th>JUNE</th>
+                                <th>JULY</th>
+                                <th>AUGUST</th>
+                                <th>SEPTEMBER</th>
+                                <th>OCTOBER</th>
+                                <th>NOVEMBER</th>
+                                <th>DECEMBER</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in diaries %}
+                            <tr data-id="{{ d.pk }}">
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td class="fw-medium">{{ d.group.name }}</td>
+                                <td class="editable" data-field="venue" style="cursor: pointer;">{{ d.venue|default:"-" }}</td>
+                                <td class="editable" data-field="time" style="cursor: pointer;">{{ d.time|default:"-" }}</td>
+                                <td class="text-center editable" data-field="january" style="cursor: pointer;">{{ d.january|default:"-" }}</td>
+                                <td class="text-center editable" data-field="february" style="cursor: pointer;">{{ d.february|default:"-" }}</td>
+                                <td class="text-center editable" data-field="march" style="cursor: pointer;">{{ d.march|default:"-" }}</td>
+                                <td class="text-center editable" data-field="april" style="cursor: pointer;">{{ d.april|default:"-" }}</td>
+                                <td class="text-center editable" data-field="may" style="cursor: pointer;">{{ d.may|default:"-" }}</td>
+                                <td class="text-center editable" data-field="june" style="cursor: pointer;">{{ d.june|default:"-" }}</td>
+                                <td class="text-center editable" data-field="july" style="cursor: pointer;">{{ d.july|default:"-" }}</td>
+                                <td class="text-center editable" data-field="august" style="cursor: pointer;">{{ d.august|default:"-" }}</td>
+                                <td class="text-center editable" data-field="september" style="cursor: pointer;">{{ d.september|default:"-" }}</td>
+                                <td class="text-center editable" data-field="october" style="cursor: pointer;">{{ d.october|default:"-" }}</td>
+                                <td class="text-center editable" data-field="november" style="cursor: pointer;">{{ d.november|default:"-" }}</td>
+                                <td class="text-center editable" data-field="december" style="cursor: pointer;">{{ d.december|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="16" class="text-center py-5 text-muted">
+                                    <i class="fas fa-folder-open mb-3 fs-3" style="color: #cbd5e0;"></i>
+                                    <p class="mb-0">No groups found in the system. Create a group to see it on the schedule.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let isEditMode = false;
+    const toggleBtn = document.getElementById('toggle-edit');
+    const editText = document.getElementById('edit-text');
+
+    toggleBtn.addEventListener('click', () => {
+        isEditMode = !isEditMode;
+        if (isEditMode) {
+            toggleBtn.style.background = '#6C5DD3';
+            toggleBtn.style.color = '#fff';
+            editText.innerText = 'Disable Edit Mode (Changes Save Autonomously)';
+            document.querySelectorAll('.editable').forEach(td => {
+                td.style.border = '1px dashed #6C5DD3';
+                td.style.backgroundColor = '#f4f2ff';
+                td.onclick = function() { enterEdit(this); };
+            });
+        } else {
+            toggleBtn.style.background = '#fff';
+            toggleBtn.style.color = '#6C5DD3';
+            editText.innerText = 'Enable Edit Mode';
+            document.querySelectorAll('.editable').forEach(td => {
+                td.style.border = '';
+                td.style.backgroundColor = '';
+                td.onclick = null;
+            });
+        }
+    });
+
+    function enterEdit(td) {
+        if (td.querySelector('input')) return;
+        
+        const originalValue = td.innerText.trim() === '-' ? '' : td.innerText.trim();
+        const field = td.dataset.field;
+        const diaryId = td.closest('tr').dataset.id;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalValue;
+        input.className = 'form-control form-control-sm';
+        input.style.minWidth = '50px';
+        
+        td.innerHTML = '';
+        td.appendChild(input);
+        input.focus();
+
+        const save = () => {
+            const newValue = input.value.trim();
+            if (newValue === originalValue) {
+                td.innerText = originalValue || '-';
+                return;
+            }
+            
+            // Show saving state
+            td.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            
+            fetch(`/groups/api/diary/${diaryId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    field: field,
+                    value: newValue
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    td.innerText = newValue || '-';
+                } else {
+                    alert('Error saving change: ' + data.error);
+                    td.innerText = originalValue || '-';
+                }
+            })
+            .catch(err => {
+                alert('Network error while saving.');
+                td.innerText = originalValue || '-';
+            });
+        };
+
+        input.onblur = save;
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') save();
+            if (e.key === 'Escape') {
+                td.innerText = originalValue || '-';
+            }
+        };
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Groups{% endblock %}
+{% block page_title %}Groups{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0" style="color: var(--text-main);">Groups</h3>
+    <a href="{% url 'group_create' %}" class="btn btn-primary px-4 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-plus me-2"></i>New Group</a>
+</div>
+
+<div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted fw-bold border-0">Group Name</th>
+                        <th class="py-3 text-muted fw-bold border-0">Location</th>
+                        <th class="py-3 text-muted fw-bold border-0">Date Created</th>
+                        <th class="py-3 text-muted fw-bold border-0">Officer</th>
+                        <th class="py-3 text-muted fw-bold border-0">Members</th>
+                        <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td class="ps-4 fw-bold" style="color: var(--text-main);">{{ group.name }}</td>
+                        <td class="text-muted">{{ group.location }}</td>
+                        <td class="text-muted">{{ group.date_created|date:"d M Y" }}</td>
+                        <td class="text-muted">{{ group.officer_name }}</td>
+                        <td>
+                            <div class="d-inline-flex align-items-center justify-content-center fw-bold" style="background-color: #ECEBFA; color: var(--primary-color); border-radius: 6px; padding: 4px 10px; font-size: 0.85rem;">
+                                {{ group.member_count }}
+                            </div>
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'group_detail' group.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); font-weight: 500; border-radius: 6px;"><i class="fas fa-folder-open me-2" style="color: var(--primary-color);"></i>Open Workspace</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-users-slash fs-3 mb-3 d-block opacity-50"></i>No groups created yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

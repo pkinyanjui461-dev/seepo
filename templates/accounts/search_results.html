@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Search Results | SEEPO{% endblock %}
+{% block page_title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="mb-4">
+            <h4 class="fw-bold">Results for "{{ query }}"</h4>
+            <p class="text-muted">We found {{ groups|length }} groups and {{ members|length }} members matching your query.</p>
+        </div>
+
+        <div class="row">
+            <!-- Groups Column -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-card py-3 border-0">
+                        <h5 class="fw-bold m-0 text-primary"><i class="fas fa-users me-2"></i>Groups</h5>
+                    </div>
+                    <div class="list-group list-group-flush p-2">
+                        {% for group in groups %}
+                        <a href="{% url 'group_detail' group.pk %}" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 py-3 bg-app">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ group.name }}</h6>
+                                    <small class="text-muted">{{ group.registration_number }}</small>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="p-4 text-center text-muted italic">
+                            No groups found.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Column -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-card py-3 border-0">
+                        <h5 class="fw-bold m-0 text-success"><i class="fas fa-user me-2"></i>Members</h5>
+                    </div>
+                    <div class="list-group list-group-flush p-2">
+                        {% for member in members %}
+                        <a href="{% url 'group_detail' member.group.pk %}?tab=members" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 py-3 bg-app">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ member.name }}</h6>
+                                    <small class="text-muted">Member ID: {{ member.member_id }} | Group: {{ member.group.name }}</small>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="p-4 text-center text-muted italic">
+                            No members found.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

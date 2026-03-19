@@ -1,0 +1,295 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SEEPO Accounting</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6C5DD3;
+            --primary-light: #8E7BFF;
+            --secondary: #3F8CFF;
+            --text-main: #11142D;
+            --text-muted: #808191;
+            --bg-body: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Split Screen Container */
+        .login-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Left Side: Image Header */
+        .login-image-side {
+            flex: 1.2;
+            position: relative;
+            background: url("{% static 'img/login.jpg' %}") center center / cover no-repeat;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 60px;
+        }
+
+        .login-image-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(17,20,45,0.1) 0%, rgba(17,20,45,0.85) 100%);
+            z-index: 1;
+        }
+
+        .login-image-content {
+            position: relative;
+            z-index: 2;
+            color: #ffffff;
+        }
+
+        .brand-logo-large {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            background: linear-gradient(120deg, #ffffff 0%, #a5b4fc 50%, #e879f9 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .image-side-text {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            max-width: 500px;
+        }
+
+        /* Right Side: Form Container */
+        .login-form-side {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            position: relative;
+            padding: 40px;
+        }
+
+        .login-form-container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-header {
+            margin-bottom: 40px;
+        }
+
+        .login-title {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 14px 18px;
+            border: 2px solid #EAEAEA;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background-color: #FAFAFA;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(108, 93, 211, 0.1);
+            outline: none;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(108, 93, 211, 0.2);
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(108, 93, 211, 0.3);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        }
+
+        .toggle-password {
+            color: var(--text-muted);
+            font-size: 18px;
+            padding: 0 15px;
+            z-index: 5;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-main);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 991px) {
+            .login-wrapper {
+                flex-direction: column;
+                height: 100%;
+                overflow: auto;
+            }
+            body {
+                overflow: auto;
+            }
+            .login-image-side {
+                min-height: 400px;
+                padding: 40px;
+                flex: none;
+            }
+            .login-form-side {
+                padding: 60px 20px;
+                flex: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .login-image-side {
+                min-height: 250px;
+                padding: 30px;
+            }
+            .brand-logo-large {
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+            }
+            .image-side-text {
+                font-size: 1rem;
+            }
+            .login-form-side {
+                padding: 40px 20px;
+            }
+            .login-title {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <!-- Left Side: Image Header -->
+    <div class="login-image-side">
+        <div class="login-image-overlay"></div>
+        <div class="login-image-content">
+            <div class="brand-logo-large">SEEPO</div>
+            <p class="image-side-text">Experience top-tier financial management and streamlined accounting workflows tailored for your precision and scale.</p>
+        </div>
+    </div>
+
+    <!-- Right Side: Login Form -->
+    <div class="login-form-side">
+        <div class="login-form-container">
+            <div class="login-header">
+                <h1 class="login-title">Welcome Back</h1>
+                <p class="login-subtitle">Enter your credentials to access your account.</p>
+            </div>
+
+            {% if form.errors %}
+                <div class="alert alert-danger py-3 small border-0 mb-4" style="border-radius: 12px; background-color: #FFF5F5; color: #E03131;">
+                    <i class="fas fa-exclamation-circle me-2"></i>Invalid phone number or password.
+                </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Phone Number</label>
+                    {{ form.username }}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    <div class="position-relative d-flex align-items-center">
+                        {{ form.password }}
+                        <button type="button" class="btn position-absolute end-0 border-0 bg-transparent h-100 toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-login w-100" type="submit">
+                    Sign In <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </form>
+
+            <div class="text-center mt-5">
+                <p class="text-muted small mb-0">&copy; 2026 SEEPO Accounting System</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('togglePassword')?.addEventListener('click', function() {
+        const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+        const icon = this.querySelector('i');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            input.parentElement.classList.add('focused');
+        });
+        input.addEventListener('blur', () => {
+            input.parentElement.classList.remove('focused');
+        });
+    });
+</script>
+
+</body>
+</html>

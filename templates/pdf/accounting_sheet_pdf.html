@@ -1,0 +1,49 @@
+{% extends "pdf/report_base.html" %}
+
+{% block table_rows %}
+    {% for r in records %}
+    <tr>
+        <td width="3%">{{ r.member.member_number|default:"-" }}</td>
+        <td class="col-name" width="20%">{{ r.member.name }}</td>
+        
+        <td class="{% if r.savings_share_bf < 0 %}negative{% endif %}">
+            {% if r.savings_share_bf >= 0 %}{{ r.savings_share_bf|floatformat:0 }}{% else %}&nbsp;{% endif %}
+        </td>
+        <td class="{% if r.loan_balance_bf < 0 %}negative{% endif %}">
+            {% if r.loan_balance_bf >= 0 %}{{ r.loan_balance_bf|floatformat:0 }}{% else %}&nbsp;{% endif %}
+        </td>
+        <td>{% if not totals.is_blank_mode %}{{ r.total_repaid|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ r.principal|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{{ r.loan_interest|floatformat:0 }}</td>
+        <td>{% if not totals.is_blank_mode %}{{ r.shares_this_month|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ r.fines_charges|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td class="{% if not totals.is_blank_mode %}{% if r.savings_share_cf < 0 or not r.savings_valid %}invalid{% endif %}{% endif %}">
+            {% if not totals.is_blank_mode %}{% if r.savings_share_cf >= 0 and r.savings_valid %}{{ r.savings_share_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}{% else %}&nbsp;{% endif %}
+        </td>
+        <td class="{% if not totals.is_blank_mode %}{% if r.loan_balance_cf < 0 or not r.loan_valid %}invalid{% endif %}{% endif %}">
+            {% if not totals.is_blank_mode %}{% if r.loan_balance_cf >= 0 and r.loan_valid %}{{ r.loan_balance_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}{% else %}&nbsp;{% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    
+    {# Empty rows padding #}
+    {% for i in padding %}
+    <tr>
+        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+    </tr>
+    {% endfor %}
+
+    <tr class="total-row">
+        <td colspan="2">TOTAL</td>
+        <td>{{ totals.savings_share_bf|floatformat:0 }}</td>
+        <td>{{ totals.loan_balance_bf|floatformat:0 }}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.total_repaid|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.principal|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{{ totals.loan_interest|floatformat:0 }}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.shares_this_month|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.fines_charges|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.savings_share_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.loan_balance_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+    </tr>
+{% endblock %}

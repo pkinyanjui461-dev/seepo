@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Accounting Sheet - {{ group.name }}{% endblock %}
+{% block page_title %}<span class="text-muted">{{ group.name }} / </span>{{ mform.get_month_name }} {{ mform.year }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Add extra padding bottom so tooltips don't clip */
+    .table-container { padding-bottom: 50px; overflow-x: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a href="{% url 'group_detail' group.pk %}?tab=forms" class="btn btn-sm btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i> Back</a>
+        <span class="badge {% if mform.status == 'draft' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">{{ mform.get_status_display }}</span>
+    </div>
+    <div>
+        <a href="{% url 'combined_monthly_report_pdf' mform.pk %}" class="btn btn-sm btn-outline-danger me-2"><i class="fas fa-file-pdf me-1"></i> Download PDF</a>
+        <a href="{% url 'performance_form' mform.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-tasks me-1"></i> Group Performance Form</a>
+    </div>
+</div>
+
+<div class="alert alert-info py-2 small shadow-sm">
+    <i class="fas fa-info-circle me-1"></i> <strong>Calculations are automatic:</strong> Loan Interest is 1.5% of Loan Balance B/F. Savings C/F and Loan Balance C/F calculate automatically. Red cells indicate accounting errors. Changes save automatically when typing.
+</div>
+
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-body p-0 table-container">
+        <!-- Excel-Like Table -->
+        <table class="table table-sm finance-table mb-0" id="financeTable" data-save-url="{% url 'save_member_record' 0 %}">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">M No.</th>
+                    <th style="min-width: 140px; left: 0; z-index: 10;">MEMBERS NAMES & DETAILS</th>
+                    <th>SAVINGS & SHARE B/F</th>
+                    <th>LOAN BALANCE B/F</th>
+                    <th>TOTAL REPAID</th>
+                    <th>PRINCIPAL</th>
+                    <th>LOAN INTEREST</th>
+                    <th>SHARES THIS MONTH</th>
+                    <th>FINE & CHARGES</th>
+                    <th>SAVINGS & SHARE C/F</th>
+                    <th>LOAN BAL C/F</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr data-record-id="{{ record.pk }}" class="record-row {% if not record.savings_valid or not record.loan_valid %}row-error{% endif %}">
+                    <td class="text-center text-muted small align-middle" style="background-color: #f8f9fa;">{{ record.member.member_number|default:"-" }}</td>
+                    <td class="fw-bold bg-light text-wrap" style="position: sticky; left: 0; border-right: 2px solid #ccc; z-index: 5; font-size: 0.85rem; line-height: 1.2;">
+                        {{ record.member.name }}
+                    </td>
+                    <td><input type="number" step="1" class="form-control calc-input" data-field="savings_share_bf" value="{% if record.savings_share_bf %}{{ record.savings_share_bf|floatformat:0 }}{% endif %}"></td>
+                    
+                    <td class="tooltip-custom {% if not record.loan_valid %}cell-error{% endif %}" id="loan-bf-cell-{{ record.pk }}">
+                        <input type="number" step="1" class="form-control calc-input" data-field="loan_balance_bf" value="{% if record.loan_balance_bf %}{{ record.loan_balance_bf|floatformat:0 }}{% endif %}">
+                    </td>
+                    
+                    <td><input type="number" step="1" class="form-control calc-input" data-field="total_repaid" value="{% if record.total_repaid %}{{ record.total_repaid|floatformat:0 }}{% endif %}"></td>
+                    <td><input type="number" step="1" class="form-control calc-input" data-field="principal" value="{% if record.principal %}{{ record.principal|floatformat:0 }}{% endif %}"></td>
+                    
+                    <td><input type="number" step="1" class="form-control calc-input text-primary fw-bold" data-field="loan_interest" value="{% if record.loan_interest %}{{ record.loan_interest|floatformat:0 }}{% endif %}" readonly tabindex="-1"></td>
+                    
+                    <td class="{% if record.shares_this_month < 0 %}cell-negative{% endif %}"><input type="number" step="1" class="form-control calc-input fw-bold text-info" data-field="shares_this_month" value="{{ record.shares_this_month|floatformat:0 }}" readonly tabindex="-1"></td>
+                    <td><input type="number" step="1" class="form-control calc-input" data-field="fines_charges" value="{% if record.fines_charges %}{{ record.fines_charges|floatformat:0 }}{% endif %}"></td>
+                    
+                    <td class="tooltip-custom {% if not record.savings_valid %}cell-error{% endif %} {% if record.savings_share_cf < 0 %}cell-negative{% endif %}" id="savings-cf-cell-{{ record.pk }}">
+                        <input type="number" step="1" class="form-control calc-input fw-bold text-success" data-field="savings_share_cf" value="{{ record.savings_share_cf|floatformat:0 }}" readonly tabindex="-1">
+                    </td>
+                    
+                    <td class="{% if record.loan_balance_cf < 0 %}cell-negative{% endif %}"><input type="number" step="1" class="form-control calc-input fw-bold text-warning" data-field="loan_balance_cf" value="{{ record.loan_balance_cf|floatformat:0 }}" readonly tabindex="-1"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-totals" id="totalsRow">
+                    <td style="background: #e9ecef;"></td>
+                    <td style="position: sticky; left: 0; background: #e9ecef; z-index: 5; border-right: 2px solid #ccc; padding-left: 10px;">TOTALS</td>
+                    <td id="tot-savings-bf" class="text-end pe-2">{% if totals.savings_share_bf %}{{ totals.savings_share_bf|floatformat:0 }}{% endif %}</td>
+                    
+                    <td id="tot-loan-bf" class="text-end pe-2 tooltip-custom {% if not totals_loan_valid %}cell-error text-danger{% endif %}">{% if totals.loan_balance_bf %}{{ totals.loan_balance_bf|floatformat:0 }}{% endif %}</td>
+                    
+                    <td id="tot-repaid" class="text-end pe-2">{% if totals.total_repaid %}{{ totals.total_repaid|floatformat:0 }}{% endif %}</td>
+                    <td id="tot-principal" class="text-end pe-2">{% if totals.principal %}{{ totals.principal|floatformat:0 }}{% endif %}</td>
+                    <td id="tot-interest" class="text-end pe-2 text-primary">{% if totals.loan_interest %}{{ totals.loan_interest|floatformat:0 }}{% endif %}</td>
+                    <td id="tot-shares" class="text-end pe-2">{% if totals.shares_this_month %}{{ totals.shares_this_month|floatformat:0 }}{% endif %}</td>
+                    <td id="tot-fines" class="text-end pe-2">{% if totals.fines_charges %}{{ totals.fines_charges|floatformat:0 }}{% endif %}</td>
+                    
+                    <td id="tot-savings-cf" class="text-end pe-2 text-success tooltip-custom {% if not totals_savings_valid %}cell-error text-danger{% endif %}">{% if totals.savings_share_cf %}{{ totals.savings_share_cf|floatformat:0 }}{% endif %}</td>
+                    
+                    <td id="tot-loan-cf" class="text-end pe-2 text-warning">{% if totals.loan_balance_cf %}{{ totals.loan_balance_cf|floatformat:0 }}{% endif %}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Save status indicator -->
+<div id="saveStatus" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050; display: none;">
+    <div class="toast show text-white bg-success shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-check-circle me-2"></i> Saved</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass CSRF token for AJAX
+    const csrfToken = '{{ csrf_token }}';
+</script>
+<script src="{% static 'js/calculations.js' %}?v=6"></script>
+{% endblock %}

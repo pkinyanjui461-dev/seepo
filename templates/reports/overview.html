@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Group Banking Report{% endblock %}
+{% block page_title %}Group Banking Report{% endblock %}
+
+{% block content %}
+<!-- Navigation Tabs -->
+<ul class="nav nav-pills mb-4" style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
+    <li class="nav-item">
+        <a class="nav-link active fw-bold shadow-sm" href="{% url 'reports_overview' %}" style="background-color: var(--primary-color); border-radius: 8px;">
+            <i class="fas fa-university me-2"></i>Group Banking
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link fw-bold" href="{% url 'entities_report' %}" style="color: var(--text-main); border-radius: 8px;">
+            <i class="fas fa-coins me-2"></i>Entities & Risk Fund
+        </a>
+    </li>
+</ul>
+
+<div class="card shadow-sm border-0 mb-4" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-4 bg-light">
+        <form method="GET" action="{% url 'reports_overview' %}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="month" class="form-label fw-bold text-muted small">Select Month</label>
+                <select name="month" id="month" class="form-select border-0 shadow-sm" style="border-radius: 8px;">
+                    {% for m_num, m_name in months %}
+                        <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="year" class="form-label fw-bold text-muted small">Select Year</label>
+                <select name="year" id="year" class="form-select border-0 shadow-sm" style="border-radius: 8px;">
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn w-100 fw-bold shadow-sm" style="background-color: var(--primary-color); color: white; border-radius: 8px;">
+                    <i class="fas fa-filter me-2"></i>Filter Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background-color: #F8F9FA; border-bottom: 2px solid var(--border-color);">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted fw-bold border-0">GROUPS NAME</th>
+                        <th class="py-3 text-muted fw-bold border-0 text-end pe-5">OFFICE ACCOUNT</th>
+                        <th class="py-3 text-muted fw-bold border-0 text-end pe-5">GROUP ACCOUNT</th>
+                        <th class="py-3 text-muted fw-bold border-0 text-end pe-5">OFFICE DEBT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td class="ps-4 fw-bold" style="color: var(--text-main);">{{ row.group_name }}</td>
+                        <td class="text-end pe-5 fw-bold" style="color: #28a745;">{{ row.office_account|floatformat:0 }}</td>
+                        <td class="text-end pe-5 fw-bold" style="color: #0dcaf0;">{{ row.group_account|floatformat:0 }}</td>
+                        <td class="text-end pe-5 fw-bold" style="color: #dc3545;">{{ row.office_debt|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fs-3 d-block opacity-25 mb-3"></i>No groups found.</td></tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot style="background-color: #F8F9FA; border-top: 2px solid var(--border-color);">
+                    <tr>
+                        <td class="ps-4 py-3 fw-bold" style="color: var(--primary-color);">TOTALS</td>
+                        <td class="text-end pe-5 py-3 fw-bold" style="color: var(--primary-color);">{{ total_office_account_all|floatformat:0 }}</td>
+                        <td class="text-end pe-5 py-3 fw-bold" style="color: var(--primary-color);">{{ total_group_account_all|floatformat:0 }}</td>
+                        <td class="text-end pe-5 py-3 fw-bold" style="color: var(--primary-color);">{{ total_office_debt_all|floatformat:0 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
