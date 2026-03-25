@@ -45,8 +45,9 @@ jobs:
             ENVIRONMENT=staging
             EOF
 
-            # Activate virtual environment and install dependencies
-            source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+            # Use cPanel's virtualenv
+            VENV_PATH="/home1/seepocok/virtualenv/staging_seepo/seepo-main/3.13"
+            source "$VENV_PATH/bin/activate"
             pip install -r requirements.txt
 
             # Run migrations
@@ -56,6 +57,7 @@ jobs:
             python manage.py collectstatic --noinput
 
             # Restart Passenger
+            mkdir -p tmp
             touch tmp/restart.txt
 
   deploy-production:
@@ -96,8 +98,9 @@ jobs:
             ENVIRONMENT=production
             EOF
 
-            # Activate virtual environment and install dependencies
-            source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+            # Use cPanel's virtualenv
+            VENV_PATH="/home1/seepocok/virtualenv/public_html/seepo-main/3.13"
+            source "$VENV_PATH/bin/activate"
             pip install -r requirements.txt
 
             # Run migrations
@@ -107,4 +110,5 @@ jobs:
             python manage.py collectstatic --noinput
 
             # Restart Passenger
+            mkdir -p tmp
             touch tmp/restart.txt
