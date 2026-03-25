@@ -90,7 +90,7 @@ void printBanner() {
     cout << "  |                   Automate Fork Synchronization                           |\n";
     cout << "  |                                                                            |\n";
     setColor(COLOR_LIGHT_GREEN);
-    cout << "  |              Pull from Upstream • Push to Fork • Sync Fork                |\n";
+    cout << "  |              Pull from Upstream ? Push to Fork ? Sync Fork                |\n";
     setColor(COLOR_LIGHT_CYAN);
     cout << "  |                                                                            |\n";
     setColor(COLOR_LIGHT_YELLOW);
@@ -167,7 +167,7 @@ void executePushCommand(const string& parentPat, const string& branch) {
     // Use git remote 'upstream' for push
     // Build git push command
     stringstream commands;
-    commands << "git push upstream " << branch << " --quiet";
+    commands << "git push upstream " << branch;
 
     setColor(COLOR_LIGHT_GREEN);
     cout << "  Pushing " << branch << " branch to parent repository...\n\n";
@@ -196,7 +196,7 @@ void executeSyncCommand(const string& pat, const string& branch) {
     // Construct fork URL with PAT - use git remote 'origin'
     // Build git fetch and merge commands
     stringstream commands;
-    commands << "git fetch origin " << branch << " && git merge origin/" << branch << " --quiet";
+    commands << "git fetch origin " << branch << " && git merge origin/" << branch;
 
     setColor(COLOR_LIGHT_GREEN);
     cout << "  Syncing " << branch << " branch from fork repository (pgwiz/seepo)...\n\n";
@@ -235,7 +235,7 @@ void executeSyncFromParentCommand(const string& parentPat, const string& branch)
     cout << "\n  Step 2/3: Merging into local branch...\n";
     setColor(COLOR_LIGHT_YELLOW);
     stringstream mergeCmd;
-    mergeCmd << "git merge upstream/" << branch << " --quiet";
+    mergeCmd << "git merge upstream/" << branch;
     system(mergeCmd.str().c_str());
 
     // Step 3: Push back to fork
@@ -243,7 +243,7 @@ void executeSyncFromParentCommand(const string& parentPat, const string& branch)
     cout << "  Step 3/3: Pushing to fork (origin)...\n";
     setColor(COLOR_LIGHT_YELLOW);
     stringstream pushCmd;
-    pushCmd << "git push origin " << branch << " --quiet";
+    pushCmd << "git push origin " << branch;
     system(pushCmd.str().c_str());
 
     setColor(COLOR_LIGHT_GREEN);
@@ -516,7 +516,4 @@ int main() {
 
     return 0;
 }
-
-
-
 
