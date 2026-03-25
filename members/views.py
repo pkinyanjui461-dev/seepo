@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import IntegrityError
 from members.models import Member
 from members.forms import MemberForm
 from groups.models import Group
@@ -20,9 +21,16 @@ def member_create(request, group_pk):
     if request.method == 'POST' and form.is_valid():
         member = form.save(commit=False)
         member.group = group
-        member.save()
-        messages.success(request, f'Member "{member.name}" added to {group.name}.')
-        return redirect('group_detail', pk=group.pk)
+        try:
+            member.save()
+            messages.success(request, f'Member "{member.name}" added to {group.name}.')
+            return redirect('group_detail', pk=group.pk)
+        except IntegrityError:
+            messages.error(
+                request,
+                f'A member with number {member.member_number} already exists in {group.name}. '
+                f'Please use a different member number.'
+            )
     return render(request, 'members/member_form.html', {
         'form': form, 'group': group, 'title': 'Add Member'
     })
@@ -34,9 +42,16 @@ def member_edit(request, pk):
     group = member.group
     form = MemberForm(request.POST or None, instance=member)
     if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, f'Member "{member.name}" updated.')
-        return redirect('group_detail', pk=group.pk)
+        try:
+            form.save()
+            messages.success(request, f'Member "{member.name}" updated.')
+            return redirect('group_detail', pk=group.pk)
+        except IntegrityError:
+            messages.error(
+                request,
+                f'A member with number {form.cleaned_data.get("member_number")} already exists in {group.name}. '
+                f'Please use a different member number.'
+            )
     return render(request, 'members/member_form.html', {
         'form': form, 'group': group, 'title': 'Edit Member'
     })

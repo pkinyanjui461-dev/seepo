@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /accounts/
+Disallow: /api/
+Allow: /
+
+Sitemap: https://seepo.co.ke/sitemap.xml

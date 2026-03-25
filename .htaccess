@@ -1,0 +1,62 @@
+# SEEPO Static Files Configuration for cPanel Passenger
+# Serve static files directly without going through Django/Passenger
+
+# Enable rewrite engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Serve static files directly with correct MIME types
+    RewriteRule ^static/(.*)$ staticfiles/$1 [L]
+
+    # Serve media files directly
+    RewriteRule ^media/(.*)$ media/$1 [L]
+
+    # Serve favicon and robots directly
+    RewriteRule ^favicon\.ico$ static/favicon.ico [L]
+    RewriteRule ^robots\.txt$ static/robots.txt [L]
+</IfModule>
+
+# Set correct MIME types for static assets
+<IfModule mod_mime.c>
+    AddType text/css .css
+    AddType application/javascript .js
+    AddType application/json .json
+    AddType image/svg+xml .svg
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/gif .gif
+    AddType image/webp .webp
+    AddType image/x-icon .ico
+    AddType font/ttf .ttf
+    AddType font/otf .otf
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+</IfModule>
+
+# Cache static assets for 1 year
+<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|otf)$">
+    Header set Cache-Control "max-age=31536000, public"
+    Header set Expires "Thu, 31 Dec 2026 23:59:59 GMT"
+</FilesMatch>
+
+# Cache buster for versioned assets
+<FilesMatch "\.(css|js)\?v=\d+$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+</FilesMatch>
+
+# Deny access to sensitive files
+<FilesMatch "\.env">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^\.git">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Compression for text assets
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json
+</IfModule>

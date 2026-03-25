@@ -99,10 +99,20 @@ TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_TZ = True
 
+# Don't redirect POST requests from /admin to /admin/ (prevents 500 errors)
+APPEND_SLASH = False
+
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Additional static file handling for cPanel
+STATIC_HOST = ''  # Will be empty for relative URLs
+if 'seepo.co.ke' in os.getenv('ALLOWED_HOSTS', '*'):
+    STATIC_HOST = 'https://seepo.co.ke'
+elif 'staging.seepo.co.ke' in os.getenv('ALLOWED_HOSTS', '*'):
+    STATIC_HOST = 'https://staging.seepo.co.ke'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -143,6 +153,12 @@ LOGGING = {
             'filename': LOG_DIR / 'error.log',
             'formatter': 'verbose',
         },
+        'static_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': LOG_DIR / 'static.log',
+            'formatter': 'verbose',
+        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -162,6 +178,16 @@ LOGGING = {
         'django.request': {
             'handlers': ['error_file'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.staticfiles': {
+            'handlers': ['static_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
