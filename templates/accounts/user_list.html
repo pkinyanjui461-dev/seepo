@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0" style="color: var(--text-main);">System Users</h3>
+    <a href="{% url 'user_create' %}" class="btn btn-primary px-4 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>New User</a>
+</div>
+
+<div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted fw-bold border-0">Name / Phone</th>
+                        <th class="py-3 text-muted fw-bold border-0">Username</th>
+                        <th class="py-3 text-muted fw-bold border-0">Email</th>
+                        <th class="py-3 text-muted fw-bold border-0">Role</th>
+                        <th class="py-3 text-muted fw-bold border-0">Status</th>
+                        <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <img src="https://ui-avatars.com/api/?name={{ u.username }}&background=E4E4E4&color=333" class="rounded-circle me-3" width="36" height="36" alt="User">
+                                <div>
+                                    <div class="fw-bold" style="color: var(--text-main);">{{ u.get_full_name|default:u.username }}</div>
+                                    <div class="text-muted small">{{ u.phone_number|default:"No Phone" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted">{{ u.username }}</td>
+                        <td class="text-muted">{{ u.email }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if u.role == 'admin' %}bg-danger bg-opacity-10 text-danger
+                                {% elif u.role == 'ict' %}bg-primary bg-opacity-10 text-primary
+                                {% elif u.role == 'management' %}bg-success bg-opacity-10 text-success
+                                {% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}"
+                                style="font-weight: 600; padding: 6px 10px; border-radius: 6px;">
+                                {{ u.get_role_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Active</span>
+                            {% else %}
+                                <span class="text-muted small fw-bold"><i class="fas fa-times-circle me-1"></i>Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="{% url 'user_edit' u.pk %}" class="btn btn-sm btn-light border" title="Edit User"><i class="fas fa-edit"></i></a>
+                                <a href="{% url 'user_password_reset' u.pk %}" class="btn btn-sm btn-light border" title="Reset Password"><i class="fas fa-key"></i></a>
+                                <a href="{% url 'user_delete' u.pk %}" class="btn btn-sm btn-outline-danger" title="Delete User"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-5">No users found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

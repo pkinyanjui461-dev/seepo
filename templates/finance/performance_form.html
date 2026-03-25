@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+{% load static finance_extras %}
+{% block title %}Group Performance{% endblock %}
+{% block page_title %}<span class="text-muted">{{ mform.group.name }} / </span>Performance: {{ mform.get_month_name }} {{ mform.year }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Performance Form Styles ─────────────────────────── */
+.perf-page { background: #f5f6fa; }
+
+.perf-title {
+    background: linear-gradient(135deg, #6C5DD3 0%, #8B5CF6 100%);
+    color: #fff;
+    text-align: center;
+    padding: 14px 20px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    border-radius: 12px 12px 0 0;
+    text-transform: uppercase;
+    margin-bottom: 0;
+}
+.perf-subtitle {
+    background: rgba(108,93,211,0.08);
+    text-align: center;
+    padding: 6px;
+    font-size: 0.85rem;
+    color: #6C5DD3;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #e4e4e4;
+    margin-bottom: 0;
+}
+
+/* Section cards */
+.perf-section {
+    background: #fff;
+    border: 1.5px solid #e0e0e8;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 100%;
+}
+.perf-section-header {
+    background: linear-gradient(90deg, #6C5DD3 0%, #8B5CF6 100%);
+    color: #fff;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.perf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+}
+.perf-table th {
+    background: #f0eeff;
+    color: #6C5DD3;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding: 6px 8px;
+    border-bottom: 1.5px solid #ddd;
+    text-align: left;
+}
+.perf-table th.amt-col { text-align: right; }
+.perf-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #f0f0f5;
+    vertical-align: middle;
+}
+.perf-table td.row-num {
+    color: #aaa;
+    font-size: 0.75rem;
+    width: 24px;
+    text-align: center;
+}
+.perf-table td.row-label { color: #333; }
+.perf-table .amt-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px dashed #ccc;
+    background: transparent;
+    text-align: right;
+    font-size: 0.83rem;
+    padding: 2px 4px;
+    outline: none;
+    min-width: 80px;
+    color: #11142D;
+}
+.perf-table .amt-input:focus {
+    border-bottom: 1.5px solid #6C5DD3;
+    background: #f8f6ff;
+}
+.perf-table .total-row {
+    background: #f0eeff;
+    font-weight: 700;
+}
+.perf-table .total-row td {
+    border-top: 2px solid #6C5DD3;
+    color: #6C5DD3;
+}
+.perf-total-display {
+    text-align: right;
+    font-weight: 700;
+    color: #6C5DD3;
+    min-width: 80px;
+    display: inline-block;
+}
+
+/* Section A/B special layout */
+.sec-ab-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.sec-ab-table th, .sec-ab-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f5; }
+.sec-ab-table th { background: #f0eeff; color: #6C5DD3; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+
+/* Reconciliation */
+.recon-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.recon-table th { background: linear-gradient(90deg,#6C5DD3,#8B5CF6); color:#fff; padding:7px 10px; font-size:0.75rem; text-align:center; }
+.recon-table td { border: 1px solid #ddd; padding: 6px 10px; text-align: center; }
+.recon-input { width: 100%; border: none; border-bottom: 1px dashed #bbb; text-align: center; font-size: 0.83rem; background: transparent; outline: none; }
+.recon-input:focus { border-bottom: 1.5px solid #6C5DD3; }
+
+/* Grand Total / Next Meeting */
+.summary-card {
+    background: #fff;
+    border: 1.5px solid #e0e0e8;
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+
+/* Save bar */
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #e4e4e4;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 200;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <a href="{% url 'monthly_form_detail' mform.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Accounting Sheet
+    </a>
+    <a href="{% url 'combined_monthly_report_pdf' mform.pk %}" class="btn btn-danger btn-sm">
+        <i class="fas fa-file-pdf me-1"></i> Download PDF
+    </a>
+</div>
+
+<form method="POST" id="perfForm">
+{% csrf_token %}
+
+{# ── TITLE ───────────────────────────────────────────── #}
+<div class="perf-title">Groups Monthly Performance</div>
+<div class="perf-subtitle">{{ mform.group.name }} &nbsp;|&nbsp; {{ mform.get_month_name }} {{ mform.year }}</div>
+
+<div class="mt-3 row g-3">
+
+{# ═══════════════════════════════════════════════════════ #}
+{# SECTION A                                               #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+<div class="perf-section">
+  <div class="perf-section-header">Section A – Advance Paid Today</div>
+  <div class="p-2">
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-num">#</th>
+        <th>M.No</th>
+        <th class="amt-col">Amount (Kshs)</th>
+        <th class="text-center">Paid</th>
+        <th class="amt-col">Fine &amp; Charges</th>
+      </tr></thead>
+      <tbody>
+        {% for member_rec in members %}
+        <tr>
+          <td class="row-num">
+            <input type="hidden" name="section" value="A">
+            <input type="hidden" name="tertiary_amount" value="0">
+            {{ member_rec.member.member_number|default:"-" }}
+          </td>
+          <td>
+            {{ member_rec.member.name }}
+            <input type="hidden" name="description" value="{{ member_rec.member.name }}">
+          </td>
+          <td>
+            <input type="number" step="1" name="amount" class="amt-input amount-A sec-a-amt" 
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+          </td>
+          <td class="text-center pt-2">
+            {% with idx=forloop.counter0 %}
+            <input type="hidden" name="is_paid" value="False" class="hidden-paid" {% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx and e.is_paid %}disabled{% endif %}{% endfor %}>
+            <input type="checkbox" name="is_paid" value="True" class="form-check-input sec-a-check"
+                   {% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx and e.is_paid %}checked{% endif %}{% endfor %}
+                   onchange="this.previousElementSibling.disabled = this.checked; updateTotal('A');">
+            {% endwith %}
+          </td>
+          <td>
+            <input type="number" step="1" name="secondary_amount" class="amt-input amount-A-fine" 
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx %}{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2" class="text-end pe-2">Total A:</td>
+          <td><span class="perf-total-display" id="tot-A">{{ entries_by_section.A.total|floatformat:0 }}</span></td>
+          <td class="text-end pe-2 text-muted small">Total Fines:</td>
+          <td><span class="perf-total-display" id="tot-A-fine">{{ entries_by_section.A.secondary_total|floatformat:0 }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
+{# ═══════════════════════════════════════════════════════ #}
+{# SECTION B                                               #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+<div class="perf-section">
+  <div class="perf-section-header">Section B – Cash Given Out Today</div>
+  <div class="p-2">
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-num">#</th>
+        <th>M.No</th>
+        <th class="amt-col">Withdrawal</th>
+        <th class="amt-col">Loans</th>
+        <th class="amt-col">Advance</th>
+      </tr></thead>
+      <tbody>
+        {% for member_rec in members %}
+        <tr>
+          <td class="row-num">
+            <input type="hidden" name="section" value="B">
+            <input type="hidden" name="is_paid" value="False">
+            {{ member_rec.member.member_number|default:"-" }}
+          </td>
+          <td>
+            {{ member_rec.member.name }}
+            <input type="hidden" name="description" value="{{ member_rec.member.name }}">
+          </td>
+          <td>
+            <input type="number" step="1" name="amount" class="amt-input amount-B" 
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+          </td>
+          <td>
+            <input type="number" step="1" name="secondary_amount" class="amt-input amount-B-loan"
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+          </td>
+          <td>
+            <input type="number" step="1" name="tertiary_amount" class="amt-input amount-B-adv"
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.tertiary_amount %}{{ e.tertiary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2" class="text-end pe-2">Total B:</td>
+          <td><span class="perf-total-display" id="tot-B">{{ entries_by_section.B.total|floatformat:0 }}</span></td>
+          <td><span class="perf-total-display" id="tot-B-loan">{{ entries_by_section.B.secondary_total|floatformat:0 }}</span></td>
+          <td><span class="perf-total-display" id="tot-B-adv">{{ entries_by_section.B.tertiary_total|floatformat:0 }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
+{# ═══════════════════════════════════════════════════════ #}
+{# SECTION C – INCOME                                      #}
+{# ═══════════════════════════════════════════════════════ #}
+{% with c_labels="Previous Banking,Total Repaid,Advance Paid,Project,Meals/Hall,Pass Book,Fines,Risk Fund,Bank Withdrawal,Debt Out" %}
+<div class="col-md-6">
+<div class="perf-section">
+  <div class="perf-section-header">Section C – INCOME</div>
+  <div class="p-2">
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-num">#</th>
+        <th>Details</th>
+        <th class="amt-col">Kshs</th>
+      </tr></thead>
+      <tbody>
+        {% for label in c_labels|split:"," %}
+        <tr>
+          <td class="row-num">
+            <input type="hidden" name="section" value="C">
+            <input type="hidden" name="is_paid" value="False">
+            <input type="hidden" name="secondary_amount" value="0">
+            <input type="hidden" name="tertiary_amount" value="0">
+            {{ forloop.counter }}
+          </td>
+          <td class="row-label">{{ label }}
+            <input type="hidden" name="description" value="{{ label }}">
+          </td>
+          <td>
+            {% if label == "Total Repaid" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-C" id="c-total-repaid" value="{% if accounting_total_repaid is not None %}{{ accounting_total_repaid|floatformat:0 }}{% endif %}" readonly>
+            {% elif label == "Advance Paid" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-C" id="c-advance-paid" value="{% for e in entries_by_section.C.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}" readonly>
+            {% elif label == "Previous Banking" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-C" id="c-previous-banking" value="{% if entries_by_section.C.entries %}{% for e in entries_by_section.C.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% else %}{{ initial_banking_bf|floatformat:0 }}{% endif %}">
+            {% elif label == "Fines" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-C" id="c-fines" value="{% for e in entries_by_section.C.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
+            {% else %}
+              <input type="number" step="1" name="amount" class="amt-input amount-C" value="{% for e in entries_by_section.C.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2" class="text-end pe-2">Total C:</td>
+          <td><span class="perf-total-display" id="tot-C">{{ entries_by_section.C.total|floatformat:0 }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+</div>
+{% endwith %}
+
+{# ═══════════════════════════════════════════════════════ #}
+{# SECTION D – EXPENSES                                    #}
+{# ═══════════════════════════════════════════════════════ #}
+{% with d_labels="Withdrawals,Loans Given,Advance Given,Principal Paid,Service Fee,Pass Book,Meals/Hall,Loan Forms,Interest,Risk Fund,Mpesa Charges,Bank Charges,Banking Today,Registration" %}
+<div class="col-md-6">
+<div class="perf-section">
+  <div class="perf-section-header">Section D – EXPENSES</div>
+  <div class="p-2">
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-num">#</th>
+        <th>Details</th>
+        <th class="amt-col">Kshs</th>
+      </tr></thead>
+      <tbody>
+        {% for label in d_labels|split:"," %}
+        <tr>
+          <td class="row-num">
+            <input type="hidden" name="section" value="D">
+            <input type="hidden" name="is_paid" value="False">
+            <input type="hidden" name="secondary_amount" value="0">
+            <input type="hidden" name="tertiary_amount" value="0">
+            {{ forloop.counter }}
+          </td>
+          <td class="row-label">{{ label }}
+            <input type="hidden" name="description" value="{{ label }}">
+          </td>
+          <td>
+            {% if label == "Withdrawals" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" id="d-withdrawals" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}" readonly>
+            {% elif label == "Loans Given" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" id="d-loans-given" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}" readonly>
+            {% elif label == "Advance Given" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" id="d-advance-given" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}" readonly>
+            {% elif label == "Interest" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" id="d-interest" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
+            {% elif label == "Principal Paid" %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" id="d-principal-paid" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
+            {% else %}
+              <input type="number" step="1" name="amount" class="amt-input amount-D" value="{% for e in entries_by_section.D.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2" class="text-end pe-2">Total D:</td>
+          <td><span class="perf-total-display" id="tot-D">{{ entries_by_section.D.total|floatformat:0 }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+</div>
+{% endwith %}
+
+{# ═══════════════════════════════════════════════════════ #}
+{# FINANCIAL RECONCILIATION                                #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="col-12">
+<div class="perf-section">
+  <div class="perf-section-header">SECTION E</div>
+  <div class="p-3" style="overflow-x:auto;">
+    <table class="recon-table">
+      <thead>
+        <tr>
+          <th>Debt B/F</th>
+          <th>Total Banking</th>
+          <th>Total Debt</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for label in "Debt B/F,Total Banking,Total Debt"|split:"," %}
+          <td><input type="number" step="1" name="amount" class="recon-input amount-E"
+                     id="e-{% if label == 'Debt B/F' %}debt-bf{% elif label == 'Total Banking' %}total-banking{% elif label == 'Total Debt' %}total-debt{% endif %}"
+                     data-initial="{% if label == 'Debt B/F' %}{{ initial_debt_bf|floatformat:0 }}{% elif label == 'Total Banking' %}{{ initial_banking_bf|floatformat:0 }}{% endif %}"
+                     value="{% for e in entries_by_section.E.entries %}{% if e.description == label %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% if not entries_by_section.E.entries %}{% if label == 'Debt B/F' %}{{ initial_debt_bf|floatformat:0 }}{% elif label == 'Total Banking' %}{{ initial_banking_bf|floatformat:0 }}{% endif %}{% endif %}"
+                     readonly>
+              <input type="hidden" name="section" value="E">
+              <input type="hidden" name="description" value="{{ label }}">
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+{# ═══════════════════════════════════════════════════════ #}
+{# GRAND TOTAL + COMMENTS + NEXT MEETING                  #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="col-12">
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="summary-card h-100">
+      <h6 class="fw-bold mb-3" style="color:#6C5DD3;text-transform:uppercase;letter-spacing:1px;font-size:0.8rem;">GROUP SUMMERY</h6>
+      <!-- Base data from accounting sheet -->
+      <input type="hidden" id="base-savings-cf" value="{{ total_savings_cf|floatformat:0 }}">
+      <input type="hidden" id="base-loans-cf" value="{{ total_loans_cf|floatformat:0 }}">
+      
+      <table class="perf-table">
+        <tbody>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">SHARES</td><td class="text-end fw-bold" id="summery-shares">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">ADVANCE</td><td class="text-end fw-bold" id="summery-advance">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">LOAN</td><td class="text-end fw-bold" id="summery-loan">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">BANKING</td><td class="text-end fw-bold" id="summery-banking">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">TOTAL REVOLVING FUNDS(TRF)</td><td class="text-end fw-bold" id="summery-trf">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">INTEREST</td><td class="text-end fw-bold" id="summery-interest">0</td></tr>
+          <tr><td class="row-label fw-bold" style="color:#6C5DD3;">OFFICE DEBT</td><td class="text-end fw-bold" id="summery-office-debt">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="summary-card h-100">
+      <h6 class="fw-bold mb-3" style="color:#6C5DD3;text-transform:uppercase;letter-spacing:1px;font-size:0.8rem;">Other Comments</h6>
+      <textarea name="comments" rows="7" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;" placeholder="Enter any comments here…">{{ perf_form.notes }}</textarea>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="summary-card h-100">
+      <h6 class="fw-bold mb-3" style="color:#6C5DD3;text-transform:uppercase;letter-spacing:1px;font-size:0.8rem;">Next Meeting</h6>
+      <div class="mb-3">
+        <label class="form-label small fw-bold text-muted">Date</label>
+        <input type="date" name="next_meeting_date" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;" 
+               value="{{ perf_form.next_meeting_date|date:'Y-m-d' }}">
+      </div>
+      <div>
+        <label class="form-label small fw-bold text-muted">Time</label>
+        <input type="time" name="next_meeting_time" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;"
+               value="{{ perf_form.next_meeting_time|time:'H:i' }}">
+      </div>
+      <div class="mt-3">
+        <label class="form-label small fw-bold text-muted">Venue</label>
+        <input type="text" name="next_meeting_venue" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;" 
+               placeholder="Meeting venue…" value="{{ perf_form.next_meeting_venue }}">
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>{# end row #}
+
+{# Save Bar #}
+<div class="save-bar mt-4">
+    <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Changes save when you click Save.</span>
+    <button type="submit" class="btn btn-primary px-5 fw-bold" style="background:linear-gradient(135deg,#6C5DD3,#8B5CF6);border:none;border-radius:10px;box-shadow:0 4px 15px rgba(108,93,211,0.4);">
+        <i class="fas fa-save me-2"></i> Save Form
+    </button>
+</div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Live section totals
+    const sections = ['A','B','C','D'];
+    sections.forEach(sec => {
+        if (sec === 'A') {
+            document.querySelectorAll(`.amount-A, .amount-A-fine, .sec-a-check`).forEach(inp => {
+                inp.addEventListener('input', () => updateTotal('A'));
+                inp.addEventListener('change', () => updateTotal('A'));
+            });
+        } else if (sec === 'B') {
+            document.querySelectorAll(`.amount-B, .amount-B-loan, .amount-B-adv`).forEach(inp => {
+                inp.addEventListener('input', () => updateTotal('B'));
+            });
+        } else {
+            document.querySelectorAll(`.amount-${sec}`).forEach(inp => {
+                inp.addEventListener('input', () => updateTotal(sec));
+            });
+        }
+        updateTotal(sec);  // initialise
+    });
+
+    function updateTotal(sec) {
+        let total = 0;
+        
+        if (sec === 'A') {
+            // Section A: Advance only sums if Paid is checked
+            let fineTotal = 0;
+            document.querySelectorAll('input[name="section"][value="A"]').forEach(sel => {
+                const tr = sel.closest('tr');
+                if (tr) {
+                    const chk = tr.querySelector('.sec-a-check');
+                    if (chk && chk.checked) {
+                        const amt = tr.querySelector('.sec-a-amt');
+                        if (amt) total += parseFloat(amt.value) || 0;
+                    }
+                    const fineInput = tr.querySelector('.amount-A-fine');
+                    if (fineInput) {
+                        fineTotal += parseFloat(fineInput.value) || 0;
+                    }
+                }
+            });
+            const fineEl = document.getElementById('tot-A-fine');
+            if (fineEl) fineEl.textContent = fineTotal.toLocaleString();
+            
+            // Sync with Section C "Advance Paid"
+            const cAdvInput = document.getElementById('c-advance-paid');
+            if (cAdvInput && cAdvInput.value != total) {
+                cAdvInput.value = total;
+                updateTotal('C');
+            }
+        } else if (sec === 'B') {
+            let loanTotal = 0;
+            let advTotal = 0;
+            document.querySelectorAll('input[name="section"][value="B"]').forEach(sel => {
+                const tr = sel.closest('tr');
+                if (tr) {
+                    const amt = tr.querySelector('.amount-B');
+                    if (amt) total += parseFloat(amt.value) || 0;
+                    
+                    const loanAmt = tr.querySelector('.amount-B-loan');
+                    if (loanAmt) loanTotal += parseFloat(loanAmt.value) || 0;
+                    
+                    const advAmt = tr.querySelector('.amount-B-adv');
+                    if (advAmt) advTotal += parseFloat(advAmt.value) || 0;
+                }
+            });
+            const loanEl = document.getElementById('tot-B-loan');
+            if (loanEl) loanEl.textContent = loanTotal.toLocaleString();
+            const advEl = document.getElementById('tot-B-adv');
+            if (advEl) advEl.textContent = advTotal.toLocaleString();
+
+            // Sync with Section D equivalents
+            let changedD = false;
+            const dWithdrawInput = document.getElementById('d-withdrawals');
+            if (dWithdrawInput && dWithdrawInput.value != total) {
+                dWithdrawInput.value = total;
+                changedD = true;
+            }
+            const dLoanInput = document.getElementById('d-loans-given');
+            if (dLoanInput && dLoanInput.value != loanTotal) {
+                dLoanInput.value = loanTotal;
+                changedD = true;
+            }
+            const dAdvInput = document.getElementById('d-advance-given');
+            if (dAdvInput && dAdvInput.value != advTotal) {
+                dAdvInput.value = advTotal;
+                changedD = true;
+            }
+            if (changedD) {
+                updateTotal('D');
+            }
+        } else if (sec === 'E') {
+            // Section E doesn't have a single total but has interdependent logic
+            updateSectionE();
+        } else {
+            // Other Sections (C, D, etc) sum normally
+            document.querySelectorAll(`.amount-${sec}`).forEach(inp => {
+                total += parseFloat(inp.value) || 0;
+            });
+        }
+
+        const el = document.getElementById(`tot-${sec}`);
+        if (el) el.textContent = total.toLocaleString();
+        
+        // After every Section total update, check if we need to update Section E
+        if (['C', 'D', 'E'].includes(sec)) {
+            updateSectionE();
+        }
+
+        updateGroupSummery();
+    }
+
+    function updateSectionE() {
+        const totCDisplay = document.getElementById('tot-C');
+        const totDDisplay = document.getElementById('tot-D');
+        if (!totCDisplay || !totDDisplay) return;
+
+        const totC = parseFloat(totCDisplay.textContent.replace(/,/g,'')) || 0;
+        const totD = parseFloat(totDDisplay.textContent.replace(/,/g,'')) || 0;
+        
+        const dPrincipalPaidEl = document.getElementById('d-principal-paid');
+        const principalPaid = dPrincipalPaidEl ? (parseFloat(dPrincipalPaidEl.value) || 0) : 0;
+        
+        const eDebtBF = document.getElementById('e-debt-bf');
+        const eTotalBanking = document.getElementById('e-total-banking');
+        const eTotalDebt = document.getElementById('e-total-debt');
+        const cPrevBanking = document.getElementById('c-previous-banking');
+
+        if (!eTotalBanking || !eTotalDebt || !eDebtBF) return;
+
+        // Use data-initial if available
+        if (!eDebtBF.dataset.base) eDebtBF.dataset.base = eDebtBF.dataset.initial || eDebtBF.value || 0;
+        if (!eTotalBanking.dataset.base) eTotalBanking.dataset.base = eTotalBanking.dataset.initial || eTotalBanking.value || 0;
+
+        const debtBase = parseFloat(eDebtBF.dataset.base) || 0;
+        const bankingBase = parseFloat(eTotalBanking.dataset.base) || 0;
+
+        // Formula: Debt B/F (row) = Debt B/F (base) - Principal Paid
+        const currentDebtBF = Math.max(0, Math.round(debtBase - principalPaid));
+        eDebtBF.value = currentDebtBF;
+
+        // Formula: Difference = C - D
+        const diff = totC - totD;
+        
+        let newTotalDebt = currentDebtBF;
+        let newTotalBanking = 0;
+
+        if (diff > 0) {
+            // Surplus: Repay debt first, then banking
+            if (newTotalDebt > 0) {
+                const repayment = Math.min(diff, newTotalDebt);
+                newTotalDebt -= repayment;
+                newTotalBanking = diff - repayment;
+            } else {
+                newTotalBanking = diff;
+            }
+        } else if (diff < 0) {
+            // Deficit: Add to debt
+            newTotalDebt += Math.abs(diff);
+        }
+
+        eTotalBanking.value = Math.round(newTotalBanking);
+        eTotalDebt.value = Math.round(newTotalDebt);
+    }
+
+    function updateGroupSummery() {
+        // Base values from hidden inputs
+        const baseSavingsCF = parseFloat(document.getElementById('base-savings-cf').value) || 0;
+        const baseLoansCF = parseFloat(document.getElementById('base-loans-cf').value) || 0;
+
+        // Elements from Sections B, E
+        const totalBankingEl = document.getElementById('e-total-banking');
+        const totalDebtEl = document.getElementById('e-total-debt');
+        
+        // Section B Totals (from display elements)
+        const secBNewLoanEl = document.getElementById('tot-B-loan');
+        const secBNewAdvEl = document.getElementById('tot-B-adv');
+
+        // Summery display elements
+        const summerySharesEl = document.getElementById('summery-shares');
+        const summeryAdvanceEl = document.getElementById('summery-advance');
+        const summeryLoanEl = document.getElementById('summery-loan');
+        const summeryBankingEl = document.getElementById('summery-banking');
+        const summeryTrfEl = document.getElementById('summery-trf');
+        const summeryInterestEl = document.getElementById('summery-interest');
+        const summeryOfficeDebtEl = document.getElementById('summery-office-debt');
+
+        // Extract values
+        const newLoansB = parseFloat(secBNewLoanEl ? secBNewLoanEl.textContent.replace(/,/g,'') : 0) || 0;
+        const newAdvB = parseFloat(secBNewAdvEl ? secBNewAdvEl.textContent.replace(/,/g,'') : 0) || 0;
+        const totalBanking = parseFloat(totalBankingEl ? totalBankingEl.value : 0) || 0;
+        const totalDebt = parseFloat(totalDebtEl ? totalDebtEl.value : 0) || 0;
+
+        // Formula Implementation:
+        // 1. SHARES = Total of savings & shares C/F on the accounting sheet
+        const shares = baseSavingsCF;
+        
+        // 2. ADVANCE = Total of advance in section b
+        const advance = newAdvB;
+        
+        // 3. LOAN = Total of loan bal C/F on accounting sheet + Total of loans in section b
+        const loan = baseLoansCF + newLoansB;
+        
+        // 4. BANKING = Total banking in section e
+        const bankingResult = totalBanking;
+        
+        // 5. OFFICE DEBT = Total debt in section e
+        const officeDebt = totalDebt;
+        
+        // 6. TRF = ADVANCE + LOAN + BANKING
+        const trf = advance + loan + bankingResult;
+        
+        // 7. INTEREST = TRF - (SHARES + OFFICE DEBT)
+        const interest = trf - (shares + officeDebt);
+
+        // Update display
+        if (summerySharesEl) summerySharesEl.textContent = shares.toLocaleString();
+        if (summeryAdvanceEl) summeryAdvanceEl.textContent = advance.toLocaleString();
+        if (summeryLoanEl) summeryLoanEl.textContent = loan.toLocaleString();
+        if (summeryBankingEl) summeryBankingEl.textContent = bankingResult.toLocaleString();
+        if (summeryTrfEl) summeryTrfEl.textContent = trf.toLocaleString();
+        if (summeryInterestEl) summeryInterestEl.textContent = interest.toLocaleString();
+        if (summeryOfficeDebtEl) summeryOfficeDebtEl.textContent = officeDebt.toLocaleString();
+    }
+
+    // Initialize E
+    updateSectionE();
+    updateGroupSummery();
+});
+</script>
+{% endblock %}

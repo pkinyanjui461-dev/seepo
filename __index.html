@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kenya Plot Registry — Batch 2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #181818;
+    --border: #2a2a2a;
+    --accent: #c8f55a;
+    --text: #e8e8e8;
+    --muted: #666;
+    --hover: #222;
+    --toast-bg: #c8f55a;
+    --toast-text: #0f0f0f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+  header { padding: 48px 40px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 52px); letter-spacing: -1px; line-height: 1; }
+  header h1 span { color: var(--accent); }
+  .meta { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .controls { padding: 20px 40px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .search { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 16px; border-radius: 4px; width: 260px; outline: none; transition: border-color 0.2s; }
+  .search:focus { border-color: var(--accent); }
+  .search::placeholder { color: var(--muted); }
+  .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.save:hover { border-color: #5af5a8; color: #5af5a8; }
+  .action-btn.saved { border-color: #5af5a8; color: #5af5a8; }
+  .saved-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #5af5a8; margin-right: 6px; vertical-align: middle; opacity: 0; transition: opacity 0.3s; }
+  .saved-dot.visible { opacity: 1; }
+  .count { margin-left: auto; font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .click-hint { padding: 10px 40px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th { padding: 14px 20px 14px 40px; text-align: left; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  th:not(:first-child) { padding-left: 20px; }
+  tbody tr { border-bottom: 1px solid #1c1c1c; transition: background 0.15s; }
+  tbody tr:hover { background: var(--hover); }
+  td { padding: 16px 20px 16px 40px; font-size: 13px; line-height: 1.4; }
+  td:not(:first-child) { padding-left: 20px; }
+  .num { color: var(--muted); font-size: 11px; }
+  .name { color: var(--text); font-weight: 500; }
+  .gender-badge { display: inline-block; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; margin-left: 8px; font-weight: 400; }
+  .gender-badge.m { background: #1a2a3a; color: #5aa8f5; }
+  .gender-badge.f { background: #2a1a2a; color: #f55ab4; }
+  .phone { color: #aaa; }
+  .plot { color: var(--accent); font-size: 12px; }
+  tbody td.copyable { cursor: pointer; position: relative; transition: color 0.15s; }
+  tbody td.copyable:hover { color: var(--accent); }
+  tbody td.copyable::after { content: '⎘'; font-size: 10px; margin-left: 6px; opacity: 0; transition: opacity 0.15s; color: var(--accent); }
+  tbody td.copyable:hover::after { opacity: 1; }
+  tbody td.copyable.flash { color: var(--accent); }
+  #toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--toast-bg); color: var(--toast-text); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 1px; padding: 12px 24px; border-radius: 4px; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 600px) { header, .controls, th, td { padding-left: 16px; } .search { width: 100%; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Kenya <span>Plot</span> Registry</h1>
+    <div class="meta" style="margin-top:8px">Batch 2 · 100 Entries</div>
+  </div>
+  <div class="meta">KE · 2024</div>
+</header>
+
+<div class="controls">
+  <input class="search" type="text" placeholder="Search name, phone or plot..." id="searchInput" />
+  <button class="filter-btn active" onclick="filter('all', this)">All</button>
+  <button class="filter-btn" onclick="filter('F', this)">Female</button>
+  <button class="filter-btn" onclick="filter('M', this)">Male</button>
+  <button class="action-btn" onclick="reshuffle()">⇄ Reshuffle</button>
+  <button class="action-btn save" id="saveBtn" onclick="saveOrder()"><span class="saved-dot" id="savedDot"></span>Save Order</button>
+  <div class="count" id="countLabel">100 records</div>
+</div>
+
+<div class="click-hint">↓ Click any name, phone or plot cell to copy it individually</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Full Name</th>
+        <th>Phone</th>
+        <th>Plot Name</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const data = [
+  {name:"Abigail Chelagat", g:"F", phone:"0711222101", plot:"Chelagas Croft"},
+  {name:"Amina Wekesa", g:"F", phone:"0722333102", plot:"Wekesas Nest"},
+  {name:"Annette Rono", g:"F", phone:"0733444103", plot:"Ronos Shade"},
+  {name:"Aisha Baraka", g:"F", phone:"0744555104", plot:"Barakas Vale"},
+  {name:"Bernadette Simiyu", g:"F", phone:"0755666105", plot:"Simiyus Knoll"},
+  {name:"Celestine Ouma", g:"F", phone:"0766777106", plot:"Oumas Acre"},
+  {name:"Consolata Juma", g:"F", phone:"0777888107", plot:"Jumas Ridge"},
+  {name:"Damaris Tanui", g:"F", phone:"0788999108", plot:"Tanuis Glade"},
+  {name:"Dorcas Kirui", g:"F", phone:"0799000109", plot:"Kiruis Bend"},
+  {name:"Edith Sang", g:"F", phone:"0700111110", plot:"Sangs Corner"},
+  {name:"Eunice Rotich", g:"F", phone:"0711222111", plot:"Rotiches Plot"},
+  {name:"Evaline Korir", g:"F", phone:"0722333112", plot:"Korirs Lot"},
+  {name:"Fatuma Onyango", g:"F", phone:"0733444113", plot:"Onyangas Rise"},
+  {name:"Fridah Kibet", g:"F", phone:"0744555114", plot:"Kibets Court"},
+  {name:"Genoveva Obiero", g:"F", phone:"0755666115", plot:"Obieros Patch"},
+  {name:"Hilda Njenga", g:"F", phone:"0766777116", plot:"Njengas Lot"},
+  {name:"Immaculate Rotich", g:"F", phone:"0777888117", plot:"Imrotiches Plot"},
+  {name:"Jane Mwenda", g:"F", phone:"0788999118", plot:"Mwendas Shade"},
+  {name:"Josephine Chesang", g:"F", phone:"0799000119", plot:"Chesangs Croft"},
+  {name:"Juliet Ngugi", g:"F", phone:"0700111120", plot:"Ngugis Haven"},
+  {name:"Kezia Maritim", g:"F", phone:"0711222121", plot:"Maritims Glade"},
+  {name:"Lillian Cheptoo", g:"F", phone:"0722333122", plot:"Cheptoos Vale"},
+  {name:"Loice Mwanzia", g:"F", phone:"0733444123", plot:"Mwanzias Rise"},
+  {name:"Magdalene Keter", g:"F", phone:"0744555124", plot:"Keters Knoll"},
+  {name:"Mercy Cheruiyot", g:"F", phone:"0755666125", plot:"Cheruiyots Plot"},
+  {name:"Millicent Mutungi", g:"F", phone:"0766777126", plot:"Mutungis Corner"},
+  {name:"Monica Chesire", g:"F", phone:"0777888127", plot:"Cheshire Nest"},
+  {name:"Mwanaisha Odhiambo", g:"F", phone:"0788999128", plot:"Mwodhiambos Plot"},
+  {name:"Norah Bett", g:"F", phone:"0799000129", plot:"Betts Acre"},
+  {name:"Pamela Sigei", g:"F", phone:"0700111130", plot:"Sigeis Croft"},
+  {name:"Peninnah Toroitich", g:"F", phone:"0711222131", plot:"Toroitiches Plot"},
+  {name:"Philomena Chebii", g:"F", phone:"0722333132", plot:"Chebiis Glade"},
+  {name:"Rosemary Lagat", g:"F", phone:"0733444133", plot:"Lagats Vale"},
+  {name:"Ruth Chebet", g:"F", phone:"0744555134", plot:"Ruchebets Plot"},
+  {name:"Sandra Kosgei", g:"F", phone:"0755666135", plot:"Kosgeis Rise"},
+  {name:"Scholastica Ndiwa", g:"F", phone:"0766777136", plot:"Ndiwas Lot"},
+  {name:"Selline Chepkoech", g:"F", phone:"0777888137", plot:"Sechepkos Plot"},
+  {name:"Sheila Muthui", g:"F", phone:"0788999138", plot:"Muthuis Bend"},
+  {name:"Sonia Barno", g:"F", phone:"0799000139", plot:"Barnos Court"},
+  {name:"Sophie Chelimo", g:"F", phone:"0700111140", plot:"Chelimos Shade"},
+  {name:"Tabitha Kemunto", g:"F", phone:"0711222141", plot:"Kemuntos Knoll"},
+  {name:"Tecla Melly", g:"F", phone:"0722333142", plot:"Mellys Patch"},
+  {name:"Triza Komen", g:"F", phone:"0733444143", plot:"Komens Ridge"},
+  {name:"Valary Kemboi", g:"F", phone:"0744555144", plot:"Kembois Glade"},
+  {name:"Veronica Bitok", g:"F", phone:"0755666145", plot:"Bitoks Lot"},
+  {name:"Violet Chumo", g:"F", phone:"0766777146", plot:"Chumos Haven"},
+  {name:"Virginia Koskei", g:"F", phone:"0777888147", plot:"Koskeis Acre"},
+  {name:"Wanjiku Gitau", g:"F", phone:"0788999148", plot:"Gitaus Croft"},
+  {name:"Zawadi Okeyo", g:"F", phone:"0799000149", plot:"Okeyos Vale"},
+  {name:"Zuhura Atemo", g:"F", phone:"0700111150", plot:"Atemos Rise"},
+  {name:"Aaron Birgen", g:"M", phone:"0711222151", plot:"Birgens Plot"},
+  {name:"Abdalla Nyamweya", g:"M", phone:"0722333152", plot:"Nyamweyas Lot"},
+  {name:"Amos Rutto", g:"M", phone:"0733444153", plot:"Ruttos Glade"},
+  {name:"Andrew Langat", g:"M", phone:"0744555154", plot:"Langats Corner"},
+  {name:"Anthony Mutai", g:"M", phone:"0755666155", plot:"Mutais Croft"},
+  {name:"Barnabas Yator", g:"M", phone:"0766777156", plot:"Yators Knoll"},
+  {name:"Caleb Cheruiyot", g:"M", phone:"0777888157", plot:"Cacheruis Plot"},
+  {name:"Christopher Sang", g:"M", phone:"0788999158", plot:"Sangs Vale"},
+  {name:"Clement Bett", g:"M", phone:"0799000159", plot:"Betts Shade"},
+  {name:"Cyprian Rotich", g:"M", phone:"0700111160", plot:"Rotiches Acre"},
+  {name:"Damiano Korir", g:"M", phone:"0711222161", plot:"Korirs Ridge"},
+  {name:"David Maritim", g:"M", phone:"0722333162", plot:"Maritims Bend"},
+  {name:"Dominic Sigei", g:"M", phone:"0733444163", plot:"Sigeis Nest"},
+  {name:"Elijah Tanui", g:"M", phone:"0744555164", plot:"Tanuis Plot"},
+  {name:"Elisha Lagat", g:"M", phone:"0755666165", plot:"Lagats Glade"},
+  {name:"Enock Barno", g:"M", phone:"0766777166", plot:"Barnos Court"},
+  {name:"Evans Komen", g:"M", phone:"0777888167", plot:"Komens Rise"},
+  {name:"Ezekiel Keter", g:"M", phone:"0788999168", plot:"Keters Lot"},
+  {name:"Festus Koskei", g:"M", phone:"0799000169", plot:"Koskeis Patch"},
+  {name:"Gideon Bitok", g:"M", phone:"0700111170", plot:"Bitoks Haven"},
+  {name:"Godfrey Chumo", g:"M", phone:"0711222171", plot:"Chumos Croft"},
+  {name:"Harold Toroitich", g:"M", phone:"0722333172", plot:"Toroitiches Lot"},
+  {name:"Hezron Chesang", g:"M", phone:"0733444173", plot:"Hesangas Plot"},
+  {name:"Hosea Kemboi", g:"M", phone:"0744555174", plot:"Hoskembos Plot"},
+  {name:"Humphrey Melly", g:"M", phone:"0755666175", plot:"Mellys Knoll"},
+  {name:"Ishmael Ngugi", g:"M", phone:"0766777176", plot:"Ngugis Shade"},
+  {name:"Japheth Simiyu", g:"M", phone:"0777888177", plot:"Simiyus Glade"},
+  {name:"Jeremiah Kosgei", g:"M", phone:"0788999178", plot:"Kosgeis Ridge"},
+  {name:"Joel Kirui", g:"M", phone:"0799000179", plot:"Kiruis Vale"},
+  {name:"Jonathan Chelimo", g:"M", phone:"0700111180", plot:"Chelimos Acre"},
+  {name:"Joshua Obiero", g:"M", phone:"0711222181", plot:"Obieros Lot"},
+  {name:"Josiah Njenga", g:"M", phone:"0722333182", plot:"Njengas Bend"},
+  {name:"Kilonzo Mwenda", g:"M", phone:"0733444183", plot:"Mwendas Corner"},
+  {name:"Kipruto Chesire", g:"M", phone:"0744555184", plot:"Cheshire Plot"},
+  {name:"Lemmy Ouma", g:"M", phone:"0755666185", plot:"Oumas Shade"},
+  {name:"Linus Wekesa", g:"M", phone:"0766777186", plot:"Wekesas Knoll"},
+  {name:"Luca Rono", g:"M", phone:"0777888187", plot:"Ronos Glade"},
+  {name:"Marcus Chelagat", g:"M", phone:"0788999188", plot:"Machelagas Plot"},
+  {name:"Mathew Baraka", g:"M", phone:"0799000189", plot:"Barakas Rise"},
+  {name:"Maurice Juma", g:"M", phone:"0700111190", plot:"Jumas Croft"},
+  {name:"Mbugua Gitau", g:"M", phone:"0711222191", plot:"Gitaus Lot"},
+  {name:"Meshack Mwanzia", g:"M", phone:"0722333192", plot:"Mwanzias Ridge"},
+  {name:"Micah Atemo", g:"M", phone:"0733444193", plot:"Atemos Vale"},
+  {name:"Milton Chebet", g:"M", phone:"0744555194", plot:"Milchebets Plot"},
+  {name:"Nickson Mutungi", g:"M", phone:"0755666195", plot:"Mutungis Shade"},
+  {name:"Noah Onyango", g:"M", phone:"0766777196", plot:"Onyangas Acre"},
+  {name:"Onesmus Sang", g:"M", phone:"0777888197", plot:"Nesangs Plot"},
+  {name:"Paul Chesang", g:"M", phone:"0788999198", plot:"Chesangs Knoll"},
+  {name:"Philip Mutai", g:"M", phone:"0799000199", plot:"Mutais Glade"},
+  {name:"Pius Ndiwa", g:"M", phone:"0700111200", plot:"Ndiwas Bend"},
+];
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+const STORAGE_KEY = 'kenya_plot_b2_order';
+const saved = localStorage.getItem(STORAGE_KEY);
+if (saved) {
+  try {
+    const savedNames = JSON.parse(saved);
+    data.sort((a, b) => savedNames.indexOf(a.name) - savedNames.indexOf(b.name));
+    document.getElementById('savedDot').classList.add('visible');
+  } catch(e) { shuffle(data); }
+} else {
+  shuffle(data);
+}
+
+function reshuffle() {
+  shuffle(data);
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('savedDot').classList.remove('visible');
+  document.getElementById('saveBtn').classList.remove('saved');
+  render(currentFilter, document.getElementById('searchInput').value);
+  showToast('Order reshuffled');
+}
+
+function saveOrder() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data.map(r => r.name)));
+  document.getElementById('savedDot').classList.add('visible');
+  document.getElementById('saveBtn').classList.add('saved');
+  showToast('Order saved — persists on reload');
+}
+
+let currentFilter = 'all';
+
+function render(filter = 'all', search = '') {
+  const tbody = document.getElementById('tbody');
+  const countLabel = document.getElementById('countLabel');
+  tbody.innerHTML = '';
+  let count = 0;
+  data.forEach(row => {
+    const matchFilter = filter === 'all' || row.g === filter;
+    const q = search.toLowerCase();
+    const matchSearch = !q || row.name.toLowerCase().includes(q) || row.phone.includes(q) || row.plot.toLowerCase().includes(q);
+    if (!matchFilter || !matchSearch) return;
+    count++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num">${String(count).padStart(2,'0')}</td>
+      <td class="name copyable" data-val="${row.name}">${row.name}<span class="gender-badge ${row.g.toLowerCase()}">${row.g}</span></td>
+      <td class="phone copyable" data-val="${row.phone}">${row.phone}</td>
+      <td class="plot copyable" data-val="${row.plot}">${row.plot}</td>
+    `;
+    tr.querySelectorAll('td.copyable').forEach(td => {
+      td.addEventListener('click', e => { e.stopPropagation(); copyText(td.dataset.val, td); });
+    });
+    tbody.appendChild(tr);
+  });
+  countLabel.textContent = `${count} record${count !== 1 ? 's' : ''}`;
+}
+
+function copyText(text, td) {
+  const doFlash = () => {
+    if (td) { td.classList.add('flash'); setTimeout(() => td.classList.remove('flash'), 800); }
+    showToast(`Copied: ${text.length > 32 ? text.slice(0,32)+'…' : text}`);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doFlash).catch(() => fallbackCopy(text, doFlash));
+  } else { fallbackCopy(text, doFlash); }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function filter(val, btn) {
+  currentFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render(currentFilter, document.getElementById('searchInput').value);
+}
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  render(currentFilter, e.target.value);
+});
+
+render();
+</script>
+</body>
+</html>

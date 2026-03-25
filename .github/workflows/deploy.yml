@@ -1,0 +1,110 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /home1/seepocok/staging_seepo/seepo-main
+
+            # Pull latest changes
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Create .env file from secrets
+            cat > .env << 'EOF'
+            DEBUG=${{ secrets.STAGING_DEBUG }}
+            SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+            ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
+            DB_ENGINE=django.db.backends.postgresql
+            DB_NAME=${{ secrets.STAGING_DB_NAME }}
+            DB_USER=${{ secrets.STAGING_DB_USER }}
+            DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+            DB_HOST=${{ secrets.STAGING_DB_HOST }}
+            DB_PORT=${{ secrets.STAGING_DB_PORT }}
+            ENVIRONMENT=staging
+            EOF
+
+            # Activate virtual environment and install dependencies
+            source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+            pip install -r requirements.txt
+
+            # Run migrations
+            python manage.py migrate --noinput
+
+            # Collect static files
+            python manage.py collectstatic --noinput
+
+            # Restart Passenger
+            touch tmp/restart.txt
+
+  deploy-production:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /home1/seepocok/public_html/seepo-main
+
+            # Pull latest changes
+            git fetch origin master
+            git reset --hard origin/master
+
+            # Create .env file from secrets
+            cat > .env << 'EOF'
+            DEBUG=${{ secrets.PROD_DEBUG }}
+            SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
+            ALLOWED_HOSTS=${{ secrets.PROD_ALLOWED_HOSTS }}
+            DB_ENGINE=django.db.backends.postgresql
+            DB_NAME=${{ secrets.PROD_DB_NAME }}
+            DB_USER=${{ secrets.PROD_DB_USER }}
+            DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            DB_HOST=${{ secrets.PROD_DB_HOST }}
+            DB_PORT=${{ secrets.PROD_DB_PORT }}
+            ENVIRONMENT=production
+            EOF
+
+            # Activate virtual environment and install dependencies
+            source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+            pip install -r requirements.txt
+
+            # Run migrations
+            python manage.py migrate --noinput
+
+            # Collect static files
+            python manage.py collectstatic --noinput
+
+            # Restart Passenger
+            touch tmp/restart.txt

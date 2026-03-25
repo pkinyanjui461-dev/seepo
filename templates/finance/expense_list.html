@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Office Expenses | SEEPO Accounting{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header & Filters -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 class="h3 mb-0 text-gray-800 font-weight-bold">Office Expenses</h2>
+            <p class="text-muted mb-0">Track and manage daily office expenditures</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <form method="GET" class="d-flex justify-content-md-end align-items-center">
+                <select name="month" class="form-select w-auto me-2" onchange="this.form.submit()">
+                    {% for m_num, m_name in months %}
+                        <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="year" class="form-select w-auto" onchange="this.form.submit()">
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Entities Income (Current Month)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ entities_income|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Total Expenses (Current Month)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_amount|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-12 mb-3">
+            <div class="card border-left-{% if profit >= 0 %}success{% else %}danger{% endif %} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{% if profit >= 0 %}success{% else %}danger{% endif %} text-uppercase mb-1">
+                                Net Profit (Current Month)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ profit|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add Expense Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-light">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-plus-circle me-1"></i> Add Expense</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label text-sm font-weight-bold">Date</label>
+                            {{ form.date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-sm font-weight-bold">Category / Name</label>
+                            {{ form.name }}
+                            <datalist id="expense-names">
+                                {% for name in existing_names %}
+                                    <option value="{{ name }}"></option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-sm font-weight-bold">Amount</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-sm font-weight-bold">Notes (Optional)</label>
+                            {{ form.notes }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-1"></i> Record Expense</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses Table -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-1"></i> Expenses List</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category/Name</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exp in expenses %}
+                                <tr>
+                                    <td>{{ exp.date|date:"M d, Y" }}</td>
+                                    <td class="font-weight-bold text-dark">{{ exp.name }}</td>
+                                    <td class="text-danger font-weight-bold">{{ exp.amount|intcomma }}</td>
+                                    <td class="text-muted small">{{ exp.notes|default:"-" }}</td>
+                                    <td class="text-end">
+                                        <form method="POST" action="{% url 'expense_delete' exp.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this expense?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Expense">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="fas fa-info-circle mb-2 fa-2x"></i>
+                                        <p class="mb-0">No expenses recorded for this month.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

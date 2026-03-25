@@ -1,0 +1,8 @@
+Django>=5.1,<6.0
+pillow
+sqlparse
+tzdata
+whitenoise
+xhtml2pdf
+python-dotenv
+psycopg[binary,pool]
