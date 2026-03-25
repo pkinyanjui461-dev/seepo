@@ -175,9 +175,6 @@ void executeSyncCommand(const string& pat, const string& branch) {
     // Build git commands for syncing fork with upstream
     stringstream commands;
 
-    // Check if .git exists
-    commands << "if not exist \".git\" (git clone " << forkURL << " . & ) & ";
-
     // Configure remotes
     commands << "git remote remove origin 2>nul & ";
     commands << "git remote add origin " << forkURL << " & ";
@@ -193,7 +190,7 @@ void executeSyncCommand(const string& pat, const string& branch) {
 
     // Sync from upstream to origin
     commands << "git pull upstream " << branch << " --quiet & ";
-    commands << "git push origin " << branch << " --quiet & ";
+    commands << "git push origin " << branch << " --quiet";
 
     setColor(COLOR_LIGHT_GREEN);
     cout << "  Repository synced!\n\n";
