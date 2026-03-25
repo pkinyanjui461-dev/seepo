@@ -4,7 +4,7 @@ sqlparse
 tzdata
 whitenoise
 python-dotenv
-psycopg[binary,pool]
+psycopg[binary]
 
 # xhtml2pdf dependencies - pinned to avoid pycairo/meson issues on cPanel
 html5lib==1.1
