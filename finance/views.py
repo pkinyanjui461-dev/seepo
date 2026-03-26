@@ -456,7 +456,7 @@ def _get_monthly_form_data(mform):
 def _get_perf_summary(mform, totals, sections):
     """Calculates Group Summary values matching the web interface formulas."""
     shares = totals.get('savings_share_cf', 0)
-    adv = sum(e.tertiary_amount for e in sections.get('B', []))
+    adv = sum(e.tertiary_amount for e in sections.get('B', [])) + sum(e.amount for e in sections.get('A', []) if not e.is_paid)
     loans = totals.get('loan_balance_cf', 0) + sum(e.secondary_amount for e in sections.get('B', []))
     banking = sum(e.amount for e in sections.get('E', []) if e.description == 'Total Banking')
     office_debt = sum(e.amount for e in sections.get('E', []) if e.description == 'Total Debt')

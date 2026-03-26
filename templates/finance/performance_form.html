@@ -695,8 +695,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. SHARES = Total of savings & shares C/F on the accounting sheet
         const shares = baseSavingsCF;
         
-        // 2. ADVANCE = Total of advance in section b
-        const advance = newAdvB;
+        // 2. ADVANCE = Total of advance in section b + Unpaid advance in section a
+        let unpaidAdvA = 0;
+        document.querySelectorAll('input[name="section"][value="A"]').forEach(sel => {
+            const tr = sel.closest('tr');
+            if (tr) {
+                const chk = tr.querySelector('.sec-a-check');
+                // If it is NOT checked, it means the advance was not paid today
+                if (chk && !chk.checked) {
+                    const amt = tr.querySelector('.sec-a-amt');
+                    if (amt) unpaidAdvA += parseFloat(amt.value) || 0;
+                }
+            }
+        });
+        const advance = newAdvB + unpaidAdvA;
         
         // 3. LOAN = Total of loan bal C/F on accounting sheet + Total of loans in section b
         const loan = baseLoansCF + newLoansB;
