@@ -6,15 +6,19 @@
     RewriteEngine On
     RewriteBase /
 
-    # Serve static files directly with correct MIME types
+    # Skip rewrite for actual files and directories (staticfiles exists)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Serve static files directly from staticfiles
     RewriteRule ^static/(.*)$ staticfiles/$1 [L]
 
     # Serve media files directly
     RewriteRule ^media/(.*)$ media/$1 [L]
 
     # Serve favicon and robots directly
-    RewriteRule ^favicon\.ico$ static/favicon.ico [L]
-    RewriteRule ^robots\.txt$ static/robots.txt [L]
+    RewriteRule ^favicon\.ico$ staticfiles/favicon.ico [L]
+    RewriteRule ^robots\.txt$ staticfiles/robots.txt [L]
 </IfModule>
 
 # Set correct MIME types for static assets
