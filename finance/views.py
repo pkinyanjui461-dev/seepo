@@ -148,6 +148,7 @@ def monthly_form_detail(request, pk):
         'principal': total('principal'),
         'loan_interest': total('loan_interest'),
         'shares_this_month': total('shares_this_month'),
+        'withdrawals': total('withdrawals'),
         'fines_charges': total('fines_charges'),
         'savings_share_cf': total('savings_share_cf'),
         'loan_balance_cf': total('loan_balance_cf'),
@@ -155,7 +156,7 @@ def monthly_form_detail(request, pk):
 
     # Totals validation
     totals_loan_valid = totals['loan_balance_bf'] == (totals['principal'] + totals['loan_balance_cf'])
-    totals_savings_valid = totals['savings_share_cf'] == (totals['savings_share_bf'] + totals['shares_this_month'])
+    totals_savings_valid = totals['savings_share_cf'] == (totals['savings_share_bf'] + totals['shares_this_month'] - totals['withdrawals'])
 
     try:
         perf_form = mform.performance_form
@@ -181,7 +182,7 @@ def save_member_record(request, record_pk):
     try:
         data = json.loads(request.body)
         fields = ['savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal',
-                  'loan_interest', 'shares_this_month', 'fines_charges', 'savings_share_cf', 'loan_balance_cf']
+                  'loan_interest', 'shares_this_month', 'withdrawals', 'fines_charges', 'savings_share_cf', 'loan_balance_cf']
         for f in fields:
             if f in data:
                 try:
@@ -446,6 +447,7 @@ def _get_monthly_form_data(mform):
         'principal': total('principal'),
         'loan_interest': total('loan_interest'),
         'shares_this_month': total('shares_this_month'),
+        'withdrawals': total('withdrawals'),
         'fines_charges': total('fines_charges'),
         'savings_share_cf': total('savings_share_cf'),
         'loan_balance_cf': total('loan_balance_cf'),

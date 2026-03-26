@@ -16,6 +16,7 @@
         <td>{% if not totals.is_blank_mode %}{{ r.principal|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{{ r.loan_interest|floatformat:0 }}</td>
         <td>{% if not totals.is_blank_mode %}{{ r.shares_this_month|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ r.withdrawals|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{% if not totals.is_blank_mode %}{{ r.fines_charges|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td class="{% if not totals.is_blank_mode %}{% if r.savings_share_cf < 0 or not r.savings_valid %}invalid{% endif %}{% endif %}">
             {% if not totals.is_blank_mode %}{% if r.savings_share_cf >= 0 and r.savings_valid %}{{ r.savings_share_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}{% else %}&nbsp;{% endif %}
@@ -30,7 +31,7 @@
     {% for i in padding %}
     <tr>
         <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
     </tr>
     {% endfor %}
 
@@ -42,6 +43,7 @@
         <td>{% if not totals.is_blank_mode %}{{ totals.principal|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{{ totals.loan_interest|floatformat:0 }}</td>
         <td>{% if not totals.is_blank_mode %}{{ totals.shares_this_month|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if not totals.is_blank_mode %}{{ totals.withdrawals|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{% if not totals.is_blank_mode %}{{ totals.fines_charges|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{% if not totals.is_blank_mode %}{{ totals.savings_share_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>
         <td>{% if not totals.is_blank_mode %}{{ totals.loan_balance_cf|floatformat:0 }}{% else %}&nbsp;{% endif %}</td>

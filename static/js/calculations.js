@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loanBf   = Math.round(getVal(tr, 'loan_balance_bf'));
         const principal = Math.round(getVal(tr, 'principal'));
         const repaid   = Math.round(getVal(tr, 'total_repaid'));
+        const withdrawals = Math.round(getVal(tr, 'withdrawals'));
         const fines    = Math.round(getVal(tr, 'fines_charges'));
 
         // Calculated fields
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             shares = repaid - (principal + loanInterest);
         }
         
-        const savCf        = savBf + shares;
+        const savCf        = savBf + shares - withdrawals;
         const loanCf       = loanBf - principal;
 
         // Only update the calculated read-only cells — never overwrite user-input cells
@@ -133,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateTotals() {
         const fields = ['savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal', 
-                        'loan_interest', 'shares_this_month', 'fines_charges', 'savings_share_cf', 'loan_balance_cf'];
+                        'loan_interest', 'shares_this_month', 'withdrawals', 'fines_charges', 'savings_share_cf', 'loan_balance_cf'];
         
         const totals = {};
         fields.forEach(f => totals[f] = 0);
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'principal': 'tot-principal',
             'loan_interest': 'tot-interest',
             'shares_this_month': 'tot-shares',
+            'withdrawals': 'tot-withdrawals',
             'fines_charges': 'tot-fines',
             'savings_share_cf': 'tot-savings-cf',
             'loan_balance_cf': 'tot-loan-cf'
