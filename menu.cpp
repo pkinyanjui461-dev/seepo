@@ -152,7 +152,104 @@ void printMenu() {
     cout << "\n";
 }
 
+void checkAndCommitChanges(const string& branch) {
+    clearScreen();
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "\n";
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    cout << "  |                    CHECKING FOR LOCAL CHANGES...                           |\n";
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_WHITE);
+    cout << "\n";
+
+    // Check for uncommitted changes
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "  Scanning for uncommitted changes...\n\n";
+    setColor(COLOR_LIGHT_YELLOW);
+
+    // Run git status to show current state
+    system("git status --short");
+
+    setColor(COLOR_WHITE);
+    cout << "\n";
+
+    // Check if there are any changes
+    int statusResult = system("git diff-index --quiet HEAD --");
+    bool hasChanges = (statusResult != 0);
+
+    if (hasChanges) {
+        setColor(COLOR_LIGHT_RED);
+        cout << "  ⚠ Found uncommitted changes!\n\n";
+        setColor(COLOR_WHITE);
+        cout << "  Commit these changes before pushing? (Y/N): ";
+
+        string response;
+        getline(cin, response);
+
+        if (response == "Y" || response == "y") {
+            // Ask for commit message
+            clearScreen();
+            setColor(COLOR_LIGHT_CYAN);
+            cout << "\n";
+            cout << "  +----------------------------------------------------------------------------+\n";
+            setColor(COLOR_LIGHT_YELLOW);
+            cout << "  |                    ENTER COMMIT MESSAGE                                    |\n";
+            setColor(COLOR_LIGHT_CYAN);
+            cout << "  +----------------------------------------------------------------------------+\n";
+            setColor(COLOR_WHITE);
+            cout << "\n";
+            cout << "  Commit message: ";
+
+            string commitMessage;
+            getline(cin, commitMessage);
+
+            if (commitMessage.empty()) {
+                setColor(COLOR_LIGHT_RED);
+                cout << "  ✗ Commit message cannot be empty!\n";
+                setColor(COLOR_WHITE);
+                cout << "  Skipping commit...\n\n";
+                return;
+            }
+
+            // Stage all changes
+            setColor(COLOR_LIGHT_CYAN);
+            cout << "\n  Staging changes...\n";
+            setColor(COLOR_LIGHT_YELLOW);
+            system("git add .");
+
+            // Create commit
+            setColor(COLOR_LIGHT_CYAN);
+            cout << "\n  Creating commit...\n";
+            setColor(COLOR_LIGHT_YELLOW);
+
+            stringstream commitCmd;
+            commitCmd << "git commit -m \"" << commitMessage << "\n\nCo-Authored-By: pgwiz <pgwiz@users.noreply.github.com>\"";
+            system(commitCmd.str().c_str());
+
+            setColor(COLOR_LIGHT_GREEN);
+            cout << "\n  ✓ Changes committed successfully!\n";
+            setColor(COLOR_WHITE);
+            cout << "\n";
+        } else {
+            setColor(COLOR_LIGHT_YELLOW);
+            cout << "  Skipping commit. Pushing only already-committed changes...\n\n";
+            setColor(COLOR_WHITE);
+        }
+    } else {
+        setColor(COLOR_LIGHT_GREEN);
+        cout << "  ✓ No uncommitted changes found.\n";
+        setColor(COLOR_WHITE);
+        cout << "  All changes are already committed.\n\n";
+    }
+}
+
 void executePushCommand(const string& parentPat, const string& branch) {
+    // First, check for and commit any local changes
+    checkAndCommitChanges(branch);
+
+    // Now proceed with push
     clearScreen();
     setColor(COLOR_LIGHT_CYAN);
     cout << "\n";
