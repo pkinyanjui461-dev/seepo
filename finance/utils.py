@@ -36,7 +36,7 @@ def ensure_performance_form_initialized(perf_form):
         prev_perf = prev_mform.performance_form
         # 1. Collect unpaid advances from Section A
         for entry in prev_perf.entries.filter(section='A', is_paid=False):
-            increase = (entry.amount * Decimal('1.1')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            increase = entry.amount
             carry_over_balances[entry.description] = carry_over_balances.get(entry.description, Decimal('0')) + increase
         
         # 2. Collect advances given in Section B (tertiary_amount)
