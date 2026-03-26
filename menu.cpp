@@ -140,9 +140,18 @@ void printMenu() {
     cout << "     [11] Sync BOTH from Parent & Push to Fork\n";
     setColor(COLOR_WHITE);
     cout << "\n";
-    cout << "  LOCAL OPERATIONS\n";
+    cout << "  LOCAL OPERATIONS (Branch Merges)\n";
     setColor(COLOR_LIGHT_GREEN);
-    cout << "     [12] Merge MASTER into MAIN (git merge)\n";
+    cout << "     [12] Merge MASTER into MAIN (Staging gets Prod code)\n";
+    setColor(COLOR_LIGHT_MAGENTA);
+    cout << "     [13] Merge MAIN into MASTER (Prod gets Staging code)\n";
+    setColor(COLOR_WHITE);
+    cout << "\n";
+    cout << "  PARENT OPERATIONS (Merge from Upstream)\n";
+    setColor(COLOR_LIGHT_GREEN);
+    cout << "     [14] Merge PARENT/MAIN into MAIN (Staging syncs from parent)\n";
+    setColor(COLOR_LIGHT_MAGENTA);
+    cout << "     [15] Merge PARENT/MASTER into MASTER (Prod syncs from parent)\n";
     setColor(COLOR_WHITE);
     cout << "\n";
     cout << "  CONFIGURATION\n";
@@ -158,6 +167,30 @@ void printMenu() {
 }
 
 void executePushCommand(const string& parentPat, const string& branch) {
+    // Auto-checkout the target branch before pushing
+    clearScreen();
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "\n";
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    cout << "  |                   CHECKING OUT " << (branch == "main" ? "MAIN" : "MASTER") << " BRANCH...                           |\n";
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_WHITE);
+    cout << "\n";
+
+    stringstream checkoutCmd;
+    checkoutCmd << "git checkout " << branch;
+    setColor(COLOR_LIGHT_YELLOW);
+    system(checkoutCmd.str().c_str());
+
+    setColor(COLOR_WHITE);
+    cout << "\n";
+
+    // Check for and commit any local changes
+    checkAndCommitChanges(branch);
+
+    // Now proceed with push
     clearScreen();
     setColor(COLOR_LIGHT_CYAN);
     cout << "\n";
@@ -172,7 +205,7 @@ void executePushCommand(const string& parentPat, const string& branch) {
     // Use git remote 'upstream' for push
     // Build git push command
     stringstream commands;
-    commands << "git push upstream " << branch << " --quiet";
+    commands << "git push upstream " << branch;
 
     setColor(COLOR_LIGHT_GREEN);
     cout << "  Pushing " << branch << " branch to parent repository...\n\n";
@@ -215,32 +248,78 @@ void executeSyncCommand(const string& pat, const string& branch) {
     cout << "\n";
 }
 
-void executeMergeMainFromMaster() {
+void executeMergeLocalBranches(const string& source, const string& target) {
     clearScreen();
     setColor(COLOR_LIGHT_CYAN);
     cout << "\n";
     cout << "  +----------------------------------------------------------------------------+\n";
     setColor(COLOR_LIGHT_YELLOW);
-    cout << "  |                   MERGING MASTER INTO MAIN...                              |\n";
+    cout << "  |                   MERGING " << (source == "main" ? "MAIN" : "MASTER") << " INTO " << (target == "main" ? "MAIN" : "MASTER") << "...                              |\n";
     setColor(COLOR_LIGHT_CYAN);
     cout << "  +----------------------------------------------------------------------------+\n";
     setColor(COLOR_WHITE);
     cout << "\n";
 
-    // Step 1: Checkout main
+    // Step 1: Checkout target branch
     setColor(COLOR_LIGHT_CYAN);
-    cout << "  Step 1/2: Checking out MAIN branch...\n";
+    cout << "  Step 1/2: Checking out " << target << " branch...\n";
     setColor(COLOR_LIGHT_YELLOW);
-    system("git checkout main");
+    stringstream checkoutCmd;
+    checkoutCmd << "git checkout " << target;
+    system(checkoutCmd.str().c_str());
 
-    // Step 2: Merge master into main
+    // Step 2: Merge source into target
     setColor(COLOR_LIGHT_CYAN);
-    cout << "\n  Step 2/2: Merging MASTER into MAIN...\n";
+    cout << "\n  Step 2/2: Merging " << source << " into " << target << "...\n";
     setColor(COLOR_LIGHT_YELLOW);
-    system("git merge master");
+    stringstream mergeCmd;
+    mergeCmd << "git merge " << source;
+    system(mergeCmd.str().c_str());
 
     setColor(COLOR_LIGHT_GREEN);
-    cout << "\n  [SUCCESS] MASTER merged into MAIN!\n";
+    cout << "\n  [SUCCESS] " << source << " merged into " << target << "!\n";
+    setColor(COLOR_WHITE);
+    cout << "\n";
+}
+
+void executeMergeFromParent(const string& parentPat, const string& branch) {
+    clearScreen();
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "\n";
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    cout << "  |                   MERGING FROM PARENT INTO " << (branch == "main" ? "MAIN" : "MASTER") << "...                      |\n";
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "  +----------------------------------------------------------------------------+\n";
+    setColor(COLOR_WHITE);
+    cout << "\n";
+
+    // Step 1: Checkout target branch
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "  Step 1/3: Checking out " << branch << " branch...\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    stringstream checkoutCmd;
+    checkoutCmd << "git checkout " << branch;
+    system(checkoutCmd.str().c_str());
+
+    // Step 2: Fetch from upstream
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "\n  Step 2/3: Fetching from parent (upstream)...\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    stringstream fetchCmd;
+    fetchCmd << "git fetch upstream " << branch;
+    system(fetchCmd.str().c_str());
+
+    // Step 3: Merge upstream into local
+    setColor(COLOR_LIGHT_CYAN);
+    cout << "\n  Step 3/3: Merging upstream/" << branch << " into local " << branch << "...\n";
+    setColor(COLOR_LIGHT_YELLOW);
+    stringstream mergeCmd;
+    mergeCmd << "git merge upstream/" << branch;
+    system(mergeCmd.str().c_str());
+
+    setColor(COLOR_LIGHT_GREEN);
+    cout << "\n  [SUCCESS] Parent " << branch << " merged into local " << branch << "!\n";
     setColor(COLOR_WHITE);
     cout << "\n";
 }
@@ -349,7 +428,7 @@ int main() {
         printMenu();
 
         setColor(COLOR_LIGHT_CYAN);
-        cout << "  Select option (0-12): ";
+        cout << "  Select option (0-15): ";
         setColor(COLOR_WHITE);
 
         string input;
@@ -539,7 +618,25 @@ int main() {
             }
 
             case 12: {
-                executeMergeMainFromMaster();
+                executeMergeLocalBranches("master", "main");
+                pause();
+                break;
+            }
+
+            case 13: {
+                executeMergeLocalBranches("main", "master");
+                pause();
+                break;
+            }
+
+            case 14: {
+                executeMergeFromParent(parentPat, "main");
+                pause();
+                break;
+            }
+
+            case 15: {
+                executeMergeFromParent(parentPat, "master");
                 pause();
                 break;
             }
@@ -547,7 +644,7 @@ int main() {
             default: {
                 printBanner();
                 setColor(COLOR_RED);
-                cout << "  [ERROR] Invalid choice. Please select 0-12.\n\n";
+                cout << "  [ERROR] Invalid choice. Please select 0-15.\n\n";
                 setColor(COLOR_WHITE);
                 pause();
                 break;
