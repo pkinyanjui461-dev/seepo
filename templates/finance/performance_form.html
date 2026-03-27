@@ -255,7 +255,7 @@
           </td>
           <td>
             <input type="number" step="1" name="amount" class="amt-input amount-B" 
-                   value="{% with idx=forloop.counter0 %}{% if entries_by_section.B.entries %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% else %}{{ member_rec.withdrawals|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% else %}{{ member_rec.withdrawals|floatformat:0 }}{% endif %}{% endwith %}">
+                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
           </td>
           <td>
             <input type="number" step="1" name="secondary_amount" class="amt-input amount-B-loan"
@@ -438,6 +438,7 @@
       <!-- Base data from accounting sheet -->
       <input type="hidden" id="base-savings-cf" value="{{ total_savings_cf|floatformat:0 }}">
       <input type="hidden" id="base-loans-cf" value="{{ total_loans_cf|floatformat:0 }}">
+      <input type="hidden" id="base-accounting-withdrawals" value="{{ total_accounting_withdrawals|floatformat:0 }}">
       
       <table class="perf-table">
         <tbody>
@@ -572,8 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Sync with Section D equivalents
             let changedD = false;
             const dWithdrawInput = document.getElementById('d-withdrawals');
-            if (dWithdrawInput && dWithdrawInput.value != total) {
-                dWithdrawInput.value = total;
+            const accountingWithdrawals = parseFloat(document.getElementById('base-accounting-withdrawals').value) || 0;
+            const combinedWithdrawals = total + accountingWithdrawals;
+
+            if (dWithdrawInput && dWithdrawInput.value != combinedWithdrawals) {
+                dWithdrawInput.value = combinedWithdrawals;
                 changedD = true;
             }
             const dLoanInput = document.getElementById('d-loans-given');
