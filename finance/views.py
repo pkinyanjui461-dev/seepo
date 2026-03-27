@@ -136,6 +136,10 @@ def monthly_form_detail(request, pk):
         record.save()
         
     records = mform.member_records.select_related('member').order_by('order', 'member__name')
+    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates
+    for r in records:
+        r.calculate()
+        r.save()
 
     # Totals
     def total(field):
@@ -210,6 +214,10 @@ def performance_form_view(request, mform_pk):
 
     # Get active members for this group/month to display in Section A
     members = mform.member_records.select_related('member').order_by('order', 'member__name')
+    # Self-healing: Ensure all records are recalculated
+    for r in members:
+        r.calculate()
+        r.save()
 
     if request.method == 'POST':
         # Save section entries from POST
