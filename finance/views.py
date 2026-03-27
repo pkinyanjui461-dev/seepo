@@ -193,6 +193,7 @@ def save_member_record(request, record_pk):
                     setattr(record, f, Decimal(str(data[f])))
                 except (InvalidOperation, TypeError):
                     setattr(record, f, Decimal('0'))
+        record.calculate()
         errors = record.validate()
         record.save()
         return JsonResponse({'success': True, 'errors': errors, 'record_id': record.pk})

@@ -3,22 +3,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!table) return;
 
     const saveUrlBase = table.dataset.saveUrl.replace('/0/', '/ID/');
-    let saveTimeout;
+    const rowTimeouts = {};
 
     // Attach input listeners
     table.querySelectorAll('.calc-input').forEach(input => {
         if (!input.readOnly) {
             input.addEventListener('input', (e) => {
                 const tr = e.target.closest('tr');
+                const rowId = tr.dataset.recordId;
+
                 performRowCalculations(tr);
                 calculateTotals();
                 
-                // Debounce save
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => {
+                // Debounce save per row
+                clearTimeout(rowTimeouts[rowId]);
+                rowTimeouts[rowId] = setTimeout(() => {
                     saveRowData(tr);
-                }, 800); // Save after 800ms of typing stop
+                    delete rowTimeouts[rowId];
+                }, 500); // Save after 500ms of typing stop
             });
+        }
+    });
+
+    // Warn if leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+        if (Object.keys(rowTimeouts).length > 0) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         }
     });
 
