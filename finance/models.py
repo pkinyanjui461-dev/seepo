@@ -75,10 +75,15 @@ class MemberRecord(models.Model):
 
         # Calculated fields
         self.loan_interest = (self.loan_balance_bf * Decimal('0.015')).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        # If total repaid is 0, shares this month is 0.
+        # If principal is 0, interest is NOT deducted from repaid.
         if self.total_repaid == 0:
             self.shares_this_month = Decimal('0')
         else:
-            self.shares_this_month = self.total_repaid - (self.principal + self.loan_interest)
+            if self.principal == 0:
+                self.shares_this_month = self.total_repaid
+            else:
+                self.shares_this_month = self.total_repaid - (self.principal + self.loan_interest)
         self.savings_share_cf = self.savings_share_bf + self.shares_this_month - self.withdrawals
         self.loan_balance_cf = self.loan_balance_bf - self.principal
 

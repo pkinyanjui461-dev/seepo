@@ -65,10 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Calculated fields
         const loanInterest = Math.round(loanBf * 0.015);
         
-        // NEW LOGIC: If total repaid is 0, shares this month is 0
+        // NEW LOGIC: If total repaid is 0, shares this month is 0.
+        // If principal is 0, interest is NOT deducted from repaid.
         let shares = 0;
         if (repaid !== 0) {
-            shares = repaid - (principal + loanInterest);
+            if (principal === 0) {
+                shares = repaid;
+            } else {
+                shares = repaid - (principal + loanInterest);
+            }
         }
         
         const savCf        = savBf + shares - withdrawals;
