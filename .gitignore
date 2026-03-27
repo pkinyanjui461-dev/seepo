@@ -23,7 +23,6 @@ env.bak/
 venv.bak/
 
 # Static and Media
-staticfiles/
 /media/
 
 # IDEs
