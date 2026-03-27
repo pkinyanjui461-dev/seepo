@@ -102,9 +102,9 @@ class MemberRecord(models.Model):
         if self.savings_share_bf < 0: sav_errors.append("Savings B/F cannot be negative.")
         if self.savings_share_cf < 0: sav_errors.append("Savings C/F cannot be negative.")
 
-        # Savings rule: savings_cf == savings_bf + shares
-        if self.savings_share_cf != (self.savings_share_bf + self.shares_this_month):
-            sav_errors.append(f"Mismatch. Expected: {self.savings_share_bf + self.shares_this_month}, Current: {self.savings_share_cf}")
+        # Savings rule: savings_cf == savings_bf + shares - withdrawals
+        if self.savings_share_cf != (self.savings_share_bf + self.shares_this_month - self.withdrawals):
+            sav_errors.append(f"Mismatch. Expected: {self.savings_share_bf + self.shares_this_month - self.withdrawals}, Current: {self.savings_share_cf}")
             
         if sav_errors:
             errors['savings'] = sav_errors

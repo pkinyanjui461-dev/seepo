@@ -136,6 +136,10 @@ def monthly_form_detail(request, pk):
         record.save()
         
     records = mform.member_records.select_related('member').order_by('order', 'member__name')
+    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates
+    for r in records:
+        r.calculate()
+        r.save()
 
     # Totals
     def total(field):
@@ -210,6 +214,10 @@ def performance_form_view(request, mform_pk):
 
     # Get active members for this group/month to display in Section A
     members = mform.member_records.select_related('member').order_by('order', 'member__name')
+    # Self-healing: Ensure all records are recalculated
+    for r in members:
+        r.calculate()
+        r.save()
 
     if request.method == 'POST':
         # Save section entries from POST
@@ -335,11 +343,13 @@ def performance_form_view(request, mform_pk):
     accounting_totals = mform.member_records.aggregate(
         total_repaid=Sum('total_repaid'),
         total_savings_cf=Sum('savings_share_cf'),
-        total_loans_cf=Sum('loan_balance_cf')
+        total_loans_cf=Sum('loan_balance_cf'),
+        total_withdrawals=Sum('withdrawals')
     )
     accounting_total_repaid = accounting_totals['total_repaid'] or Decimal('0')
     total_savings_cf = accounting_totals['total_savings_cf'] or Decimal('0')
     total_loans_cf = accounting_totals['total_loans_cf'] or Decimal('0')
+    total_accounting_withdrawals = accounting_totals['total_withdrawals'] or Decimal('0')
 
     return render(request, 'finance/performance_form.html', {
         'mform': mform,
@@ -352,6 +362,7 @@ def performance_form_view(request, mform_pk):
         'initial_debt_bf': initial_debt_bf,
         'total_savings_cf': total_savings_cf,
         'total_loans_cf': total_loans_cf,
+        'total_accounting_withdrawals': total_accounting_withdrawals,
     })
 
 
