@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setVal(tr, 'loan_balance_cf', loanCf);
 
         // Client-side visual validation
-        validateRow(tr, savBf, shares, savCf, loanBf, principal, loanCf);
+        validateRow(tr, savBf, shares, withdrawals, savCf, loanBf, principal, loanCf);
     }
 
     function checkNegative(val, name, errors) {
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
-    function validateRow(tr, savBf, shares, savCf, loanBf, principal, loanCf) {
+    function validateRow(tr, savBf, shares, withdrawals, savCf, loanBf, principal, loanCf) {
         const recordId = tr.dataset.recordId;
         const loanCell = document.getElementById(`loan-bf-cell-${recordId}`);
         const savCell = document.getElementById(`savings-cf-cell-${recordId}`);
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkNegative(savBf, "Savings B/F", savErrors);
         checkNegative(savCf, "Savings C/F", savErrors);
 
-        const expectedSavCf = savBf + shares;
+        const expectedSavCf = savBf + shares - withdrawals;
         if (savCf !== expectedSavCf) {
             savErrors.push(`Mismatch\nExpected: ${expectedSavCf}\nCurrent: ${savCf}`);
         }
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loanTd.removeAttribute('data-error');
         }
 
-        const expTotalSav = totals['savings_share_bf'] + totals['shares_this_month'];
+        const expTotalSav = totals['savings_share_bf'] + totals['shares_this_month'] - totals['withdrawals'];
         if (totals['savings_share_cf'] !== expTotalSav) {
             savTd.classList.add('cell-error', 'text-danger');
             savTd.setAttribute('data-error', `Totals Mismatch\nExpected: ${expTotalSav.toFixed(0)}`);

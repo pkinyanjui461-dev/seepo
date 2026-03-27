@@ -255,7 +255,7 @@
           </td>
           <td>
             <input type="number" step="1" name="amount" class="amt-input amount-B" 
-                   value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
+                   value="{% with idx=forloop.counter0 %}{% if entries_by_section.B.entries %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% else %}{{ member_rec.withdrawals|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% else %}{{ member_rec.withdrawals|floatformat:0 }}{% endif %}{% endwith %}">
           </td>
           <td>
             <input type="number" step="1" name="secondary_amount" class="amt-input amount-B-loan"
