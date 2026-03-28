@@ -152,9 +152,12 @@ def monthly_form_detail(request, pk):
             
             # Add new loans taken in Section B of the previous month
             if hasattr(previous_form, 'performance_form'):
-                # Use iexact and strip to be more robust with name matching
+                # Look at the member's number first, then fallback to name matching
+                member_num = str(r.member.member_number)
                 name = r.member.name.strip()
-                p_entry = previous_form.performance_form.entries.filter(section='B', description__iexact=name).first()
+                p_entry = previous_form.performance_form.entries.filter(
+                    Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
+                ).first()
                 if p_entry:
                     r.loan_balance_bf += p_entry.secondary_amount
 
@@ -595,12 +598,13 @@ def performance_form_pdf(request, pk):
     inline = request.GET.get('inline') == '1'
 
     # Build a name -> member_number lookup for the PDF template
-    from members.models import Member
-    member_num_map = {
-        m.name: m.member_number
-        for m in Member.objects.filter(group=mform.group)
-        if m.member_number is not None
-    }
+    # Build a lookup for the PDF template (handles both old name-based and new number-based descriptions)
+    member_num_map = {}
+    for m in Member.objects.filter(group=mform.group):
+        if m.member_number is not None:
+            mno = str(m.member_number)
+            member_num_map[m.name] = mno
+            member_num_map[mno] = mno
 
     return generate_pdf_response('pdf/performance_form_pdf.html', {
         'mform': mform,
@@ -684,10 +688,19 @@ def combined_monthly_report_pdf(request, pk):
     adv_total = sum(e.amount for e in sections['A'] if e.is_paid)
     perf_summary = _get_perf_summary(mform, totals, sections)
 
+    # Build a lookup for the PDF template
+    member_num_map = {}
+    for m in Member.objects.filter(group=mform.group):
+        if m.member_number is not None:
+            mno = str(m.member_number)
+            member_num_map[m.name] = mno
+            member_num_map[mno] = mno
+
     performance_pdf = render_performance_form_reportlab({
         'mform': mform, 'perf_form': perf_form, 'records': records, 'totals': totals,
         'sections': sections, 'section_totals': section_totals, 'perf_summary': perf_summary,
         'base_dir': settings.BASE_DIR,
+        'member_num_map': member_num_map,
     })
     
     # 3. Merge
