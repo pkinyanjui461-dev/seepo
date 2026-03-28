@@ -136,8 +136,20 @@ def monthly_form_detail(request, pk):
         record.save()
         
     records = mform.member_records.select_related('member').order_by('order', 'member__name')
-    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates
+    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates.
+    # New: Also dynamically synchronize carry-forward values if the previous month was updated.
     for r in records:
+        if previous_form and r.member_id in prev_records:
+            prev_r = prev_records[r.member_id]
+            r.savings_share_bf = prev_r.savings_share_cf
+            r.loan_balance_bf = prev_r.loan_balance_cf
+            
+            # Add new loans taken in Section B of the previous month
+            if hasattr(previous_form, 'performance_form'):
+                p_entry = previous_form.performance_form.entries.filter(section='B', description=r.member.name).first()
+                if p_entry:
+                    r.loan_balance_bf += p_entry.secondary_amount
+
         r.calculate()
         r.save()
 
