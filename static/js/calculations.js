@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setVal(tr, field, val) {
         const input = tr.querySelector(`[data-field="${field}"]`);
         if (!input) return;
-        input.value = val === 0 ? '' : val.toFixed(0);
+        input.value = val.toFixed(0);
         const td = input.closest('td');
         // Flag negative calculated results with blinking red cell
         if (val < 0) {
@@ -68,12 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // NEW LOGIC: If total repaid is 0, shares this month is 0.
         // If principal is 0 OR there are withdrawals, interest/principal is NOT deducted from repaid.
         let shares = 0;
-        if (repaid !== 0) {
-            if (principal === 0 || withdrawals > 0) {
-                shares = repaid;
-            } else {
-                shares = repaid - (principal + loanInterest);
-            }
+        if (repaid <= 0) {
+            shares = 0;
+        } else if (principal === 0 || withdrawals > 0) {
+            shares = repaid;
+        } else {
+            // Deduct principal and interest, but don't let shares go negative
+            shares = Math.max(0, repaid - (principal + loanInterest));
         }
         
         const savCf        = savBf + shares - withdrawals;
