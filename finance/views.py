@@ -1,5 +1,6 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from django.db.models import Q, Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -48,7 +49,10 @@ def monthly_form_create(request, group_pk):
         
         # Determine the most recent previous form for this group
         # Sort by year descending, month descending
-        previous_form = group.monthly_forms.exclude(pk=mform.pk).order_by('-year', '-month').first()
+        # Correctly find the previous month's form
+        previous_form = group.monthly_forms.filter(
+            Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
+        ).order_by('-year', '-month').first()
         
         # Build a fast lookup dict of previous member records
         prev_records = {}
@@ -105,8 +109,10 @@ def monthly_form_detail(request, pk):
     existing_member_ids = records.values_list('member_id', flat=True)
     new_members = group.member_set.filter(is_active=True).exclude(id__in=existing_member_ids)
     
-    # If a previous form exists, grab default carry forwards for newly added active members too
-    previous_form = group.monthly_forms.exclude(pk=mform.pk).order_by('-year', '-month').first()
+    # Correctly find the previous month's form
+    previous_form = group.monthly_forms.filter(
+        Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
+    ).order_by('-year', '-month').first()
     prev_records = {}
     if previous_form:
         prev_records = {r.member_id: r for r in previous_form.member_records.all()}
@@ -136,8 +142,25 @@ def monthly_form_detail(request, pk):
         record.save()
         
     records = mform.member_records.select_related('member').order_by('order', 'member__name')
-    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates
+    # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates.
+    # New: Also dynamically synchronize carry-forward values if the previous month was updated.
     for r in records:
+        if previous_form and r.member_id in prev_records:
+            prev_r = prev_records[r.member_id]
+            r.savings_share_bf = prev_r.savings_share_cf
+            r.loan_balance_bf = prev_r.loan_balance_cf
+            
+            # Add new loans taken in Section B of the previous month
+            if hasattr(previous_form, 'performance_form'):
+                # Look at the member's number first, then fallback to name matching
+                member_num = str(r.member.member_number)
+                name = r.member.name.strip()
+                p_entry = previous_form.performance_form.entries.filter(
+                    Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
+                ).first()
+                if p_entry:
+                    r.loan_balance_bf += p_entry.secondary_amount
+
         r.calculate()
         r.save()
 
@@ -575,12 +598,13 @@ def performance_form_pdf(request, pk):
     inline = request.GET.get('inline') == '1'
 
     # Build a name -> member_number lookup for the PDF template
-    from members.models import Member
-    member_num_map = {
-        m.name: m.member_number
-        for m in Member.objects.filter(group=mform.group)
-        if m.member_number is not None
-    }
+    # Build a lookup for the PDF template (handles both old name-based and new number-based descriptions)
+    member_num_map = {}
+    for m in Member.objects.filter(group=mform.group):
+        if m.member_number is not None:
+            mno = str(m.member_number)
+            member_num_map[m.name] = mno
+            member_num_map[mno] = mno
 
     return generate_pdf_response('pdf/performance_form_pdf.html', {
         'mform': mform,
@@ -664,10 +688,19 @@ def combined_monthly_report_pdf(request, pk):
     adv_total = sum(e.amount for e in sections['A'] if e.is_paid)
     perf_summary = _get_perf_summary(mform, totals, sections)
 
+    # Build a lookup for the PDF template
+    member_num_map = {}
+    for m in Member.objects.filter(group=mform.group):
+        if m.member_number is not None:
+            mno = str(m.member_number)
+            member_num_map[m.name] = mno
+            member_num_map[mno] = mno
+
     performance_pdf = render_performance_form_reportlab({
         'mform': mform, 'perf_form': perf_form, 'records': records, 'totals': totals,
         'sections': sections, 'section_totals': section_totals, 'perf_summary': perf_summary,
         'base_dir': settings.BASE_DIR,
+        'member_num_map': member_num_map,
     })
     
     # 3. Merge

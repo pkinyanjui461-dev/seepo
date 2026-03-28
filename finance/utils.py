@@ -56,13 +56,20 @@ def ensure_performance_form_initialized(perf_form):
     if not has_a_b:
         members_recs = mform.member_records.select_related('member').order_by('order', 'member__name')
         for i, mrec in enumerate(members_recs):
+            # NEW: Use member number as the primary identifier in description for A and B
+            member_num = str(mrec.member.member_number)
             name = mrec.member.name
-            amount = carry_over_balances.get(name, Decimal('0'))
+            
+            # Try to get carry over by number first, then by name
+            amount = carry_over_balances.get(member_num)
+            if amount is None:
+                amount = carry_over_balances.get(name, Decimal('0'))
+                
             PerformanceEntry.objects.create(
-                performance_form=perf_form, section='A', description=name, amount=amount, is_paid=False, order=i
+                performance_form=perf_form, section='A', description=member_num, amount=amount, is_paid=False, order=i
             )
             PerformanceEntry.objects.create(
-                performance_form=perf_form, section='B', description=name, amount=0, secondary_amount=0, tertiary_amount=0, order=i
+                performance_form=perf_form, section='B', description=member_num, amount=0, secondary_amount=0, tertiary_amount=0, order=i
             )
 
     # 3. Initialize C if missing
