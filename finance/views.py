@@ -1,5 +1,6 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from django.db.models import Q, Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -48,7 +49,10 @@ def monthly_form_create(request, group_pk):
         
         # Determine the most recent previous form for this group
         # Sort by year descending, month descending
-        previous_form = group.monthly_forms.exclude(pk=mform.pk).order_by('-year', '-month').first()
+        # Correctly find the previous month's form
+        previous_form = group.monthly_forms.filter(
+            Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
+        ).order_by('-year', '-month').first()
         
         # Build a fast lookup dict of previous member records
         prev_records = {}
@@ -105,8 +109,10 @@ def monthly_form_detail(request, pk):
     existing_member_ids = records.values_list('member_id', flat=True)
     new_members = group.member_set.filter(is_active=True).exclude(id__in=existing_member_ids)
     
-    # If a previous form exists, grab default carry forwards for newly added active members too
-    previous_form = group.monthly_forms.exclude(pk=mform.pk).order_by('-year', '-month').first()
+    # Correctly find the previous month's form
+    previous_form = group.monthly_forms.filter(
+        Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
+    ).order_by('-year', '-month').first()
     prev_records = {}
     if previous_form:
         prev_records = {r.member_id: r for r in previous_form.member_records.all()}
@@ -146,7 +152,9 @@ def monthly_form_detail(request, pk):
             
             # Add new loans taken in Section B of the previous month
             if hasattr(previous_form, 'performance_form'):
-                p_entry = previous_form.performance_form.entries.filter(section='B', description=r.member.name).first()
+                # Use iexact and strip to be more robust with name matching
+                name = r.member.name.strip()
+                p_entry = previous_form.performance_form.entries.filter(section='B', description__iexact=name).first()
                 if p_entry:
                     r.loan_balance_bf += p_entry.secondary_amount
 
