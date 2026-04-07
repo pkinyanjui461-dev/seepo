@@ -59,6 +59,8 @@
         .main-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
+            word-wrap: break-word;
         }
         .main-table th {
             font-size: 7pt;
@@ -157,15 +159,15 @@
                 {% block table_header %}
                 <th width="3%">#</th>
                 <th width="20%">MEMBERS NAMES</th>
-                <th>SAVINGS B/F</th>
-                <th>LOAN B/F</th>
-                <th>REPAID</th>
-                <th>PRINCIPAL</th>
-                <th>INTEREST</th>
-                <th>SHARES</th>
-                <th>FINES</th>
-                <th>SAVINGS C/F</th>
-                <th>LOAN C/F</th>
+                <th width="9%">SAVINGS B/F</th>
+                <th width="9%">LOAN B/F</th>
+                <th width="8%">REPAID</th>
+                <th width="8%">PRINCIPAL</th>
+                <th width="8%">INTEREST</th>
+                <th width="8%">SHARES</th>
+                <th width="8%">FINES</th>
+                <th width="9%">SAVINGS C/F</th>
+                <th width="10%">LOAN C/F</th>
                 {% endblock %}
             </tr>
         </thead>
