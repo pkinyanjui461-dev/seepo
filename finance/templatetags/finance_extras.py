@@ -24,3 +24,16 @@ def get_item(dictionary, key):
     if not isinstance(dictionary, dict):
         return None
     return dictionary.get(key)
+
+@register.filter
+def hide_0(value):
+    """Format a float to 0 decimal places, but return an empty string if the value is zero."""
+    if not value and value != 0:
+        return ""
+    try:
+        val = float(value)
+        if val == 0.0:
+            return ""
+        return "{:.0f}".format(val)
+    except (ValueError, TypeError):
+        return ""

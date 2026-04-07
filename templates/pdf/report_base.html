@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load finance_extras %}
 <html>
 <head>
     <meta charset="UTF-8">
@@ -118,13 +119,13 @@
             <td width="30%">
                 {% if perf_summary %}
                 <table class="summary-mini-table">
-                    <tr><td class="summary-label">SHARES</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">ADVANCE</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">LOANS</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">BANKING</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">TRF</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">INTEREST</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|floatformat:0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">OFFICE DEBT</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|floatformat:0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">SHARES</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">ADVANCE</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">LOANS</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">BANKING</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">TRF</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">INTEREST</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|hide_0 }}{% endif %}</td></tr>
+                    <tr><td class="summary-label">OFFICE DEBT</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|hide_0 }}{% endif %}</td></tr>
                 </table>
                 {% endif %}
             </td>
@@ -162,7 +163,6 @@
                 <th>PRINCIPAL</th>
                 <th>INTEREST</th>
                 <th>SHARES</th>
-                <th>WITHDRAWALS</th>
                 <th>FINES</th>
                 <th>SAVINGS C/F</th>
                 <th>LOAN C/F</th>
