@@ -217,7 +217,7 @@ def render_performance_form_reportlab(context_dict):
     b_data.append(['TOTAL', f"{section_totals.get('B_with', 0):.0f}", f"{section_totals.get('B_loan', 0):.0f}", f"{section_totals.get('B_adv', 0):.0f}"])
 
     # Table Creation & Styling
-    a_table = Table(a_data, colWidths=[35*mm, 15*mm, 15*mm, 15*mm], rowHeights=[6*mm]*2 + [5*mm]*(len(a_data)-5) + [6*mm]*3)
+    a_table = Table(a_data, colWidths=[35*mm, 15*mm, 15*mm, 15*mm], rowHeights=[5*mm]*2 + [4*mm]*(len(a_data)-5) + [5*mm]*3)
     a_table.setStyle(TableStyle(common_style + [
         ('BACKGROUND', (0,0), (-1,1), HEADER_BG), ('TEXTCOLOR', (0,0), (-1,1), TEXT_WHITE),
         ('SPAN', (0,0), (3,0)), ('SPAN', (0,-2), (2,-2)), ('SPAN', (0,-1), (2,-1)),
@@ -225,14 +225,14 @@ def render_performance_form_reportlab(context_dict):
         ('FONTNAME', (0,-3), (0,-1), 'Helvetica-Bold'), ('ALIGN', (0,-2), (0,-1), 'RIGHT')
     ]))
     
-    b_table = Table(b_data, colWidths=[35*mm, 18*mm, 18*mm, 18*mm], rowHeights=[6*mm]*2 + [5*mm]*(len(b_data)-3) + [6*mm])
+    b_table = Table(b_data, colWidths=[35*mm, 18*mm, 18*mm, 18*mm], rowHeights=[5*mm]*2 + [4*mm]*(len(b_data)-3) + [5*mm])
     b_table.setStyle(TableStyle(common_style + [
         ('BACKGROUND', (0,0), (-1,1), HEADER_BG), ('TEXTCOLOR', (0,0), (-1,1), TEXT_WHITE),
         ('SPAN', (0,0), (3,0)), ('ALIGN', (0,2), (0,-2), 'LEFT'), ('FONTSIZE', (0,2), (0,-2), 7)
     ]))
     
     elements.append(Table([[a_table, b_table]], colWidths=[85*mm, 95*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
-    elements.append(Spacer(1, 6*mm))
+    elements.append(Spacer(1, 4*mm))
     
     # 4. Sections C, D, E (Professional Design)
     # Section C: Income - Matching Web Labels Exactly
@@ -266,30 +266,30 @@ def render_performance_form_reportlab(context_dict):
         e_data.append([Paragraph(f"<b>{e.description.upper()}: </b><div align='right'>{amt_str}</div>", label_style)])
     while len(e_data) < 7: e_data.append([Paragraph(" ", label_style)])
     
-    c_table = Table(c_data, colWidths=[8*mm, 35*mm, 18*mm], rowHeights=[6*mm]*len(c_data))
+    c_table = Table(c_data, colWidths=[8*mm, 35*mm, 18*mm], rowHeights=[5*mm]*len(c_data))
     c_table.setStyle(TableStyle(common_style + [
         ('BACKGROUND', (0,0), (-1,1), HEADER_BG), ('TEXTCOLOR', (0,0), (-1,1), TEXT_WHITE),
         ('SPAN', (0,0), (2,0)), ('ALIGN', (1,2), (1,-2), 'LEFT'), ('FONTNAME', (1,-1), (1,-1), 'Helvetica-Bold')
     ]))
     
-    d_table = Table(d_data, colWidths=[8*mm, 35*mm, 18*mm], rowHeights=[6*mm]*len(d_data))
+    d_table = Table(d_data, colWidths=[8*mm, 35*mm, 18*mm], rowHeights=[5*mm]*len(d_data))
     d_table.setStyle(TableStyle(common_style + [
         ('BACKGROUND', (0,0), (-1,1), HEADER_BG), ('TEXTCOLOR', (0,0), (-1,1), TEXT_WHITE),
         ('SPAN', (0,0), (2,0)), ('ALIGN', (1,2), (1,-2), 'LEFT'), ('FONTNAME', (1,-1), (1,-1), 'Helvetica-Bold')
     ]))
     
-    e_table = Table(e_data, colWidths=[65*mm], rowHeights=[6*mm]*len(e_data))
+    e_table = Table(e_data, colWidths=[65*mm], rowHeights=[5*mm]*len(e_data))
     e_table.setStyle(TableStyle(common_style + [
         ('BACKGROUND', (0,0), (0,0), HEADER_BG), ('TEXTCOLOR', (0,0), (0,0), TEXT_WHITE),
         ('ALIGN', (0,1), (-1,-1), 'LEFT'), ('VALIGN', (0,1), (-1,-1), 'MIDDLE')
     ]))
     
     elements.append(Table([[c_table, d_table, e_table]], colWidths=[65*mm, 65*mm, 65*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
-    elements.append(Spacer(1, 8*mm))
+    elements.append(Spacer(1, 4*mm))
     
     # 5. Footer (Final Layout)
     meeting_data = [['NEXT MEETING DETAILS', ''], ['DATE', perf_form.next_meeting_date.strftime('%d/%m/%Y') if perf_form and perf_form.next_meeting_date else ''], ['TIME', perf_form.next_meeting_time.strftime('%H:%M') if perf_form and perf_form.next_meeting_time else ''], ['VENUE', perf_form.next_meeting_venue if perf_form and perf_form.next_meeting_venue else ''], ['STAGE/AREA', '']]
-    meeting_table = Table(meeting_data, colWidths=[40*mm, 50*mm], rowHeights=[6*mm]*5)
+    meeting_table = Table(meeting_data, colWidths=[40*mm, 50*mm], rowHeights=[5*mm]*5)
     meeting_table.setStyle(TableStyle(common_style + [('BACKGROUND', (0,0), (-1,0), HEADER_BG), ('TEXTCOLOR', (0,0), (-1,0), TEXT_WHITE), ('SPAN', (0,0), (1,0)), ('ALIGN', (0,1), (0,-1), 'LEFT')]))
     
     elements.append(Table([[meeting_table, ""]], colWidths=[95*mm, 85*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP'), ('ALIGN', (0,0), (-1,-1), 'LEFT')]))
