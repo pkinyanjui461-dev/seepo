@@ -1,4 +1,5 @@
 from django import template
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -29,11 +30,11 @@ def get_item(dictionary, key):
 def hide_0(value):
     """Format a float to 0 decimal places, but return an empty string if the value is zero."""
     if not value and value != 0:
-        return ""
+        return mark_safe("&nbsp;")
     try:
         val = float(value)
         if val == 0.0:
-            return ""
+            return mark_safe("&nbsp;")
         return "{:.0f}".format(val)
     except (ValueError, TypeError):
-        return ""
+        return mark_safe("&nbsp;")
