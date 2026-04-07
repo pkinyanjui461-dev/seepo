@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load finance_extras %}
 <html>
+
 <head>
     <meta charset="UTF-8">
     <style>
@@ -8,60 +9,80 @@
             size: A4;
             margin: 0.5cm;
         }
+
         body {
             font-family: Helvetica, Arial, sans-serif;
             font-size: 8pt;
             color: #333;
         }
-        .text-center { text-align: center; }
-        .text-left { text-align: left; }
-        .text-right { text-align: right; }
-        .bold { font-weight: bold; }
-        
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
         .header-table {
             width: 100%;
             margin-bottom: 5px;
         }
+
         .header-table td {
             vertical-align: middle;
         }
+
         .company-name {
             font-size: 13pt;
             font-weight: bold;
-            color: #8b1d41;
+            color: #3964da;
         }
+
         .sub-header {
             font-size: 9pt;
             font-style: italic;
         }
+
         .form-title {
             font-size: 10pt;
             font-weight: bold;
             text-decoration: underline;
             margin-top: 5px;
         }
-        
+
         .metadata-table {
             width: 100%;
             margin-bottom: 5px;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
         }
+
         .metadata-table td {
             padding: 1px 0;
         }
+
         .dotted-line {
             border-bottom: 1px dotted #000;
             display: inline-block;
             min-width: 100px;
         }
-        
+
         .main-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
             word-wrap: break-word;
         }
+
         .main-table th {
             font-size: 6pt;
             background-color: #f2f2f2;
@@ -69,20 +90,30 @@
             padding: 2px 1px;
             text-transform: uppercase;
         }
+
         .main-table td {
             border: 0.5pt solid #000;
             padding: 2px 1px;
             text-align: center;
             font-size: 7pt;
         }
-        .col-name { text-align: left !important; }
-        
+
+        .col-name {
+            text-align: left !important;
+        }
+
         .total-row td {
             font-weight: bold;
             background-color: #f2f2f2;
         }
-        .negative { color: transparent; }
-        .invalid { color: transparent; }
+
+        .negative {
+            color: transparent;
+        }
+
+        .invalid {
+            color: transparent;
+        }
 
         /* Summary Table in Header */
         .summary-mini-table {
@@ -90,22 +121,25 @@
             border-collapse: collapse;
             font-size: 7pt;
         }
+
         .summary-mini-table td {
             border: 0.5pt solid #000;
             padding: 2px 4px;
         }
+
         .summary-label {
             font-weight: bold;
             background-color: #f2f2f2;
             width: 50%;
         }
+
         .summary-value {
             text-align: right;
             width: 50%;
         }
-
     </style>
 </head>
+
 <body class="{% block page_class %}{% endblock %}">
     {% block header %}
     <table class="header-table">
@@ -121,13 +155,41 @@
             <td width="30%">
                 {% if perf_summary %}
                 <table class="summary-mini-table">
-                    <tr><td class="summary-label">SHARES</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">ADVANCE</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">LOANS</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">BANKING</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">TRF</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">INTEREST</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|hide_0 }}{% endif %}</td></tr>
-                    <tr><td class="summary-label">OFFICE DEBT</td><td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|hide_0 }}{% endif %}</td></tr>
+                    <tr>
+                        <td class="summary-label">SHARES</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|hide_0 }}{%
+                            endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">ADVANCE</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|hide_0 }}{% endif
+                            %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">LOANS</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|hide_0 }}{%
+                            endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">BANKING</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|hide_0 }}{%
+                            endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">TRF</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|hide_0 }}{% endif
+                            %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">INTEREST</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|hide_0 }}{%
+                            endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">OFFICE DEBT</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|hide_0
+                            }}{% endif %}</td>
+                    </tr>
                 </table>
                 {% endif %}
             </td>
@@ -142,11 +204,15 @@
             <td>DATE: <span class="dotted-line">&nbsp;{{ mform.updated_at|date:"j/n/Y" }}&nbsp;</span></td>
         </tr>
         <tr>
-            <td>GROUPS OFFICERS NAME: <span class="dotted-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>GROUPS OFFICERS NAME: <span
+                    class="dotted-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            </td>
             <td>PROJECT: <span class="dotted-line">&nbsp;R.L.F&nbsp;</span></td>
         </tr>
         <tr>
-            <td>SIGNATURE: <span class="dotted-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>SIGNATURE: <span
+                    class="dotted-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            </td>
             <td></td>
         </tr>
     </table>
@@ -173,7 +239,9 @@
         </thead>
         <tbody>
             {% block table_rows %}
-            <tr><td colspan="11" style="text-align: center; color: #999;">NO DATA AVAILABLE</td></tr>
+            <tr>
+                <td colspan="11" style="text-align: center; color: #999;">NO DATA AVAILABLE</td>
+            </tr>
             {% endblock %}
         </tbody>
     </table>
@@ -181,4 +249,5 @@
 
     {% block footer %}{% endblock %}
 </body>
+
 </html>
