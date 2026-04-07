@@ -62,7 +62,7 @@
         .metadata-table {
             width: 100%;
             margin-bottom: 5px;
-            border-bottom: 1px solid #000;
+            border-bottom: 1px solid #3964da;
             padding-bottom: 2px;
         }
 
@@ -71,7 +71,7 @@
         }
 
         .dotted-line {
-            border-bottom: 1px dotted #000;
+            border-bottom: 1px dotted #3964da;
             display: inline-block;
             min-width: 100px;
         }
@@ -86,13 +86,13 @@
         .main-table th {
             font-size: 6pt;
             background-color: #f2f2f2;
-            border: 0.5pt solid #000;
+            border: 0.5pt solid #3964da;
             padding: 2px 1px;
             text-transform: uppercase;
         }
 
         .main-table td {
-            border: 0.5pt solid #000;
+            border: 0.5pt solid #3964da;
             padding: 2px 1px;
             text-align: center;
             font-size: 7pt;
@@ -123,7 +123,7 @@
         }
 
         .summary-mini-table td {
-            border: 0.5pt solid #000;
+            border: 0.5pt solid #3964da;
             padding: 2px 4px;
         }
 
@@ -157,31 +157,38 @@
                 <table class="summary-mini-table">
                     <tr>
                         <td class="summary-label">SHARES</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.shares|hide_0 }}{%
+                            endif %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">ADVANCE</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.adv|hide_0 }}{% endif
+                            %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">LOANS</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.loans|hide_0 }}{%
+                            endif %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">BANKING</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.banking|hide_0 }}{%
+                            endif %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">TRF</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.trf|hide_0 }}{% endif
+                            %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">INTEREST</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.interest|hide_0 }}{%
+                            endif %}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">OFFICE DEBT</td>
-                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|hide_0 }}{% endif %}</td>
+                        <td class="summary-value">{% if not totals.is_blank_mode %}{{ perf_summary.office_debt|hide_0
+                            }}{% endif %}</td>
                     </tr>
                 </table>
                 {% endif %}
