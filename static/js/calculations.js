@@ -25,6 +25,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Manual save button functionality
+    const manualSaveBtn = document.getElementById('manualSaveBtn');
+    if (manualSaveBtn) {
+        manualSaveBtn.addEventListener('click', async () => {
+            const originalHTML = manualSaveBtn.innerHTML;
+            manualSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+            manualSaveBtn.disabled = true;
+
+            const rows = document.querySelectorAll('.record-row');
+            const promises = [];
+            rows.forEach(tr => {
+                promises.push(saveRowData(tr));
+            });
+
+            await Promise.all(promises);
+
+            // Clear any pending debounced row saves
+            Object.keys(rowTimeouts).forEach(rowId => clearTimeout(rowTimeouts[rowId]));
+            for (let prop in rowTimeouts) { delete rowTimeouts[prop]; }
+
+            manualSaveBtn.innerHTML = '<i class="fas fa-check me-1"></i> Saved';
+            
+            // Show the toast indicator
+            const toast = document.getElementById('saveStatus');
+            if (toast) {
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2000);
+            }
+
+            setTimeout(() => {
+                manualSaveBtn.innerHTML = originalHTML;
+                manualSaveBtn.disabled = false;
+            }, 2000);
+        });
+    }
+
     // Warn if leaving with unsaved changes
     window.addEventListener('beforeunload', (e) => {
         if (Object.keys(rowTimeouts).length > 0) {
