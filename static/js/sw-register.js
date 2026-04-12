@@ -80,11 +80,19 @@
       const shellCacheKey = cacheKeys.find(function (key) {
         return key.indexOf('seepo-offline-shell-') === 0;
       });
+      const runtimeCacheKey = cacheKeys.find(function (key) {
+        return key.indexOf('seepo-offline-runtime-') === 0;
+      });
+
+      const swVersion = shellCacheKey
+        ? shellCacheKey.replace('seepo-offline-shell-', '')
+        : (runtimeCacheKey ? runtimeCacheKey.replace('seepo-offline-runtime-', '') : '');
+      const swVersionLabel = swVersion ? ' | SW ' + swVersion : '';
 
       if (!shellCacheKey) {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Priming (' + hostLabel + ')',
+          'Offline Host: Priming (' + hostLabel + ')' + swVersionLabel,
           'Shell cache has not been created yet for this host.'
         );
         return;
@@ -100,14 +108,14 @@
       if (checks.every(Boolean)) {
         setHostReadyBadge(
           'ok',
-          'Offline Host: Ready (' + hostLabel + ')',
-          'This host has an active Service Worker and a primed offline shell cache.'
+          'Offline Host: Ready (' + hostLabel + ')' + swVersionLabel,
+          'This host has an active Service Worker and a primed offline shell cache. Version: ' + swVersion
         );
       } else {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Partial (' + hostLabel + ')',
-          'Service Worker is active, but required shell entries are still priming.'
+          'Offline Host: Partial (' + hostLabel + ')' + swVersionLabel,
+          'Service Worker is active, but required shell entries are still priming. Version: ' + swVersion
         );
       }
     } catch (error) {
