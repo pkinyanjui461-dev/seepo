@@ -228,6 +228,8 @@ class OfflineSyncApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response["Content-Type"].startswith("application/javascript"))
+        self.assertEqual(response["Service-Worker-Allowed"], "/")
+        self.assertIn("no-cache", response["Cache-Control"])
 
         body = response.content.decode("utf-8")
         self.assertIn("OFFLINE_FALLBACK_URL", body)
@@ -263,6 +265,7 @@ class OfflineSyncApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response["Content-Type"].startswith("application/manifest+json"))
+        self.assertIn("no-cache", response["Cache-Control"])
 
         body = response.json()
         self.assertEqual(body.get("display"), "standalone")

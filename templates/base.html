@@ -89,6 +89,43 @@
         .pwa-install-btn[hidden] {
             display: none !important;
         }
+
+        .offline-host-ready-badge {
+            position: fixed;
+            left: 16px;
+            bottom: 60px;
+            z-index: 1090;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+            color: #fff;
+            background: #64748b;
+            max-width: min(86vw, 420px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .host-ready-checking { background: #475569; }
+        .host-ready-ok { background: #15803d; }
+        .host-ready-warn { background: #d97706; }
+        .host-ready-error { background: #b91c1c; }
+
+        @media (max-width: 575.98px) {
+            .offline-host-ready-badge {
+                left: 12px;
+                bottom: 58px;
+                font-size: 0.72rem;
+                max-width: calc(100vw - 24px);
+            }
+
+            .pwa-install-btn {
+                left: 12px;
+                bottom: 12px;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
     <script>
@@ -359,6 +396,7 @@
 <div id="offline-banner" class="offline-banner">Working offline. Changes are saved locally.</div>
 <div id="sync-badge" class="sync-badge sync-state-synced">Synced</div>
 <div id="sync-toast" class="sync-toast" aria-live="polite"></div>
+<div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">Offline Host: Checking...</div>
 <button id="pwa-install-btn" class="pwa-install-btn" type="button" hidden>Install App</button>
 
 <!-- Bootstrap JS Bundle -->

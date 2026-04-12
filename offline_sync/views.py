@@ -224,6 +224,9 @@ def service_worker(request):
     response = render(request, 'offline_sync/sw.js')
     response['Content-Type'] = 'application/javascript'
     response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 
@@ -258,6 +261,9 @@ def web_manifest(request):
 
     response = JsonResponse(manifest)
     response['Content-Type'] = 'application/manifest+json'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 

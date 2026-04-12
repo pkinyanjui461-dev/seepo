@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
