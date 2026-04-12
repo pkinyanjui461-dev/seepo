@@ -145,6 +145,77 @@
     z-index: 200;
     box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
 }
+
+  [data-theme="dark"] .perf-page {
+    background: var(--bg-color);
+  }
+
+  [data-theme="dark"] .perf-subtitle {
+    background: rgba(139, 92, 246, 0.2);
+    color: #d9ceff;
+    border-bottom-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .perf-section,
+  [data-theme="dark"] .summary-card {
+    background: #1f2532;
+    border-color: #3b455b;
+  }
+
+  [data-theme="dark"] .perf-table th,
+  [data-theme="dark"] .sec-ab-table th {
+    background: #313a4d;
+    color: #dbe6ff;
+    border-bottom-color: #48536b;
+  }
+
+  [data-theme="dark"] .perf-table td,
+  [data-theme="dark"] .sec-ab-table td {
+    border-bottom-color: #30384a;
+    color: var(--text-main);
+  }
+
+  [data-theme="dark"] .perf-table td.row-num {
+    color: #9eabc7;
+  }
+
+  [data-theme="dark"] .perf-table .amt-input,
+  [data-theme="dark"] .recon-input {
+    color: #edf2ff;
+    border-bottom-color: #606b84;
+  }
+
+  [data-theme="dark"] .perf-table .amt-input:focus,
+  [data-theme="dark"] .recon-input:focus {
+    border-bottom-color: #8b5cf6;
+    background: #2a3346;
+  }
+
+  [data-theme="dark"] .perf-table .total-row {
+    background: #283145;
+  }
+
+  [data-theme="dark"] .perf-table .total-row td,
+  [data-theme="dark"] .perf-total-display {
+    color: #c9bcff;
+    border-top-color: #8b5cf6;
+  }
+
+  [data-theme="dark"] .recon-table td {
+    border-color: #48546f;
+    background: #202938;
+    color: var(--text-main);
+  }
+
+  [data-theme="dark"] .save-bar {
+    background: #1a2030;
+    border-top-color: #3b455b;
+  }
+
+  [data-theme="dark"] .save-bar .text-muted,
+  [data-theme="dark"] .summary-card .text-muted {
+    color: #bdc8df !important;
+  }
 </style>
 {% endblock %}
 
@@ -200,7 +271,7 @@
             <input type="hidden" name="description" value="{{ member_rec.member.member_number }}">
           </td>
           <td>
-            <input type="number" step="1" name="amount" class="amt-input amount-A sec-a-amt" 
+            <input type="number" step="1" name="amount" class="amt-input amount-A sec-a-amt"
                    value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
           </td>
           <td class="text-center pt-2">
@@ -212,7 +283,7 @@
             {% endwith %}
           </td>
           <td>
-            <input type="number" step="1" name="secondary_amount" class="amt-input amount-A-fine" 
+            <input type="number" step="1" name="secondary_amount" class="amt-input amount-A-fine"
                    value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.A.entries %}{% if forloop.counter0 == idx %}{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
           </td>
         </tr>
@@ -259,7 +330,7 @@
             <input type="hidden" name="description" value="{{ member_rec.member.member_number }}">
           </td>
           <td>
-            <input type="number" step="1" name="amount" class="amt-input amount-B" 
+            <input type="number" step="1" name="amount" class="amt-input amount-B"
                    value="{% with idx=forloop.counter0 %}{% for e in entries_by_section.B.entries %}{% if forloop.counter0 == idx %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}{% endwith %}">
           </td>
           <td>
@@ -443,7 +514,7 @@
       <!-- Base data from accounting sheet -->
       <input type="hidden" id="base-savings-cf" value="{{ total_savings_cf|floatformat:0 }}">
       <input type="hidden" id="base-loans-cf" value="{{ total_loans_cf|floatformat:0 }}">
-      
+
       <table class="perf-table">
         <tbody>
           <tr><td class="row-label fw-bold" style="color:#6C5DD3;">SHARES</td><td class="text-end fw-bold" id="summery-shares">0</td></tr>
@@ -470,7 +541,7 @@
       <h6 class="fw-bold mb-3" style="color:#6C5DD3;text-transform:uppercase;letter-spacing:1px;font-size:0.8rem;">Next Meeting</h6>
       <div class="mb-3">
         <label class="form-label small fw-bold text-muted">Date</label>
-        <input type="date" name="next_meeting_date" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;" 
+        <input type="date" name="next_meeting_date" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;"
                value="{{ perf_form.next_meeting_date|date:'Y-m-d' }}">
       </div>
       <div>
@@ -480,7 +551,7 @@
       </div>
       <div class="mt-3">
         <label class="form-label small fw-bold text-muted">Venue</label>
-        <input type="text" name="next_meeting_venue" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;" 
+        <input type="text" name="next_meeting_venue" class="form-control" style="font-size:0.85rem;border-color:#e0e0e8;"
                placeholder="Meeting venue…" value="{{ perf_form.next_meeting_venue }}">
       </div>
     </div>
@@ -526,7 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateTotal(sec) {
         let total = 0;
-        
+
         if (sec === 'A') {
             // Section A: Advance only sums if Paid is checked
             let fineTotal = 0;
@@ -546,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const fineEl = document.getElementById('tot-A-fine');
             if (fineEl) fineEl.textContent = fineTotal.toLocaleString();
-            
+
             // Sync with Section C "Advance Paid"
             const cAdvInput = document.getElementById('c-advance-paid');
             if (cAdvInput && cAdvInput.value != total) {
@@ -561,10 +632,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tr) {
                     const amt = tr.querySelector('.amount-B');
                     if (amt) total += parseFloat(amt.value) || 0;
-                    
+
                     const loanAmt = tr.querySelector('.amount-B-loan');
                     if (loanAmt) loanTotal += parseFloat(loanAmt.value) || 0;
-                    
+
                     const advAmt = tr.querySelector('.amount-B-adv');
                     if (advAmt) advTotal += parseFloat(advAmt.value) || 0;
                 }
@@ -606,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const el = document.getElementById(`tot-${sec}`);
         if (el) el.textContent = total.toLocaleString();
-        
+
         // After every Section total update, check if we need to update Section E
         if (['C', 'D', 'E'].includes(sec)) {
             updateSectionE();
@@ -622,10 +693,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const totC = parseFloat(totCDisplay.textContent.replace(/,/g,'')) || 0;
         const totD = parseFloat(totDDisplay.textContent.replace(/,/g,'')) || 0;
-        
+
         const dPrincipalPaidEl = document.getElementById('d-principal-paid');
         const principalPaid = dPrincipalPaidEl ? (parseFloat(dPrincipalPaidEl.value) || 0) : 0;
-        
+
         const eDebtBF = document.getElementById('e-debt-bf');
         const eTotalBanking = document.getElementById('e-total-banking');
         const eTotalDebt = document.getElementById('e-total-debt');
@@ -646,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Formula: Difference = C - D
         const diff = totC - totD;
-        
+
         let newTotalDebt = currentDebtBF;
         let newTotalBanking = 0;
 
@@ -676,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Elements from Sections B, E
         const totalBankingEl = document.getElementById('e-total-banking');
         const totalDebtEl = document.getElementById('e-total-debt');
-        
+
         // Section B Totals (from display elements)
         const secBNewLoanEl = document.getElementById('tot-B-loan');
         const secBNewAdvEl = document.getElementById('tot-B-adv');
@@ -699,7 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Formula Implementation:
         // 1. SHARES = Total of savings & shares C/F on the accounting sheet
         const shares = baseSavingsCF;
-        
+
         // 2. ADVANCE = Total of advance in section b + Unpaid advance in section a
         let unpaidAdvA = 0;
         document.querySelectorAll('input[name="section"][value="A"]').forEach(sel => {
@@ -714,19 +785,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         const advance = newAdvB + unpaidAdvA;
-        
+
         // 3. LOAN = Total of loan bal C/F on accounting sheet + Total of loans in section b
         const loan = baseLoansCF + newLoansB;
-        
+
         // 4. BANKING = Total banking in section e
         const bankingResult = totalBanking;
-        
+
         // 5. OFFICE DEBT = Total debt in section e
         const officeDebt = totalDebt;
-        
+
         // 6. TRF = ADVANCE + LOAN + BANKING
         const trf = advance + loan + bankingResult;
-        
+
         // 7. INTEREST = TRF - (SHARES + OFFICE DEBT)
         const interest = trf - (shares + officeDebt);
 

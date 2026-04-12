@@ -2,6 +2,22 @@
 {% block title %}Group Banking Report{% endblock %}
 {% block page_title %}Group Banking Report{% endblock %}
 
+{% block extra_css %}
+<style>
+    [data-theme="dark"] .report-filter-surface,
+    [data-theme="dark"] .report-table-surface {
+        background: linear-gradient(145deg, var(--muted-surface) 0%, var(--muted-surface-strong) 100%) !important;
+        color: var(--text-main) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    [data-theme="dark"] .report-table-surface th,
+    [data-theme="dark"] .report-table-surface td {
+        color: var(--muted-text-strong) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Navigation Tabs -->
 <ul class="nav nav-pills mb-4" style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
@@ -18,7 +34,7 @@
 </ul>
 
 <div class="card shadow-sm border-0 mb-4" style="border-radius: var(--border-radius-lg); overflow: hidden;">
-    <div class="card-body p-4 bg-light">
+    <div class="card-body p-4 bg-light report-filter-surface">
         <form method="GET" action="{% url 'reports_overview' %}" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="month" class="form-label fw-bold text-muted small">Select Month</label>
@@ -49,7 +65,7 @@
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead style="background-color: #F8F9FA; border-bottom: 2px solid var(--border-color);">
+                <thead class="report-table-surface" style="background-color: #F8F9FA; border-bottom: 2px solid var(--border-color);">
                     <tr>
                         <th class="ps-4 py-3 text-muted fw-bold border-0">GROUPS NAME</th>
                         <th class="py-3 text-muted fw-bold border-0 text-end pe-5">OFFICE ACCOUNT</th>
@@ -69,7 +85,7 @@
                     <tr><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fs-3 d-block opacity-25 mb-3"></i>No groups found.</td></tr>
                     {% endfor %}
                 </tbody>
-                <tfoot style="background-color: #F8F9FA; border-top: 2px solid var(--border-color);">
+                <tfoot class="report-table-surface" style="background-color: #F8F9FA; border-top: 2px solid var(--border-color);">
                     <tr>
                         <td class="ps-4 py-3 fw-bold" style="color: var(--primary-color);">TOTALS</td>
                         <td class="text-end pe-5 py-3 fw-bold" style="color: var(--primary-color);">{{ total_office_account_all|floatformat:0 }}</td>

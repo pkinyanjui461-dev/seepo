@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=6">
     <link rel="manifest" href="{% url 'web_manifest' %}">
     <meta name="theme-color" content="#6C5DD3">
     <style>
@@ -386,7 +386,7 @@
                     <span style="display:block;width:18px;height:2px;background:#fff;border-radius:2px;"></span>
                 </button>
                 <h2 class="fs-4 m-0 fw-bold header-title" style="color: var(--text-main); margin-right: auto !important;">{% block page_title %}Overview{% endblock %}</h2>
-                
+
                 <!-- MOBILE RIGHT ACTIONS: Bell & Profile -->
                 <div class="d-flex d-lg-none align-items-center ms-auto">
                     <div class="dropdown me-3">
@@ -451,7 +451,7 @@
                     <input type="text" name="q" class="form-control border-0 bg-transparent p-0" placeholder="Search Groups or Members..." style="font-size: 0.85rem; outline: none; box-shadow: none;">
                 </form>
             </div>
-            
+
             <button class="navbar-toggler d-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>

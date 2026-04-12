@@ -8,19 +8,22 @@
     --sidebar-gradient-start: #1a1040;
     --sidebar-gradient-end:   #2d1b69;
     --sidebar-glow: rgba(108, 93, 211, 0.45);
-    
+
     --bg-color: #F5F6FA;           /* Light gray app background */
     --card-bg: #FFFFFF;
-    
+
     --text-main: #11142D;          /* Dark headline text */
     --text-muted: #808191;         /* Muted text */
-    
+    --muted-surface: #f3f5f8;
+    --muted-surface-strong: #eaedf3;
+    --muted-text-strong: #5d6678;
+
     --accent-purple: #6C5DD3;
     --accent-red: #FF754C;
     --accent-green: #22C55E;
     --accent-orange: #FFA412;
     --accent-blue: #3F8CFF;
-    
+
     --error-color: #FF754C;
     --border-color: #E4E4E4;
     --border-radius-lg: 16px;
@@ -469,6 +472,50 @@ body {
     background: linear-gradient(145deg, var(--muted-surface) 0%, var(--muted-surface-strong) 100%) !important;
     color: var(--text-main) !important;
     border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-body,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .table,
+[data-theme="dark"] .table > :not(caption) > * > * {
+    color: var(--text-main);
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .table-light,
+[data-theme="dark"] .table-light > :not(caption) > * > *,
+[data-theme="dark"] .table thead,
+[data-theme="dark"] .table tfoot {
+    background-color: var(--muted-surface) !important;
+    color: var(--muted-text-strong) !important;
+}
+
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: #202838 !important;
+}
+
+[data-theme="dark"] .table-hover > tbody > tr:hover > * {
+    background-color: #2a3243 !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: #d5deef;
+    border-color: #5a667f;
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover,
+[data-theme="dark"] .btn-outline-secondary:focus {
+    color: #ffffff;
+    background: #334155;
+    border-color: #64748b;
 }
 
 [data-theme="dark"] .text-muted,
