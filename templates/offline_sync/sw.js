@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -36,6 +36,8 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-form-handler.js" %}',
   '{% static "js/sw-register.js" %}',
   '{% static "img/logo.png" %}',
+  '{% static "img/pwa-icon-192.png" %}',
+  '{% static "img/pwa-icon-512.png" %}',
   '{% static "favicon.ico" %}',
   '{% static "robots.txt" %}',
 ];
@@ -102,12 +104,7 @@ async function networkFirst(request) {
       return cached;
     }
 
-    const fallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
-    if (fallback) {
-      return fallback;
-    }
-
-    return new Response('Offline. Please reconnect and retry.', {
+    return new Response('Offline resource unavailable. Please reconnect and retry.', {
       status: 503,
       headers: {
         'Content-Type': 'text/plain',
@@ -158,12 +155,17 @@ async function navigationNetworkFirst(request) {
 
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
+  const acceptHeader = event.request.headers.get('accept') || '';
+  const isApiRequest =
+    requestUrl.origin === self.location.origin &&
+    (requestUrl.pathname.includes('/api/') || acceptHeader.includes('application/json'));
 
   if (event.request.method !== 'GET') {
     return;
   }
 
-  if (requestUrl.origin === self.location.origin && requestUrl.pathname.startsWith('/api/sync/')) {
+  // Let API/data requests fail normally when offline so client code can handle fetch errors.
+  if (isApiRequest) {
     return;
   }
 

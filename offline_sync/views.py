@@ -230,22 +230,28 @@ def service_worker(request):
 @require_GET
 def web_manifest(request):
     manifest = {
+        'id': '/',
         'name': 'SEEPO Accounting',
         'short_name': 'SEEPO',
-        'start_url': '/',
+        'description': 'Offline-capable accounting and sync-enabled field workflows for SEEPO.',
+        'start_url': '/?source=pwa',
+        'scope': '/',
         'display': 'standalone',
+        'display_override': ['standalone', 'minimal-ui', 'browser'],
         'background_color': '#ffffff',
         'theme_color': '#6C5DD3',
         'icons': [
             {
-                'src': '/static/favicon.ico',
+                'src': '/static/img/pwa-icon-192.png',
                 'sizes': '192x192',
-                'type': 'image/x-icon',
+                'type': 'image/png',
+                'purpose': 'any maskable',
             },
             {
-                'src': '/static/favicon.ico',
+                'src': '/static/img/pwa-icon-512.png',
                 'sizes': '512x512',
-                'type': 'image/x-icon',
+                'type': 'image/png',
+                'purpose': 'any maskable',
             },
         ],
     }

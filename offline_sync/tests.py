@@ -34,6 +34,7 @@ class OfflineSyncApiTests(TestCase):
         self.status_url = reverse("sync_debug_status")
         self.clear_url = reverse("sync_debug_clear")
         self.sw_url = reverse("service_worker")
+        self.manifest_url = reverse("web_manifest")
         self.offline_url = reverse("offline_fallback")
 
     def _push(self, model_name, records):
@@ -247,3 +248,25 @@ class OfflineSyncApiTests(TestCase):
         self.assertIn("/reports/", body)
         self.assertIn("/accounts/users/create/", body)
         self.assertIn("/reports/entities/", body)
+
+    def test_service_worker_skips_api_requests(self):
+        self.client.logout()
+        response = self.client.get(self.sw_url)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode("utf-8")
+        self.assertIn("requestUrl.pathname.includes('/api/')", body)
+
+    def test_web_manifest_includes_installable_png_icons(self):
+        self.client.logout()
+        response = self.client.get(self.manifest_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("application/manifest+json"))
+
+        body = response.json()
+        self.assertEqual(body.get("display"), "standalone")
+
+        icon_sources = {icon.get("src") for icon in body.get("icons", [])}
+        self.assertIn("/static/img/pwa-icon-192.png", icon_sources)
+        self.assertIn("/static/img/pwa-icon-512.png", icon_sources)
