@@ -26,7 +26,8 @@
                 </div>
                 
                 <div class="d-grid gap-2">
-                    <form method="POST">
+                      <form method="POST"
+                          data-online-required-message="Group deletion requires internet to avoid destructive conflicts with synced data.">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger w-100 py-3 mb-2" style="border-radius: 10px; font-weight: 600;">
                             <i class="fas fa-trash-alt me-2"></i>Yes, Delete Group & All Data

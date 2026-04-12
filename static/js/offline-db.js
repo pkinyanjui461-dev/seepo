@@ -42,10 +42,26 @@
     return pending;
   }
 
+  async function getPendingBreakdown() {
+    const breakdown = {};
+    const models = Object.keys(modelTableMap);
+
+    for (const modelName of models) {
+      const table = tableForModel(modelName);
+      const count = await table.where('synced').equals(0).count();
+      if (count > 0) {
+        breakdown[modelName] = count;
+      }
+    }
+
+    return breakdown;
+  }
+
   window.seepoOfflineDb = {
     db,
     modelTableMap,
     tableForModel,
-    getPendingCount
+    getPendingCount,
+    getPendingBreakdown
   };
 })();

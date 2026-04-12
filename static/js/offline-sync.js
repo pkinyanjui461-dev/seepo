@@ -30,6 +30,92 @@
       this.modelOrder = resolveModelOrder();
     }
 
+    updateQueueChip(total, breakdown) {
+      const chip = document.getElementById('sync-queue-chip');
+      if (!chip) {
+        return;
+      }
+
+      const labelMap = {
+        group: 'Groups',
+        member: 'Members',
+        monthly_form: 'Monthly Forms',
+        expense: 'Expenses',
+        user: 'Users',
+        diary: 'Diary',
+        draft: 'Drafts'
+      };
+
+      if (!total) {
+        chip.classList.add('sync-queue-chip-empty');
+        chip.textContent = 'No queued records';
+        return;
+      }
+
+      const keys = Object.keys(breakdown).sort((a, b) => a.localeCompare(b));
+      const items = keys.map((key) => {
+        const label = labelMap[key] || key;
+        return '<span class="sync-queue-pill">' + label + ': ' + breakdown[key] + '</span>';
+      });
+
+      chip.classList.remove('sync-queue-chip-empty');
+      chip.innerHTML = items.join('');
+    }
+
+    async getQueueStatus() {
+      const breakdown = await window.seepoOfflineDb.getPendingBreakdown();
+
+      if (window.seepoOfflineDiary && typeof window.seepoOfflineDiary.pendingCount === 'function') {
+        const diaryPending = Number(window.seepoOfflineDiary.pendingCount()) || 0;
+        if (diaryPending > 0) {
+          breakdown.diary = diaryPending;
+        }
+      }
+
+      if (window.seepoOfflineDraftQueue && typeof window.seepoOfflineDraftQueue.pendingCount === 'function') {
+        const draftPending = Number(window.seepoOfflineDraftQueue.pendingCount()) || 0;
+        if (draftPending > 0) {
+          breakdown.draft = draftPending;
+        }
+      }
+
+      const total = Object.values(breakdown).reduce((sum, count) => sum + (Number(count) || 0), 0);
+      this.updateQueueChip(total, breakdown);
+
+      window.dispatchEvent(
+        new CustomEvent('seepo:queue-status', {
+          detail: {
+            total,
+            breakdown,
+          },
+        })
+      );
+
+      return { total, breakdown };
+    }
+
+    async runAuxiliarySyncs() {
+      const syncTasks = [];
+
+      if (window.seepoOfflineDiary && typeof window.seepoOfflineDiary.syncNow === 'function') {
+        syncTasks.push(window.seepoOfflineDiary.syncNow());
+      }
+
+      if (window.seepoOfflineDraftQueue && typeof window.seepoOfflineDraftQueue.syncNow === 'function') {
+        syncTasks.push(window.seepoOfflineDraftQueue.syncNow());
+      }
+
+      if (!syncTasks.length) {
+        return;
+      }
+
+      const results = await Promise.allSettled(syncTasks);
+      const failed = results.find((result) => result.status === 'rejected');
+      if (failed) {
+        throw failed.reason;
+      }
+    }
+
     async init() {
       window.addEventListener('online', async () => {
         await this.refreshStatus();
@@ -38,6 +124,10 @@
       });
 
       window.addEventListener('offline', async () => {
+        await this.refreshStatus();
+      });
+
+      window.addEventListener('seepo:draft-queue-updated', async () => {
         await this.refreshStatus();
       });
 
@@ -123,7 +213,8 @@
     }
 
     async refreshStatus() {
-      const pending = await window.seepoOfflineDb.getPendingCount();
+      const queueStatus = await this.getQueueStatus();
+      const pending = queueStatus.total;
 
       if (!navigator.onLine) {
         this.showOfflineBanner(true);
@@ -193,6 +284,13 @@
           this.lastSyncError = error;
           console.error('Sync failed for model', modelName, error);
         }
+      }
+
+      try {
+        await this.runAuxiliarySyncs();
+      } catch (error) {
+        this.lastSyncError = error;
+        console.error('Auxiliary queue sync failed', error);
       }
 
       this.isSyncing = false;

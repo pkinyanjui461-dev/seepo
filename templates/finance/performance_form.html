@@ -158,7 +158,12 @@
     </a>
 </div>
 
-<form method="POST" id="perfForm">
+<form method="POST" id="perfForm"
+  data-offline-draft-form="true"
+  data-offline-draft-key="performance-form-{{ mform.pk }}"
+  data-offline-draft-label="draft"
+  data-offline-draft-message="Offline: performance form draft queued and will sync when online."
+  data-offline-redirect-url="{% url 'performance_form' mform.pk %}">
 {% csrf_token %}
 
 {# ── TITLE ───────────────────────────────────────────── #}

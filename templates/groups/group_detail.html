@@ -130,7 +130,11 @@
                             <a href="{% url 'monthly_form_detail' mform.pk %}" class="btn btn-sm" style="background-color: #ECEBFA; color: var(--primary-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"><i class="fas fa-table me-2"></i>Accounting Sheet</a>
                             <a href="{% url 'performance_form' mform.pk %}" class="btn btn-sm" style="background-color: #F8F9FA; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"><i class="fas fa-chart-line me-2 text-muted"></i>Group Performance</a>
                             
-                            <form method="POST" action="{% url 'monthly_form_delete' mform.pk %}" class="mt-3 w-100" id="del-form-{{ mform.pk }}">
+                                <form method="POST"
+                                    action="{% url 'monthly_form_delete' mform.pk %}"
+                                    class="mt-3 w-100"
+                                    id="del-form-{{ mform.pk }}"
+                                    data-online-required-message="Deleting accounting forms requires internet to keep synced ledgers consistent.">
                                 {% csrf_token %}
                                 <div id="del-btn-{{ mform.pk }}">
                                     <button type="button" class="btn btn-sm w-100" style="background-color: #FFF0ED; color: #FF754C; border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"

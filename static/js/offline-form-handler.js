@@ -16,6 +16,10 @@
     const form = event.currentTarget;
     const method = (form.getAttribute('method') || 'GET').toUpperCase();
 
+    if (form.getAttribute('data-offline-draft-form') === 'true') {
+      return;
+    }
+
     if (navigator.onLine || method !== 'POST') {
       return;
     }
@@ -113,7 +117,9 @@
       form.addEventListener('submit', onOfflineFormSubmit);
     });
 
-    const unsupportedForms = document.querySelectorAll('form:not([data-offline-form="true"])');
+    const unsupportedForms = document.querySelectorAll(
+      'form:not([data-offline-form="true"]):not([data-offline-draft-form="true"])'
+    );
     unsupportedForms.forEach((form) => {
       form.addEventListener('submit', onUnsupportedOfflineSubmit);
     });

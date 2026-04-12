@@ -261,6 +261,7 @@ class OfflineSyncApiTests(TestCase):
         self.assertIn("/reports/entities/", body)
         self.assertIn("dev-log-tools.js", body)
         self.assertIn("offline-diary-sync.js", body)
+        self.assertIn("offline-draft-queue.js", body)
 
     def test_service_worker_includes_known_group_workspace_urls(self):
         self.client.logout()

@@ -103,6 +103,12 @@
             margin-bottom: 10px;
         }
 
+        .sw-tools-row-column {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
         .sw-tools-label {
             font-size: 0.78rem;
             font-weight: 700;
@@ -196,6 +202,50 @@
             color: #fff;
             background: #334155;
             text-align: center;
+        }
+
+        .sync-now-btn {
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            text-align: center;
+        }
+
+        .sync-now-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .sync-queue-chip {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .sync-queue-chip-empty {
+            color: var(--text-muted);
+            font-size: 0.74rem;
+        }
+
+        .sync-queue-pill {
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        [data-theme="dark"] .sync-queue-pill {
+            background: #334155;
+            color: #dbeafe;
         }
 
         .copy-dev-logs-btn:disabled {
@@ -506,6 +556,11 @@
         <span class="sw-tools-label">Service Worker</span>
         <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">Host checking...</div>
     </div>
+    <div class="sw-tools-row sw-tools-row-column">
+        <span class="sw-tools-label">Queued by model</span>
+        <div id="sync-queue-chip" class="sync-queue-chip sync-queue-chip-empty">No queued records</div>
+    </div>
+    <button id="sync-now-btn" class="sync-now-btn" type="button"><i class="fas fa-rotate me-2"></i>Sync Now</button>
     {% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
     <button id="copy-dev-logs-btn" class="copy-dev-logs-btn" type="button"><i class="fas fa-copy me-2"></i>Copy Logs</button>
     {% endif %}
@@ -523,6 +578,7 @@
 <script src="{% static 'js/offline-db.js' %}"></script>
 <script src="{% static 'js/offline-sync.js' %}"></script>
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
+<script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/sw-register.js' %}"></script>
 <script>
@@ -530,6 +586,7 @@
         const fab = document.getElementById('sw-tools-fab');
         const panel = document.getElementById('sw-tools-panel');
         const closeBtn = document.getElementById('sw-tools-close');
+        const syncNowBtn = document.getElementById('sync-now-btn');
 
         if (!fab || !panel) {
             return;
@@ -565,6 +622,32 @@
                 setOpen(false);
             }
         });
+
+        if (syncNowBtn) {
+            syncNowBtn.addEventListener('click', async function () {
+                if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+                    return;
+                }
+
+                syncNowBtn.disabled = true;
+                const originalText = syncNowBtn.innerHTML;
+                syncNowBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Syncing...';
+
+                try {
+                    await window.seepoOfflineSync.syncNow();
+                    if (window.seepoOfflineSync.showToast) {
+                        window.seepoOfflineSync.showToast('Manual sync completed.');
+                    }
+                } catch (error) {
+                    if (window.seepoOfflineSync.showToast) {
+                        window.seepoOfflineSync.showToast('Manual sync failed. Please retry.');
+                    }
+                } finally {
+                    syncNowBtn.disabled = false;
+                    syncNowBtn.innerHTML = originalText;
+                }
+            });
+        }
     })();
 </script>
 {% block extra_js %}{% endblock %}
