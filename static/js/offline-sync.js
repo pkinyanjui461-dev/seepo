@@ -24,10 +24,19 @@
     constructor() {
       this.isSyncing = false;
       this.lastSyncError = null;
+      this.lastSyncErrors = [];
       this.statusTimer = null;
       this.preloadTimer = null;
       this.preloadIntervalMs = 120000;
       this.modelOrder = resolveModelOrder();
+    }
+
+    normalizeError(error, context) {
+      const message = error && error.message ? error.message : String(error || 'Unknown error');
+      return {
+        context,
+        message,
+      };
     }
 
     updateQueueChip(total, breakdown) {
@@ -262,18 +271,40 @@
       return payload;
     }
 
-    async syncNow() {
+    async syncNow(options) {
+      const syncOptions = {
+        throwOnError: false,
+        ...(options || {}),
+      };
+
       if (this.isSyncing) {
-        return;
+        return {
+          success: false,
+          errors: [
+            {
+              context: 'sync',
+              message: 'Sync is already running.',
+            },
+          ],
+        };
       }
 
       if (!navigator.onLine) {
         await this.refreshStatus();
-        return;
+        return {
+          success: false,
+          errors: [
+            {
+              context: 'network',
+              message: 'Cannot sync while offline.',
+            },
+          ],
+        };
       }
 
       this.isSyncing = true;
       this.lastSyncError = null;
+      this.lastSyncErrors = [];
       await this.refreshStatus();
 
       for (const modelName of this.modelOrder) {
@@ -281,7 +312,9 @@
           await this.pushModel(modelName);
           await this.pullModel(modelName);
         } catch (error) {
-          this.lastSyncError = error;
+          const normalized = this.normalizeError(error, modelName);
+          this.lastSyncError = normalized;
+          this.lastSyncErrors.push(normalized);
           console.error('Sync failed for model', modelName, error);
         }
       }
@@ -289,12 +322,28 @@
       try {
         await this.runAuxiliarySyncs();
       } catch (error) {
-        this.lastSyncError = error;
+        const normalized = this.normalizeError(error, 'auxiliary');
+        this.lastSyncError = normalized;
+        this.lastSyncErrors.push(normalized);
         console.error('Auxiliary queue sync failed', error);
       }
 
       this.isSyncing = false;
       await this.refreshStatus();
+
+      const result = {
+        success: this.lastSyncErrors.length === 0,
+        errors: this.lastSyncErrors.slice(),
+      };
+
+      if (!result.success && syncOptions.throwOnError) {
+        const first = result.errors[0] && result.errors[0].message ? result.errors[0].message : 'Unknown sync error.';
+        const moreCount = result.errors.length - 1;
+        const suffix = moreCount > 0 ? ' (+' + moreCount + ' more)' : '';
+        throw new Error(first + suffix);
+      }
+
+      return result;
     }
 
     async pushModel(modelName) {
@@ -322,11 +371,18 @@
         body: JSON.stringify({ model: modelName, records })
       });
 
-      if (!response.ok) {
-        throw new Error('Push failed for model ' + modelName);
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (error) {
+        result = null;
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        const serverError = result && result.error ? String(result.error) : 'HTTP ' + response.status;
+        throw new Error(modelName + ': ' + serverError);
+      }
+
       if (Array.isArray(result.records_saved)) {
         for (const saved of result.records_saved) {
           const local = await table.where('client_uuid').equals(saved.client_uuid).first();
@@ -337,6 +393,13 @@
             });
           }
         }
+      }
+
+      if (Array.isArray(result.errors) && result.errors.length > 0) {
+        const firstError = result.errors[0] && result.errors[0].error
+          ? String(result.errors[0].error)
+          : 'Unknown server validation error.';
+        throw new Error(modelName + ': ' + firstError);
       }
 
       if (result.synced > 0) {

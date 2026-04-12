@@ -85,7 +85,7 @@
                                 <td class="text-muted">{{ member.join_date|date:"d M Y" }}</td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); border-radius: 6px 0 0 6px;" title="Edit Member"><i class="fas fa-edit"></i></a>
+                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); border-radius: 6px 0 0 6px;" title="Edit Member"><i class="fas fa-edit" style="color: var(--primary-color);"></i></a>
                                         <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger" style="border-radius: 0 6px 6px 0;" title="Remove Member"><i class="fas fa-trash-alt"></i></a>
                                     </div>
                                 </td>
@@ -159,7 +159,7 @@
             </div>
             {% empty %}
             <div class="col-12">
-                <div class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="background-color: #F8F9FA; border-radius: var(--border-radius-lg); border: 1px dashed var(--border-color);">
+                <div class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="background-color: var(--muted-surface); border-radius: var(--border-radius-lg); border: 1px dashed var(--border-color);">
                     <i class="fas fa-folder-open fs-1 mb-3 opacity-25" style="color: var(--primary-color);"></i>
                     <h5 class="fw-bold" style="color: var(--text-main);">No forms yet</h5>
                     <p class="text-muted mb-4">Start by creating the first financial form for this group.</p>
