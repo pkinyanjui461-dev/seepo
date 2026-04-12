@@ -14,7 +14,7 @@
                 <h3 class="fw-bold mb-2 dashboard-greeting-title" style="color: var(--primary-color);">Hello {{ user.get_full_name|default:user.username }}!</h3>
                 <p class="mb-4 dashboard-greeting-subtitle">Welcome back! Here's what's happening today.</p>
                 <div>
-                   <button class="btn text-white px-4 py-2 dashboard-greeting-cta" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</button>
+                   <a href="{% url 'group_list' %}" class="btn text-white px-4 py-2 dashboard-greeting-cta" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</a>
                 </div>
             </div>
         </div>
@@ -182,7 +182,7 @@
                         cutout: '70%'
                     }]
                 },
-                options: { 
+                options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -207,23 +207,23 @@
                     datasets: [{
                         label: 'Amount (Ksh)',
                         data: [
-                            data.service_fee, 
-                            data.passbook, 
-                            data.loan_form, 
-                            data.mpesa, 
+                            data.service_fee,
+                            data.passbook,
+                            data.loan_form,
+                            data.mpesa,
                             data.risk_fund
                         ],
                         backgroundColor: [
-                            accentPurple, 
-                            accentGreen, 
-                            accentBlue, 
-                            accentOrange, 
+                            accentPurple,
+                            accentGreen,
+                            accentBlue,
+                            accentOrange,
                             accentRed
                         ],
                         borderRadius: 6,
                     }]
                 },
-                options: { 
+                options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {

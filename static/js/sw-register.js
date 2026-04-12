@@ -35,13 +35,18 @@
     badge.title = title || text;
   }
 
+  function getSwBadgeLabel(swVersion) {
+    const normalized = String(swVersion || SW_ASSET_VERSION || '').replace(/^v/i, '');
+    return normalized ? 'SW' + normalized : 'SW';
+  }
+
   async function updateOfflineHostReadyStatus() {
     const hostLabel = window.location.host;
 
     if (!hasServiceWorkerSupport) {
       setHostReadyBadge(
         'error',
-        'Offline Host: Unsupported (' + hostLabel + ')',
+        'OH-Unsupported',
         'This browser does not support Service Workers.'
       );
       return;
@@ -50,20 +55,20 @@
     if (!canUseServiceWorkersOnThisHost()) {
       setHostReadyBadge(
         'error',
-        'Offline Host: HTTPS Required (' + hostLabel + ')',
+        'OH-HTTPS',
         'Service Workers require HTTPS on non-local hosts.'
       );
       return;
     }
 
-    setHostReadyBadge('checking', 'Offline Host: Checking (' + hostLabel + ')');
+    setHostReadyBadge('checking', 'OH-Checking');
 
     try {
       const registration = await navigator.serviceWorker.getRegistration('/');
       if (!registration || !registration.active) {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Not Ready (' + hostLabel + ')',
+          'OH-NotReady',
           'Service Worker is not active on this host yet.'
         );
         return;
@@ -72,7 +77,7 @@
       if (!navigator.serviceWorker.controller) {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Reload Needed (' + hostLabel + ')',
+          'OH-Reload',
           'Service Worker is installed. Reload once so this tab is controlled.'
         );
         return;
@@ -89,12 +94,12 @@
       const swVersion = shellCacheKey
         ? shellCacheKey.replace('seepo-offline-shell-', '')
         : (runtimeCacheKey ? runtimeCacheKey.replace('seepo-offline-runtime-', '') : '');
-      const swVersionLabel = swVersion ? ' | SW ' + swVersion : '';
+      const swVersionLabel = ' | ' + getSwBadgeLabel(swVersion);
 
       if (!shellCacheKey) {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Priming (' + hostLabel + ')' + swVersionLabel,
+          'OH-Priming' + swVersionLabel,
           'Shell cache has not been created yet for this host.'
         );
         return;
@@ -110,20 +115,20 @@
       if (checks.every(Boolean)) {
         setHostReadyBadge(
           'ok',
-          'Offline Host: Ready (' + hostLabel + ')' + swVersionLabel,
+          'OH-Ready' + swVersionLabel,
           'This host has an active Service Worker and a primed offline shell cache. Version: ' + swVersion
         );
       } else {
         setHostReadyBadge(
           'warn',
-          'Offline Host: Partial (' + hostLabel + ')' + swVersionLabel,
+          'OH-Partial' + swVersionLabel,
           'Service Worker is active, but required shell entries are still priming. Version: ' + swVersion
         );
       }
     } catch (error) {
       setHostReadyBadge(
         'error',
-        'Offline Host: Check Failed (' + hostLabel + ')',
+        'OH-Error',
         'Readiness check failed: ' + (error && error.message ? error.message : String(error))
       );
     }
@@ -241,7 +246,7 @@
       console.error('Service worker registration failed:', error);
       setHostReadyBadge(
         'error',
-        'Offline Host: Registration Failed (' + window.location.host + ')',
+        'OH-RegError',
         'Service Worker registration failed: ' + (error && error.message ? error.message : String(error))
       );
     }

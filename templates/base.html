@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=8">
     <link rel="manifest" href="{% url 'web_manifest' %}">
     <meta name="theme-color" content="#6C5DD3">
     <style>
@@ -554,7 +554,7 @@
     </div>
     <div class="sw-tools-row">
         <span class="sw-tools-label">Service Worker</span>
-        <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">Host checking...</div>
+        <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">OH-Checking</div>
     </div>
     <div class="sw-tools-row sw-tools-row-column">
         <span class="sw-tools-label">Queued by model</span>
@@ -580,7 +580,7 @@
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}"></script>
+<script src="{% static 'js/sw-register.js' %}?v=15"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');

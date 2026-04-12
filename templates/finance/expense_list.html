@@ -4,6 +4,22 @@
 
 {% block title %}Office Expenses | SEEPO Accounting{% endblock %}
 
+{% block extra_css %}
+<style>
+    [data-theme="dark"] .office-expense-table thead,
+    [data-theme="dark"] .office-expense-table thead.table-light,
+    [data-theme="dark"] .office-expense-table thead.table-light > tr > th {
+        background-color: #232c3d !important;
+        color: #dbe4fb !important;
+        border-color: var(--border-color) !important;
+    }
+
+    [data-theme="dark"] .office-expense-table tbody .expense-name-cell {
+        color: #edf2ff !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header & Filters -->
@@ -133,7 +149,7 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle">
+                        <table class="table table-hover table-striped mb-0 align-middle office-expense-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>Date</th>
@@ -147,7 +163,7 @@
                                 {% for exp in expenses %}
                                 <tr>
                                     <td>{{ exp.date|date:"M d, Y" }}</td>
-                                    <td class="font-weight-bold text-dark">{{ exp.name }}</td>
+                                    <td class="font-weight-bold expense-name-cell">{{ exp.name }}</td>
                                     <td class="text-danger font-weight-bold">{{ exp.amount|intcomma }}</td>
                                     <td class="text-muted small">{{ exp.notes|default:"-" }}</td>
                                     <td class="text-end">

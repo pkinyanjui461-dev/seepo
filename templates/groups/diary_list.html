@@ -47,6 +47,48 @@
         font-weight: 600;
         color: #2d3748;
     }
+
+    [data-theme="dark"] .table-custom {
+        background: #141a27;
+        border: 1px solid var(--border-color);
+    }
+
+    [data-theme="dark"] .table-custom thead th {
+        background-color: #232c3d;
+        color: #dbe4fb;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    [data-theme="dark"] .table-custom tbody tr:hover {
+        background-color: #1f293b;
+    }
+
+    [data-theme="dark"] .table-custom tbody td {
+        color: #edf2ff;
+        border-bottom: 1px solid #30384a;
+    }
+
+    [data-theme="dark"] .fw-medium {
+        color: #edf2ff;
+    }
+
+    [data-theme="dark"] .card-header.bg-white {
+        background-color: var(--card-bg) !important;
+    }
+
+    [data-theme="dark"] .card-header h5 {
+        color: #edf2ff !important;
+    }
+
+    [data-theme="dark"] #toggle-edit {
+        background: #141a27 !important;
+        color: #ffffff !important;
+        border-color: var(--primary-color) !important;
+    }
+
+    [data-theme="dark"] .editable.pending-offline-cell {
+        background-color: #3f3519 !important;
+    }
 </style>
 {% endblock %}
 
@@ -125,6 +167,27 @@
     let isEditMode = false;
     const toggleBtn = document.getElementById('toggle-edit');
     const editText = document.getElementById('edit-text');
+
+    function isDarkThemeEnabled() {
+        return (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+    }
+
+    function applyToggleButtonStyle() {
+        if (isEditMode) {
+            return;
+        }
+
+        if (isDarkThemeEnabled()) {
+            toggleBtn.style.background = '#141a27';
+            toggleBtn.style.color = '#ffffff';
+            toggleBtn.style.borderColor = '#8B5CF6';
+            return;
+        }
+
+        toggleBtn.style.background = '#fff';
+        toggleBtn.style.color = '#6C5DD3';
+        toggleBtn.style.borderColor = '#6C5DD3';
+    }
 
     function showDiaryToast(message) {
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
@@ -211,39 +274,40 @@
     toggleBtn.addEventListener('click', () => {
         isEditMode = !isEditMode;
         if (isEditMode) {
+            const darkTheme = isDarkThemeEnabled();
             toggleBtn.style.background = '#6C5DD3';
             toggleBtn.style.color = '#fff';
+            toggleBtn.style.borderColor = '#6C5DD3';
             editText.innerText = 'Disable Edit Mode (Changes Save Autonomously)';
             document.querySelectorAll('.editable').forEach(td => {
                 td.style.border = '1px dashed #6C5DD3';
-                td.style.backgroundColor = '#f4f2ff';
+                td.style.backgroundColor = darkTheme ? '#312851' : '#f4f2ff';
                 td.onclick = function() { enterEdit(this); };
             });
         } else {
-            toggleBtn.style.background = '#fff';
-            toggleBtn.style.color = '#6C5DD3';
             editText.innerText = 'Enable Edit Mode';
             document.querySelectorAll('.editable').forEach(td => {
                 td.style.border = '';
                 td.style.backgroundColor = '';
                 td.onclick = null;
             });
+            applyToggleButtonStyle();
         }
     });
 
     function enterEdit(td) {
         if (td.querySelector('input')) return;
-        
+
         const originalValue = td.innerText.trim() === '-' ? '' : td.innerText.trim();
         const field = td.dataset.field;
         const diaryId = td.closest('tr').dataset.id;
-        
+
         const input = document.createElement('input');
         input.type = 'text';
         input.value = originalValue;
         input.className = 'form-control form-control-sm';
         input.style.minWidth = '50px';
-        
+
         td.innerHTML = '';
         td.appendChild(input);
         input.focus();
@@ -281,6 +345,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        applyToggleButtonStyle();
         if (window.seepoOfflineDiary && navigator.onLine) {
             window.seepoOfflineDiary.syncNow();
         }
