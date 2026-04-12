@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
-load_dotenv(BASE_DIR / '.env')
+# Load environment variables from .env file.
+# override=True prevents inherited shell vars from forcing stale local DB settings.
+load_dotenv(BASE_DIR / '.env', override=True)
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'seepo-dev-secret-key-change-in-production-2024')
 
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'members',
     'finance',
     'reports',
+    'offline_sync',
 ]
 
 MIDDLEWARE = [
@@ -67,14 +69,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'seepo_project.wsgi.application'
 
+if ENVIRONMENT == 'development':
+    default_db_engine = 'django.db.backends.mysql'
+    default_db_name = 'seepo_dev'
+    default_db_user = 'root'
+    default_db_password = ''
+    default_db_host = '127.0.0.1'
+    default_db_port = '3306'
+else:
+    default_db_engine = 'django.db.backends.postgresql'
+    default_db_name = 'seepocok_main'
+    default_db_user = 'seepocok_devmain'
+    default_db_password = ''
+    default_db_host = 'localhost'
+    default_db_port = '5432'
+
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'seepocok_main'),
-        'USER': os.getenv('DB_USER', 'seepocok_devmain'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': os.getenv('DB_ENGINE', default_db_engine),
+        'NAME': os.getenv('DB_NAME', default_db_name),
+        'USER': os.getenv('DB_USER', default_db_user),
+        'PASSWORD': os.getenv('DB_PASSWORD', default_db_password),
+        'HOST': os.getenv('DB_HOST', default_db_host),
+        'PORT': os.getenv('DB_PORT', default_db_port),
     }
 }
 

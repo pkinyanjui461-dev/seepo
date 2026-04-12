@@ -9,7 +9,13 @@
     <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body p-4">
-                <form method="POST">
+                    <form method="POST"
+                        {% if not form.instance.pk %}
+                        data-offline-form="true"
+                        data-offline-model="member"
+                        data-group-client-uuid="{{ group.client_uuid }}"
+                        data-offline-redirect-url="{% url 'group_detail' group.pk %}"
+                        {% endif %}>
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-3">

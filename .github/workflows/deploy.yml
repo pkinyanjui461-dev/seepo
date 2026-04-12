@@ -59,6 +59,9 @@ jobs:
             # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
 
+            # Backup before migration (safety checkpoint)
+            python pgbackup.py backup --label before-feature-x
+
             # Run migrations
             python manage.py migrate --noinput
 
@@ -120,6 +123,9 @@ jobs:
 
             # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
+
+            # Backup before migration (safety checkpoint)
+            python pgbackup.py backup --label before-feature-x
 
             # Run migrations
             python manage.py migrate --noinput

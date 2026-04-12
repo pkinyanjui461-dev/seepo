@@ -1,4 +1,7 @@
+import uuid
+
 from django.db import models
+from django.utils import timezone
 
 
 class Group(models.Model):
@@ -11,6 +14,8 @@ class Group(models.Model):
     date_created = models.DateField()
     officer_name = models.CharField(max_length=200)
     banking_type = models.CharField(max_length=20, choices=BANKING_CHOICES, default='office')
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

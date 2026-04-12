@@ -1,0 +1,1008 @@
+
+    Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:...:...:
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:...:
+Not Found: /favicon.ico
+Not Found: /accounts/login/favicon.ico...:[UID:2184][435956] Child process with pid: 435981 was killed by signal: 15, core dumped: no
+Not Found: /favicon.ico
+Not Found: /favicon.ico...:
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+
+Not Found: /accounts/login/favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:
+
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico...:
+
+Not Found: /robots.txt...:Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:
+
+Not Found: /favicon.ico
+Not Found: /accounts/login/favicon.ico...:
+Not Found: /robots.txt
+
+Not Found: /robots.txt...:...:
+
+Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:Not Found: /favicon.ico...:...:
+[UID:2184][1541212] Child process with pid: 1541305 was killed by signal: 15, core dumped: no...:Not Found: /favicon.ico
+Not Found: /favicon.ico...:
+Not Found: /favicon.ico...:
+
+Not Found: /favicon.ico
+
+Not Found: /robots.txt
+
+Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:...:
+Not Found: /accounts/login/favicon.ico...:...:Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico...:...:...:...:
+
+Could not get image data from src attribute: /home1/seepocok/public_html/seepo-main/static/img/logo.png
+'<img src="/home1/seepocok/public_html/seepo-main/static/img/logo.png" style="width: 130px; height: auto;"/>'...:...:...:...:...:Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:
+Not Found: /robots.txt
+Not Found: /robots.txt...:
+Could not get image data from src attribute: /home1/seepocok/public_html/seepo-main/static/img/logo.png
+'<img src="/home1/seepocok/public_html/seepo-main/static/img/logo.png" style="width: 130px; height: auto;"/>'
+
+Not Found: /robots.txt...:...:
+Could not get image data from src attribute: /home1/seepocok/public_html/seepo-main/static/img/logo.png
+'<img src="/home1/seepocok/public_html/seepo-main/static/img/logo.png" style="width: 130px; height: auto;"/>'
+Not Found: /robots.txt...:
+
+Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:Not Found: /_ignition/execute-solution
+
+Not Found: /wp-login.php
+
+Not Found: /wordpress/
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php...:Not Found: /wp-login.php
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php
+
+Not Found: /wordpress/
+
+Not Found: /_ignition/execute-solution
+
+Not Found: /_ignition/execute-solution
+
+Not Found: /wordpress/
+
+Not Found: /accounts/login/favicon.ico...:
+
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico...:Not Found: /favicon.ico...:Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico...:
+Not Found: /accounts/login/?next=/accounts/login/%3Fnext=/...:Not Found: /robots.txt
+
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+Not Found: /robots.txt...:Not Found: /sitemap.xml
+Not Found: /ads.txt
+Not Found: /security.txt
+Not Found: /.well-known/security.txt
+Not Found: /llms.txt
+Not Found: /humans.txt
+
+Not Found: /robots.txt...:...:Not Found: /.well-known/security.txt
+Not Found: /security.txt...:
+
+Not Found: /favicon.ico...:Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico...:Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+[UID:2184][1311929] Child process with pid: 1311998 was killed by signal: 15, core dumped: no...:Not Found: /favicon.ico
+
+Not Found: /robots.txt
+
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+[UID:2184][1428350] Child process with pid: 1428377 was killed by signal: 15, core dumped: no...:
+Not Found: /favicon.ico...:Not Found: /favicon.ico...:...:
+Not Found: /robots.txt
+
+Not Found: /robots.txt...:
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+
+Not Found: /accounts/login/favicon.ico
+Not Found: /accounts/login/favicon.ico
+Not Found: /accounts/login/favicon.ico
+Not Found: /favicon.ico/ads.txt
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/ads.txt
+Not Found: /favicon.ico/sellers.json
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/sellers.json
+Not Found: /favicon.ico/ads.txt
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/sellers.json...:
+
+Not Found: /robots.txt...:...:...:...:...:Not Found: /favicon.ico...:...:...:...:Not Found: /robots.txt...:
+Not Found: /favicon.ico...:
+
+Bad Request: /finance/record/5/save/
+Could not get image data from src attribute: /home1/seepocok/public_html/seepo-main/static/img/logo.png
+'<img src="/home1/seepocok/public_html/seepo-main/static/img/logo.png" style="width: 130px; height: auto;"/>'...:
+Not Found: /favicon.ico
+
+Not Found: /robots.txt...:Internal Server Error: /members/group/11/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 4) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 4) already exists.
+Internal Server Error: /members/group/11/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 4) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 4) already exists....:
+Internal Server Error: /members/group/11/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 1) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(11, 1) already exists....:...:...:
+
+Not Found: /ads.txt...:Not Found: /accounts/login/favicon.ico...:Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico...:Not Found: /robots.txt...:
+
+Not Found: /robots.txt...:...:...:
+Not Found: /accounts/login/favicon.ico
+
+Not Found: /wp-login.php...:
+Not Found: /robots.txt...:...:
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+
+Not Found: /robots.txt
+
+Not Found: /robots.txt
+
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php
+
+Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico
+
+Not Found: /wp-includes/wlwmanifest.xml//wp-includes/wlwmanifest.xml
+Not Found: /xmlrpc.php//xmlrpc.php
+Not Found: /blog/wp-includes/wlwmanifest.xml//blog/wp-includes/wlwmanifest.xml
+Not Found: /web/wp-includes/wlwmanifest.xml//web/wp-includes/wlwmanifest.xml
+Not Found: /wordpress/wp-includes/wlwmanifest.xml//wordpress/wp-includes/wlwmanifest.xml
+Not Found: /website/wp-includes/wlwmanifest.xml//website/wp-includes/wlwmanifest.xml
+Not Found: /wp/wp-includes/wlwmanifest.xml//wp/wp-includes/wlwmanifest.xml
+Not Found: /news/wp-includes/wlwmanifest.xml//news/wp-includes/wlwmanifest.xml
+Not Found: /2020/wp-includes/wlwmanifest.xml//2020/wp-includes/wlwmanifest.xml
+Not Found: /2019/wp-includes/wlwmanifest.xml//2019/wp-includes/wlwmanifest.xml
+Not Found: /shop/wp-includes/wlwmanifest.xml//shop/wp-includes/wlwmanifest.xml
+Not Found: /wp1/wp-includes/wlwmanifest.xml//wp1/wp-includes/wlwmanifest.xml
+Not Found: /test/wp-includes/wlwmanifest.xml//test/wp-includes/wlwmanifest.xml
+Not Found: /wp2/wp-includes/wlwmanifest.xml//wp2/wp-includes/wlwmanifest.xml
+Not Found: /site/wp-includes/wlwmanifest.xml//site/wp-includes/wlwmanifest.xml
+Not Found: /cms/wp-includes/wlwmanifest.xml//cms/wp-includes/wlwmanifest.xml
+Not Found: /sito/wp-includes/wlwmanifest.xml//sito/wp-includes/wlwmanifest.xml...:...:Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+Not Found: /favicon.ico...:
+Not Found: /accounts/login/favicon.ico...:
+Not Found: /wp-login.php...:Not Found: /favicon.ico...:
+
+Not Found: /favicon.ico...:...:
+
+Not Found: /accounts/login/favicon.ico...:
+Internal Server Error: /members/group/14/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 12) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 12) already exists.
+Internal Server Error: /members/group/14/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists.
+Internal Server Error: /members/group/14/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists.
+Internal Server Error: /members/group/14/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(14, 9) already exists....:Not Found: /robots.txt...:Not Found: /robots.txt...:Not Found: /favicon.ico...:Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+Not Found: /favicon.ico...:...:
+Not Found: /favicon.ico
+
+Not Found: /robots.txt...:...:...:...:...:...:Internal Server Error: /members/group/21/add/
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(21, 19) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home1/seepocok/public_html/seepo-main/members/views.py", line 23, in member_create
+    member.save()
+    ~~~~~~~~~~~^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/query.py", line 1852, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "members_member_group_id_member_number_dff9e0be_uniq"
+DETAIL:  Key (group_id, member_number)=(21, 19) already exists....:...:
+
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:
+
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap...:Not Found: /accounts/login/https:/fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap/accounts/login/https%3A/fonts.googleapis.com/css2%3Ffamily%3DInter%3Awght%40400%3B500%3B600%3B700%26family%3DOutfit%3Awght%40500%3B700%3B900%26display%3Dswap
+
+Not Found: /sitemap.xml...:Not Found: /robots.txt
+Not Found: /favicon.ico
+
+Not Found: /favicon.ico
+Not Found: /sitemap.xml
+
+Not Found: /robots.txt...:
+Not Found: /wordpress/...:Not Found: /favicon.ico...:...:...:
+
+Not Found: /robots.txt...:...:...:...:...:...:...:...:...:
+
+Not Found: /favicon.ico
+
+Not Found: /wp-login.php
+
+Not Found: /robots.txt...:...:...:...:...:...:...:...:...:
+Not Found: /robots.txt...:...:Not Found: /robots.txt...:Not Found: /favicon.ico
+Not Found: /favicon.png
+Not Found: /favicon.ico
+Not Found: /favicon.ico...:Not Found: /accounts/login/favicon.ico...:Not Found: /accounts/login/?next=/accounts/login/%3Fnext=/...:Forbidden (Referer checking failed - no Referer.): /
+Not Found: /index.php
+Internal Server Error: /admin
+Traceback (most recent call last):
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/utils/deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/middleware/common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home1/seepocok/virtualenv/public_html/seepo-main/3.13/lib/python3.13/site-packages/django/middleware/common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+    ...<9 lines>...
+    )
+RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to seepo.co.ke:443/admin/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Not Found: /api...:Not Found: /accounts/login/favicon.ico
+
+Not Found: /wp-login.php
+
+Not Found: /wp-login.php...:
+Not Found: /favicon.ico...:Not Found: /favicon.ico
+Not Found: /favicon.ico...:Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/188/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/189/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/190/save/
+Forbidden (CSRF token from the 'X-Csrftoken' HTTP header incorrect.): /finance/record/191/save/...:...:...:Not Found: /favicon.ico
+[UID:2184][593319] Child process with pid: 714750 was killed by signal: 15, core dumped: no
+
+Not Found: /favicon.ico...:...:...:...:Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /accounts/login/favicon.ico
+Not Found: /favicon.ico/ads.txt
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/sellers.json
+Not Found: /accounts/login/favicon.ico
+Not Found: /accounts/login/favicon.ico
+Not Found: /favicon.ico/ads.txt
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/ads.txt...:Not Found: /favicon.ico/sellers.json
+Not Found: /favicon.ico/app-ads.txt
+Not Found: /favicon.ico/sellers.json...:...:...:...:
+
+[UID:2184][1031493] Child process with pid: 1048735 was killed by signal: 15, core dumped: no...:

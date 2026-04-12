@@ -93,7 +93,10 @@
                     <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-plus-circle me-1"></i> Add Expense</h6>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                      <form method="POST"
+                          data-offline-form="true"
+                          data-offline-model="expense"
+                          data-offline-redirect-url="{% url 'expense_list' %}?month={{ selected_month }}&year={{ selected_year }}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label text-sm font-weight-bold">Date</label>

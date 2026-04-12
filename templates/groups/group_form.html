@@ -7,7 +7,12 @@
     <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body p-4">
-                <form method="POST">
+                    <form method="POST"
+                        {% if not form.instance.pk %}
+                        data-offline-form="true"
+                        data-offline-model="group"
+                        data-offline-redirect-url="{% url 'group_list' %}"
+                        {% endif %}>
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-3">

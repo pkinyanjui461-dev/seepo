@@ -1,4 +1,7 @@
+import uuid
+
 from django.db import models
+from django.utils import timezone
 from groups.models import Group
 from members.models import Member
 
@@ -14,6 +17,8 @@ class MonthlyForm(models.Model):
     year = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     notes = models.TextField(blank=True)
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -172,6 +177,8 @@ class Expense(models.Model):
     name = models.CharField(max_length=200)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     notes = models.TextField(blank=True, null=True)
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
