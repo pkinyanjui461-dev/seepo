@@ -94,6 +94,42 @@
     return payload;
   }
 
+  function selectionKey(item) {
+    return String(item.id || item.dedupeKey || '');
+  }
+
+  function getSelectionItems() {
+    return getQueue().map(function (item) {
+      const label = (item.label ? String(item.label) : 'draft') + ' draft';
+      return {
+        key: selectionKey(item),
+        label: label,
+        action: item.action || '',
+        updatedAt: item.createdAt || '',
+      };
+    });
+  }
+
+  function deleteSelectionItems(keys) {
+    const keySet = new Set(Array.isArray(keys) ? keys.map(String) : []);
+    if (!keySet.size) {
+      return 0;
+    }
+
+    const queue = getQueue();
+    const remaining = queue.filter(function (item) {
+      return !keySet.has(selectionKey(item));
+    });
+    const deleted = queue.length - remaining.length;
+
+    if (deleted > 0) {
+      setQueue(remaining);
+      window.dispatchEvent(new CustomEvent('seepo:draft-queue-updated', { detail: { pending: remaining.length } }));
+    }
+
+    return deleted;
+  }
+
   async function syncNow() {
     if (!navigator.onLine) {
       return { synced: 0, remaining: getQueue().length };
@@ -186,6 +222,8 @@
 
   window.seepoOfflineDraftQueue = {
     getQueue: getQueue,
+    getSelectionItems: getSelectionItems,
+    deleteSelectionItems: deleteSelectionItems,
     pendingCount: function () {
       return getQueue().length;
     },

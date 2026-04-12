@@ -5,6 +5,7 @@ from datetime import date
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
+from django.urls import reverse
 from django.utils import timezone
 
 
@@ -57,7 +58,8 @@ def _build_meeting_sections(today):
     diaries = DiaryEntry.objects.select_related('group').all()
     for diary in diaries:
         for month_field, month_number in MONTH_FIELD_MAP:
-            day = _extract_day_of_month(getattr(diary, month_field, None))
+            raw_day_value = getattr(diary, month_field, None)
+            day = _extract_day_of_month(raw_day_value)
             if not day:
                 continue
 
@@ -67,8 +69,18 @@ def _build_meeting_sections(today):
 
             meeting_date = date(today.year, month_number, day)
             delta_days = (meeting_date - today).days
+            venue = str((diary.venue or '').strip())
+            group_location = str((diary.group.location or '').strip())
             payload = {
+                'group_id': diary.group.pk,
                 'group_name': diary.group.name,
+                'group_location': group_location,
+                'venue': venue or group_location,
+                'meeting_time': str((diary.time or '').strip()),
+                'weekday': meeting_date.strftime('%A'),
+                'month_name': calendar.month_name[month_number],
+                'raw_day_value': str(raw_day_value or '').strip(),
+                'group_url': reverse('group_detail', args=[diary.group.pk]),
                 'meeting_date': meeting_date,
                 'display_date': meeting_date.strftime('%d %b %Y'),
             }
@@ -97,7 +109,7 @@ def _build_meeting_sections(today):
         {
             'slug': 'ongoing',
             'title': 'Ongoing (Today)',
-            'status_label': 'Success',
+            'status_label': 'Ongoing',
             'empty_label': 'No meetings happening today.',
         },
         {
@@ -109,7 +121,7 @@ def _build_meeting_sections(today):
         {
             'slug': 'past',
             'title': 'Past Meetings',
-            'status_label': 'Success',
+            'status_label': 'Past',
             'empty_label': 'No older past meetings.',
         },
     ]

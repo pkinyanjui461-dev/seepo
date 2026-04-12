@@ -92,12 +92,26 @@
                 <h5 class="fw-bold mb-0" style="color: var(--text-main);">
                     <i class="fas fa-calendar-check me-2"></i>Diary Meeting Timeline
                 </h5>
-                <span class="dashboard-meeting-pill">Upcoming / Ongoing / Success / Past</span>
+                <div class="d-flex align-items-center gap-2 dashboard-meeting-filters">
+                    <span class="dashboard-meeting-pill">Upcoming / Ongoing / Success / Past</span>
+                    <div class="dropdown">
+                        <button id="meeting-filter-btn" class="btn btn-sm btn-outline-primary dashboard-meeting-filter-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Filter: All
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm dashboard-meeting-filter-menu">
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option active" data-meeting-filter="all">All</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="upcoming">Upcoming</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="ongoing">Ongoing</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="success">Success</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="past">Past</button></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-4">
-                <div class="row g-3">
+                <div class="row g-3" id="dashboard-meeting-sections">
                     {% for section in meeting_sections %}
-                    <div class="col-md-6 col-xl-3">
+                    <div class="col-md-6 col-xl-3 dashboard-meeting-section" data-meeting-section="{{ section.slug }}">
                         <div class="dashboard-meeting-column h-100">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="dashboard-meeting-title mb-0">{{ section.title }}</h6>
@@ -106,13 +120,25 @@
 
                             <div class="dashboard-meeting-list">
                                 {% for meeting in section.items %}
-                                <div class="dashboard-meeting-item">
-                                    <div class="dashboard-meeting-meta">
+                                <button type="button"
+                                        class="dashboard-meeting-item dashboard-meeting-item-button js-meeting-item"
+                                        data-meeting-status="{{ section.slug }}"
+                                        data-meeting-status-label="{{ section.status_label }}"
+                                        data-meeting-group="{{ meeting.group_name }}"
+                                        data-meeting-group-url="{{ meeting.group_url }}"
+                                        data-meeting-group-location="{{ meeting.group_location|default:'' }}"
+                                        data-meeting-venue="{{ meeting.venue|default:'' }}"
+                                        data-meeting-time="{{ meeting.meeting_time|default:'' }}"
+                                        data-meeting-date="{{ meeting.display_date }}"
+                                        data-meeting-weekday="{{ meeting.weekday|default:'' }}"
+                                        data-meeting-month="{{ meeting.month_name|default:'' }}"
+                                        data-meeting-day-raw="{{ meeting.raw_day_value|default:'' }}">
+                                    <div class="dashboard-meeting-meta text-start">
                                         <div class="dashboard-meeting-group">{{ meeting.group_name }}</div>
                                         <div class="dashboard-meeting-date">{{ meeting.display_date }}</div>
                                     </div>
                                     <span class="dashboard-status dashboard-status-{{ section.slug }}">{{ section.status_label }}</span>
-                                </div>
+                                </button>
                                 {% empty %}
                                 <div class="dashboard-meeting-empty">{{ section.empty_label }}</div>
                                 {% endfor %}
@@ -186,6 +212,57 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="meeting-detail-modal" tabindex="-1" aria-labelledby="meeting-detail-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meeting-detail-title">Meeting Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="dashboard-meeting-detail-grid">
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Status</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-status">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Group</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-group">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Venue</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-venue">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Group Location</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-group-location">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Date</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-date">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Day</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-weekday">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Time</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-time">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Diary Source</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-diary-source">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="meeting-detail-group-link" class="btn btn-primary" href="#">Open Group</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -285,5 +362,110 @@
             });
         })
         .catch(err => console.error("Error loading dashboard stats:", err));
+
+    (function () {
+        const filterBtn = document.getElementById('meeting-filter-btn');
+        const filterOptions = document.querySelectorAll('.dashboard-meeting-filter-option');
+        const meetingSections = document.querySelectorAll('.dashboard-meeting-section');
+        const meetingItems = document.querySelectorAll('.js-meeting-item');
+        const modalEl = document.getElementById('meeting-detail-modal');
+
+        const statusLabelMap = {
+            upcoming: 'Upcoming',
+            ongoing: 'Ongoing',
+            success: 'Success',
+            past: 'Past',
+            all: 'All',
+        };
+
+        const detailNodes = {
+            status: document.getElementById('meeting-detail-status'),
+            group: document.getElementById('meeting-detail-group'),
+            venue: document.getElementById('meeting-detail-venue'),
+            groupLocation: document.getElementById('meeting-detail-group-location'),
+            date: document.getElementById('meeting-detail-date'),
+            weekday: document.getElementById('meeting-detail-weekday'),
+            time: document.getElementById('meeting-detail-time'),
+            source: document.getElementById('meeting-detail-diary-source'),
+            groupLink: document.getElementById('meeting-detail-group-link'),
+        };
+
+        const detailsModal = (modalEl && window.bootstrap && window.bootstrap.Modal)
+            ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
+            : null;
+
+        function applyFilter(filterSlug) {
+            meetingSections.forEach(function (section) {
+                const shouldShow = filterSlug === 'all' || section.dataset.meetingSection === filterSlug;
+                section.classList.toggle('d-none', !shouldShow);
+                section.classList.toggle('dashboard-meeting-section-single', shouldShow && filterSlug !== 'all');
+            });
+
+            if (filterBtn) {
+                const label = statusLabelMap[filterSlug] || 'All';
+                filterBtn.textContent = 'Filter: ' + label;
+            }
+
+            filterOptions.forEach(function (option) {
+                option.classList.toggle('active', option.dataset.meetingFilter === filterSlug);
+            });
+        }
+
+        function setDetailText(node, value, fallback) {
+            if (!node) {
+                return;
+            }
+            const text = String(value || '').trim();
+            node.textContent = text || fallback;
+        }
+
+        filterOptions.forEach(function (option) {
+            option.addEventListener('click', function () {
+                const filterSlug = option.dataset.meetingFilter || 'all';
+                applyFilter(filterSlug);
+            });
+        });
+
+        meetingItems.forEach(function (item) {
+            item.addEventListener('click', function () {
+                const statusSlug = item.dataset.meetingStatus || '';
+                const statusLabel = item.dataset.meetingStatusLabel || statusLabelMap[statusSlug] || '-';
+                const sourceMonth = item.dataset.meetingMonth || '';
+                const sourceRawDay = item.dataset.meetingDayRaw || '';
+
+                setDetailText(detailNodes.status, statusLabel, '-');
+                setDetailText(detailNodes.group, item.dataset.meetingGroup, '-');
+                setDetailText(detailNodes.venue, item.dataset.meetingVenue, 'Not set');
+                setDetailText(detailNodes.groupLocation, item.dataset.meetingGroupLocation, 'Not set');
+                setDetailText(detailNodes.date, item.dataset.meetingDate, '-');
+                setDetailText(detailNodes.weekday, item.dataset.meetingWeekday, '-');
+                setDetailText(detailNodes.time, item.dataset.meetingTime, 'Not set');
+
+                const sourceText = sourceMonth || sourceRawDay
+                    ? (sourceMonth ? sourceMonth + ' ' : '') + (sourceRawDay ? '(' + sourceRawDay + ')' : '')
+                    : '-';
+                setDetailText(detailNodes.source, sourceText, '-');
+
+                if (detailNodes.groupLink) {
+                    const groupUrl = String(item.dataset.meetingGroupUrl || '').trim();
+                    if (groupUrl) {
+                        detailNodes.groupLink.href = groupUrl;
+                        detailNodes.groupLink.classList.remove('disabled');
+                        detailNodes.groupLink.removeAttribute('aria-disabled');
+                    } else {
+                        detailNodes.groupLink.href = '#';
+                        detailNodes.groupLink.classList.add('disabled');
+                        detailNodes.groupLink.setAttribute('aria-disabled', 'true');
+                    }
+                }
+
+                if (detailsModal) {
+                    detailsModal.show();
+                }
+            });
+        });
+
+        applyFilter('all');
+    })();
 </script>
 {% endblock %}

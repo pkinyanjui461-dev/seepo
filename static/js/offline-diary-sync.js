@@ -79,6 +79,40 @@
     return true;
   }
 
+  function selectionKey(item) {
+    return String(item.diaryId) + ':' + String(item.field || '');
+  }
+
+  function getSelectionItems() {
+    return getQueue().map(function (item) {
+      const fieldLabel = String(item.field || '').toUpperCase();
+      return {
+        key: selectionKey(item),
+        label: 'Diary #' + item.diaryId + ' - ' + fieldLabel,
+        updatedAt: item.updatedAt || '',
+      };
+    });
+  }
+
+  function deleteSelectionItems(keys) {
+    const keySet = new Set(Array.isArray(keys) ? keys.map(String) : []);
+    if (!keySet.size) {
+      return 0;
+    }
+
+    const queue = getQueue();
+    const remaining = queue.filter(function (item) {
+      return !keySet.has(selectionKey(item));
+    });
+
+    const deleted = queue.length - remaining.length;
+    if (deleted > 0) {
+      setQueue(remaining);
+    }
+
+    return deleted;
+  }
+
   async function pushUpdate(item) {
     const response = await fetch('/groups/api/diary/' + item.diaryId + '/update/', {
       method: 'POST',
@@ -148,6 +182,8 @@
     getQueue: getQueue,
     queueUpdate: queueUpdate,
     syncNow: syncNow,
+    getSelectionItems: getSelectionItems,
+    deleteSelectionItems: deleteSelectionItems,
     pendingCount: function () {
       return getQueue().length;
     },

@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=9">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=10">
     <link rel="manifest" href="{% url 'web_manifest' %}">
     <meta name="theme-color" content="#6C5DD3">
     <style>
@@ -698,7 +698,7 @@
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=20"></script>
+<script src="{% static 'js/sw-register.js' %}?v=21"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
@@ -740,9 +740,21 @@
                 monthly_form: 'Monthly Form',
                 expense: 'Expense',
                 user: 'User',
+                diary: 'Diary',
+                draft: 'Draft',
             };
 
             return map[modelName] || String(modelName || 'Record');
+        }
+
+        function sourceDisplayName(sourceName) {
+            const map = {
+                model: 'Model Queue',
+                diary: 'Diary Queue',
+                draft: 'Draft Queue',
+            };
+
+            return map[sourceName] || 'Queue';
         }
 
         function formatUpdatedAt(value) {
@@ -778,6 +790,8 @@
                 return {
                     model: checkbox.getAttribute('data-model') || '',
                     localId: Number(checkbox.getAttribute('data-local-id')),
+                    source: checkbox.getAttribute('data-source') || 'model',
+                    key: checkbox.getAttribute('data-key') || '',
                 };
             });
         }
@@ -820,6 +834,8 @@
                 checkbox.className = 'pending-sync-checkbox form-check-input mt-0';
                 checkbox.setAttribute('data-model', item.model);
                 checkbox.setAttribute('data-local-id', String(item.localId));
+                checkbox.setAttribute('data-source', item.source || 'model');
+                checkbox.setAttribute('data-key', String(item.key || ''));
 
                 const body = document.createElement('div');
 
@@ -834,10 +850,15 @@
                 modelPill.className = 'pending-sync-model-pill';
                 modelPill.textContent = modelDisplayName(item.model);
 
+                const sourcePill = document.createElement('span');
+                sourcePill.className = 'pending-sync-model-pill';
+                sourcePill.textContent = sourceDisplayName(item.source || 'model');
+
                 const updated = document.createElement('span');
                 updated.textContent = formatUpdatedAt(item.updatedAt);
 
                 meta.appendChild(modelPill);
+                meta.appendChild(sourcePill);
                 meta.appendChild(updated);
                 body.appendChild(title);
                 body.appendChild(meta);
@@ -857,8 +878,47 @@
                 return;
             }
 
-            const items = await window.seepoOfflineDb.getPendingRecordsForSelection();
-            renderPendingRows(items);
+            const modelItems = await window.seepoOfflineDb.getPendingRecordsForSelection();
+            const decoratedModelItems = modelItems.map(function (item) {
+                return {
+                    source: 'model',
+                    model: item.model,
+                    localId: item.localId,
+                    key: item.model + ':' + String(item.localId),
+                    label: item.label,
+                    updatedAt: item.updatedAt,
+                };
+            });
+
+            const diaryItems =
+                window.seepoOfflineDiary && typeof window.seepoOfflineDiary.getSelectionItems === 'function'
+                    ? window.seepoOfflineDiary.getSelectionItems().map(function (item) {
+                          return {
+                              source: 'diary',
+                              model: 'diary',
+                              localId: -1,
+                              key: item.key,
+                              label: item.label,
+                              updatedAt: item.updatedAt,
+                          };
+                      })
+                    : [];
+
+            const draftItems =
+                window.seepoOfflineDraftQueue && typeof window.seepoOfflineDraftQueue.getSelectionItems === 'function'
+                    ? window.seepoOfflineDraftQueue.getSelectionItems().map(function (item) {
+                          return {
+                              source: 'draft',
+                              model: 'draft',
+                              localId: -1,
+                              key: item.key,
+                              label: item.label,
+                              updatedAt: item.updatedAt,
+                          };
+                      })
+                    : [];
+
+            renderPendingRows([].concat(decoratedModelItems, diaryItems, draftItems));
         }
 
         function getDeletePendingModal() {
@@ -1005,7 +1065,44 @@
                 confirmDeletePendingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
 
                 try {
-                    const deletedCount = await window.seepoOfflineDb.deletePendingRecords(selectedRows);
+                    const modelRows = selectedRows
+                        .filter(function (item) {
+                            return item.source === 'model';
+                        })
+                        .map(function (item) {
+                            return {
+                                model: item.model,
+                                localId: item.localId,
+                            };
+                        });
+
+                    const diaryKeys = selectedRows
+                        .filter(function (item) {
+                            return item.source === 'diary';
+                        })
+                        .map(function (item) {
+                            return item.key;
+                        });
+
+                    const draftKeys = selectedRows
+                        .filter(function (item) {
+                            return item.source === 'draft';
+                        })
+                        .map(function (item) {
+                            return item.key;
+                        });
+
+                    const modelDeleted = await window.seepoOfflineDb.deletePendingRecords(modelRows);
+                    const diaryDeleted =
+                        window.seepoOfflineDiary && typeof window.seepoOfflineDiary.deleteSelectionItems === 'function'
+                            ? window.seepoOfflineDiary.deleteSelectionItems(diaryKeys)
+                            : 0;
+                    const draftDeleted =
+                        window.seepoOfflineDraftQueue && typeof window.seepoOfflineDraftQueue.deleteSelectionItems === 'function'
+                            ? window.seepoOfflineDraftQueue.deleteSelectionItems(draftKeys)
+                            : 0;
+
+                    const deletedCount = modelDeleted + diaryDeleted + draftDeleted;
                     await loadPendingRows();
 
                     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
