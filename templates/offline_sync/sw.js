@@ -1,18 +1,32 @@
 {% load static %}
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
+const NAVIGATION_ROUTE_FALLBACKS = [
+  { prefix: '/accounts/', fallback: '{% url "dashboard" %}' },
+  { prefix: '/groups/', fallback: '/groups/' },
+  { prefix: '/members/', fallback: '/groups/' },
+  { prefix: '/finance/', fallback: '/finance/expenses/' },
+  { prefix: '/reports/', fallback: '/reports/' },
+  { prefix: '/offline/', fallback: OFFLINE_FALLBACK_URL },
+  { prefix: '/', fallback: '{% url "dashboard" %}' },
+];
 
 const APP_SHELL_URLS = [
   OFFLINE_FALLBACK_URL,
   '{% url "dashboard" %}',
   '/accounts/login/',
+  '/accounts/profile/',
+  '/accounts/settings/',
+  '/accounts/users/',
+  '/accounts/users/create/',
   '/groups/',
   '/groups/create/',
   '/groups/diary/',
   '/finance/expenses/',
   '/reports/',
+  '/reports/entities/',
   '/manifest.webmanifest',
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
@@ -102,6 +116,46 @@ async function networkFirst(request) {
   }
 }
 
+function getNavigationFallback(pathname) {
+  const matched = NAVIGATION_ROUTE_FALLBACKS.find((entry) => pathname.startsWith(entry.prefix));
+  return matched ? matched.fallback : OFFLINE_FALLBACK_URL;
+}
+
+async function navigationNetworkFirst(request) {
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open(RUNTIME_CACHE);
+    if (response && (response.ok || response.type === 'opaque')) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) {
+      return cached;
+    }
+
+    const requestUrl = new URL(request.url);
+    const routeFallbackUrl = getNavigationFallback(requestUrl.pathname);
+    const routeFallback = await caches.match(routeFallbackUrl, { ignoreSearch: true });
+    if (routeFallback) {
+      return routeFallback;
+    }
+
+    const offlineFallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
+    if (offlineFallback) {
+      return offlineFallback;
+    }
+
+    return new Response('Offline. Please reconnect and retry.', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
@@ -114,7 +168,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(networkFirst(event.request));
+    event.respondWith(navigationNetworkFirst(event.request));
     return;
   }
 

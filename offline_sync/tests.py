@@ -231,3 +231,19 @@ class OfflineSyncApiTests(TestCase):
         body = response.content.decode("utf-8")
         self.assertIn("OFFLINE_FALLBACK_URL", body)
         self.assertIn("/offline/", body)
+
+    def test_service_worker_includes_all_route_fallbacks(self):
+        self.client.logout()
+        response = self.client.get(self.sw_url)
+
+        self.assertEqual(response.status_code, 200)
+
+        body = response.content.decode("utf-8")
+        self.assertIn("NAVIGATION_ROUTE_FALLBACKS", body)
+        self.assertIn("/accounts/", body)
+        self.assertIn("/groups/", body)
+        self.assertIn("/members/", body)
+        self.assertIn("/finance/", body)
+        self.assertIn("/reports/", body)
+        self.assertIn("/accounts/users/create/", body)
+        self.assertIn("/reports/entities/", body)
