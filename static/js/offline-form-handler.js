@@ -1,9 +1,5 @@
 (function () {
-  function showOfflineActionMessage(formElement) {
-    const message =
-      formElement.getAttribute('data-online-required-message') ||
-      'You are offline. This action requires internet access.';
-
+  function showToastMessage(message) {
     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
       window.seepoOfflineSync.showToast(message);
       return;
@@ -12,7 +8,72 @@
     alert(message);
   }
 
-  function onUnsupportedOfflineSubmit(event) {
+  function showOfflineActionMessage(formElement) {
+    const message =
+      formElement.getAttribute('data-online-required-message') ||
+      'You are offline. This action requires internet access.';
+
+    showToastMessage(message);
+  }
+
+  async function tryHandleOfflineDelete(formElement) {
+    const modelName = (formElement.getAttribute('data-offline-delete-model') || '').trim();
+    const clientUuid = (formElement.getAttribute('data-offline-delete-client-uuid') || '').trim();
+
+    if (!modelName || !clientUuid) {
+      return false;
+    }
+
+    if (
+      !window.seepoOfflineDb ||
+      typeof window.seepoOfflineDb.getPendingRecordByClientUuid !== 'function' ||
+      typeof window.seepoOfflineDb.deletePendingRecordByClientUuid !== 'function'
+    ) {
+      showToastMessage('Offline delete is unavailable on this page.');
+      return true;
+    }
+
+    const pendingRecord = await window.seepoOfflineDb.getPendingRecordByClientUuid(modelName, clientUuid);
+    if (!pendingRecord) {
+      const deniedMessage =
+        formElement.getAttribute('data-offline-delete-denied-message') ||
+        'Offline delete is allowed only for records created locally and not yet synced.';
+      showToastMessage(deniedMessage);
+      return true;
+    }
+
+    const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid(modelName, clientUuid);
+    if (!deleted) {
+      showToastMessage('Could not remove the pending record from local storage.');
+      return true;
+    }
+
+    const rowSelector = (formElement.getAttribute('data-offline-delete-row-selector') || '').trim();
+    if (rowSelector) {
+      const rowElement = document.querySelector(rowSelector);
+      if (rowElement) {
+        rowElement.remove();
+      }
+    }
+
+    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+      await window.seepoOfflineSync.refreshStatus();
+    }
+
+    const successMessage =
+      formElement.getAttribute('data-offline-delete-success-message') ||
+      'Removed pending offline record from this device.';
+    showToastMessage(successMessage);
+
+    const redirectUrl = (formElement.getAttribute('data-offline-delete-redirect-url') || '').trim();
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+
+    return true;
+  }
+
+  async function onUnsupportedOfflineSubmit(event) {
     const form = event.currentTarget;
     const method = (form.getAttribute('method') || 'GET').toUpperCase();
 
@@ -25,6 +86,12 @@
     }
 
     event.preventDefault();
+
+    const handledOfflineDelete = await tryHandleOfflineDelete(form);
+    if (handledOfflineDelete) {
+      return;
+    }
+
     showOfflineActionMessage(form);
   }
 

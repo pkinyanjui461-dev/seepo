@@ -145,6 +145,34 @@
     return deleted;
   }
 
+  async function getPendingRecordByClientUuid(modelName, clientUuid) {
+    const normalizedModel = String(modelName || '').trim();
+    const normalizedClientUuid = String(clientUuid || '').trim();
+
+    if (!modelTableMap[normalizedModel] || !normalizedClientUuid) {
+      return null;
+    }
+
+    const table = tableForModel(normalizedModel);
+    const record = await table.where('client_uuid').equals(normalizedClientUuid).first();
+
+    if (!record || Number(record.synced) !== 0) {
+      return null;
+    }
+
+    return record;
+  }
+
+  async function deletePendingRecordByClientUuid(modelName, clientUuid) {
+    const pendingRecord = await getPendingRecordByClientUuid(modelName, clientUuid);
+    if (!pendingRecord) {
+      return false;
+    }
+
+    await tableForModel(modelName).delete(pendingRecord._localId);
+    return true;
+  }
+
   window.seepoOfflineDb = {
     db,
     modelTableMap,
@@ -152,6 +180,8 @@
     getPendingCount,
     getPendingBreakdown,
     getPendingRecordsForSelection,
-    deletePendingRecords
+    deletePendingRecords,
+    getPendingRecordByClientUuid,
+    deletePendingRecordByClientUuid
   };
 })();

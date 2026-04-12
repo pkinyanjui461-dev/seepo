@@ -161,7 +161,7 @@
                             </thead>
                             <tbody>
                                 {% for exp in expenses %}
-                                <tr>
+                                <tr id="expense-row-{{ exp.pk }}">
                                     <td>{{ exp.date|date:"M d, Y" }}</td>
                                     <td class="font-weight-bold expense-name-cell">{{ exp.name }}</td>
                                     <td class="text-danger font-weight-bold">{{ exp.amount|intcomma }}</td>
@@ -170,7 +170,12 @@
                                             <form method="POST"
                                                 action="{% url 'expense_delete' exp.pk %}"
                                                 class="d-inline"
-                                                data-online-required-message="Expense deletion requires internet to protect financial audit consistency."
+                                                data-online-required-message="Expense deletion requires internet unless this expense is still pending local sync."
+                                                data-offline-delete-model="expense"
+                                                data-offline-delete-client-uuid="{{ exp.client_uuid }}"
+                                                data-offline-delete-row-selector="#expense-row-{{ exp.pk }}"
+                                                data-offline-delete-success-message="Removed pending offline expense from this device."
+                                                data-offline-delete-denied-message="This expense is already synced. Delete it while online."
                                                 onsubmit="return confirm('Are you sure you want to delete this expense?');">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Expense">

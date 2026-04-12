@@ -84,6 +84,12 @@ Do not delete or rename stores without Dexie migration code.
 - Keep shell pre-cache list aligned with template static imports.
 - For navigation requests, use network-first with cached/fallback response.
 - Bump SW cache version when changing cache strategy.
+- Mandatory on any SW script change: bump all SW version markers in the same commit.
+	- `templates/offline_sync/sw.js`: `CACHE_VERSION`
+	- `templates/offline_sync/sw.js`: `SW_REGISTER_ASSET_VERSION`
+	- `static/js/sw-register.js`: `SW_ASSET_VERSION`
+	- `templates/base.html`: `sw-register.js?v=...` query version (if present)
+- If these are not bumped together, clients can stay on stale SW/caches after deploy.
 
 ## Static Asset Constraints
 

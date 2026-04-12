@@ -10,16 +10,21 @@
                 <div class="d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px; background-color: #FFE8E8; color: #DC3545; border-radius: 50%;">
                     <i class="fas fa-user-slash fs-1"></i>
                 </div>
-                
+
                 <h3 class="fw-bold mb-3" style="color: var(--text-main);">Delete User?</h3>
                 <p class="text-muted mb-4">
-                    Are you sure you want to delete user <strong>{{ user_to_delete.get_full_name|default:user_to_delete.username }}</strong>? 
+                    Are you sure you want to delete user <strong>{{ user_to_delete.get_full_name|default:user_to_delete.username }}</strong>?
                     This will remove their access to the system entirely.
                 </p>
-                
+
                 <div class="d-grid gap-2">
                       <form method="POST"
-                          data-online-required-message="User deletion requires internet to safely remove access and audit records.">
+                          data-online-required-message="User deletion requires internet unless this user record is still pending local sync."
+                          data-offline-delete-model="user"
+                          data-offline-delete-client-uuid="{{ user_to_delete.client_uuid }}"
+                          data-offline-delete-redirect-url="{% url 'user_list' %}"
+                          data-offline-delete-success-message="Removed pending offline user from this device."
+                          data-offline-delete-denied-message="This user is already synced. Delete while online.">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger w-100 py-3 mb-2" style="border-radius: 10px; font-weight: 600;">
                             <i class="fas fa-trash-alt me-2"></i>Yes, Delete User

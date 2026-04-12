@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Delete Member: {{ member.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+            <div style="height: 6px; width: 100%; background-color: #FF754C;"></div>
+            <div class="card-body p-4 text-center">
+                <div class="d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px; background-color: #FFF0ED; color: #FF754C; border-radius: 50%;">
+                    <i class="fas fa-user-minus fs-1"></i>
+                </div>
+
+                <h3 class="fw-bold mb-3" style="color: var(--text-main);">Delete Member?</h3>
+                <p class="text-muted mb-4">
+                    You are about to remove <strong>{{ member.name }}</strong> from <strong>{{ group.name }}</strong>.
+                </p>
+
+                <div class="alert alert-danger border-0 mb-4" style="background-color: #FFF0ED; color: #842029; border-radius: 12px; text-align: left;">
+                    <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Warning</h6>
+                    <p class="mb-0 small">This action is permanent and cannot be undone.</p>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <form method="POST"
+                          data-online-required-message="Member deletion requires internet unless this member was created locally and is still pending sync."
+                          data-offline-delete-model="member"
+                          data-offline-delete-client-uuid="{{ member.client_uuid }}"
+                          data-offline-delete-redirect-url="{% url 'group_detail' group.pk %}"
+                          data-offline-delete-success-message="Removed pending offline member from this device."
+                          data-offline-delete-denied-message="This member is already synced. Delete it while online.">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-100 py-3 mb-2" style="border-radius: 10px; font-weight: 600;">
+                            <i class="fas fa-trash-alt me-2"></i>Yes, Delete Member
+                        </button>
+                    </form>
+                    <a href="{% url 'group_detail' group.pk %}" class="btn btn-outline-secondary w-100 py-3" style="border-radius: 10px; font-weight: 600;">
+                        No, Keep Member
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,6 +8,17 @@
     <a href="{% url 'group_create' %}" class="btn btn-primary px-4 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-plus me-2"></i>New Group</a>
 </div>
 
+<div id="offline-pending-groups-wrap" class="card shadow-sm border-0 mb-4 d-none" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold mb-0" style="color: var(--text-main);">Offline Pending Groups</h5>
+            <span id="offline-pending-groups-count" class="badge" style="background-color: #ECEBFA; color: var(--primary-color);">0</span>
+        </div>
+        <p class="text-muted small mb-3">Groups saved on this device and not synced yet. You can add members to them now, then sync when online.</p>
+        <div id="offline-pending-groups-list" class="d-flex flex-column gap-2"></div>
+    </div>
+</div>
+
 <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -46,4 +57,308 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-member-modal" tabindex="-1" aria-labelledby="offline-member-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-member-modal-title">Add Member (Offline Pending Group)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="offline-member-modal-group-name" class="small text-muted mb-3"></p>
+                <input type="hidden" id="offline-member-group-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-member-number" class="form-label fw-bold">Member Number (Optional)</label>
+                    <input id="offline-member-number" class="form-control" type="number" min="1" placeholder="e.g. 1">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-name" class="form-label fw-bold">Member Name</label>
+                    <input id="offline-member-name" class="form-control" type="text" placeholder="Full Name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-phone" class="form-label fw-bold">Phone (Optional)</label>
+                    <input id="offline-member-phone" class="form-control" type="text" placeholder="+254...">
+                </div>
+                <div class="mb-0">
+                    <label for="offline-member-join-date" class="form-label fw-bold">Join Date</label>
+                    <input id="offline-member-join-date" class="form-control" type="date" required>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-member-btn" class="btn btn-primary">Save Member Offline</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const pendingWrap = document.getElementById('offline-pending-groups-wrap');
+    const pendingList = document.getElementById('offline-pending-groups-list');
+    const pendingCount = document.getElementById('offline-pending-groups-count');
+
+    const memberModalEl = document.getElementById('offline-member-modal');
+    const memberGroupClientUuid = document.getElementById('offline-member-group-client-uuid');
+    const memberModalGroupName = document.getElementById('offline-member-modal-group-name');
+    const memberNumberInput = document.getElementById('offline-member-number');
+    const memberNameInput = document.getElementById('offline-member-name');
+    const memberPhoneInput = document.getElementById('offline-member-phone');
+    const memberJoinDateInput = document.getElementById('offline-member-join-date');
+    const saveOfflineMemberBtn = document.getElementById('save-offline-member-btn');
+
+    let memberModal = null;
+
+    if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
+        return;
+    }
+
+    function showToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+
+        alert(message);
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return '-';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString();
+    }
+
+    function getMemberModal() {
+        if (!memberModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!memberModal) {
+            memberModal = window.bootstrap.Modal.getOrCreateInstance(memberModalEl);
+        }
+
+        return memberModal;
+    }
+
+    async function getPendingGroups() {
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        const pendingGroups = await groupsTable.where('synced').equals(0).toArray();
+        pendingGroups.sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+        return pendingGroups;
+    }
+
+    async function countPendingMembers(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const members = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return members.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).length;
+    }
+
+    async function removePendingGroup(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const pendingMembers = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+
+        for (const member of pendingMembers) {
+            if (Number(member.synced) === 0) {
+                await membersTable.delete(member._localId);
+            }
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('group', groupClientUuid);
+        if (!deleted) {
+            showToast('This group is already synced. Delete it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline group and its pending members.');
+        await renderPendingGroups();
+    }
+
+    function openOfflineMemberModal(groupClientUuid, groupName) {
+        if (!memberGroupClientUuid || !memberNameInput || !memberJoinDateInput) {
+            return;
+        }
+
+        memberGroupClientUuid.value = groupClientUuid;
+        memberModalGroupName.textContent = 'Group: ' + groupName;
+        memberNumberInput.value = '';
+        memberNameInput.value = '';
+        memberPhoneInput.value = '';
+        memberJoinDateInput.value = new Date().toISOString().slice(0, 10);
+
+        const modal = getMemberModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function saveOfflineMember() {
+        const groupClientUuid = (memberGroupClientUuid.value || '').trim();
+        const memberName = (memberNameInput.value || '').trim();
+        const joinDate = (memberJoinDateInput.value || '').trim();
+
+        if (!groupClientUuid || !memberName || !joinDate) {
+            showToast('Member name and join date are required.');
+            return;
+        }
+
+        const memberPayload = {
+            group_client_uuid: groupClientUuid,
+            member_number: (memberNumberInput.value || '').trim(),
+            name: memberName,
+            phone: (memberPhoneInput.value || '').trim(),
+            join_date: joinDate,
+            is_active: true,
+        };
+
+        await window.seepoOfflineSync.saveOffline('member', memberPayload);
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getMemberModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Member saved offline for this pending group.');
+        await renderPendingGroups();
+    }
+
+    async function syncNow() {
+        if (!navigator.onLine) {
+            showToast('You are offline. Connect to internet to sync.');
+            return;
+        }
+
+        if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+            showToast('Sync tools are unavailable on this page.');
+            return;
+        }
+
+        await window.seepoOfflineSync.syncNow();
+        await renderPendingGroups();
+        window.location.reload();
+    }
+
+    async function renderPendingGroups() {
+        const groups = await getPendingGroups();
+
+        if (!groups.length) {
+            pendingWrap.classList.add('d-none');
+            pendingList.innerHTML = '';
+            pendingCount.textContent = '0';
+            return;
+        }
+
+        pendingWrap.classList.remove('d-none');
+        pendingCount.textContent = String(groups.length);
+
+        const fragments = [];
+        for (const group of groups) {
+            const memberCount = await countPendingMembers(group.client_uuid);
+            fragments.push(
+                '<div class="border rounded p-3" style="border-color: var(--border-color) !important;">' +
+                    '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
+                        '<div>' +
+                            '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                            '<div class="text-muted small">' +
+                                'Location: ' + htmlEscape(group.location || '-') +
+                                ' | Created: ' + htmlEscape(formatDate(group.date_created)) +
+                                ' | Pending Members: ' + memberCount +
+                            '</div>' +
+                        '</div>' +
+                        '<span class="badge" style="background-color:#FFF3CD;color:#7C5400;">Pending Sync</span>' +
+                    '</div>' +
+                    '<div class="d-flex flex-wrap gap-2 mt-3">' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '">' +
+                            '<i class="fas fa-user-plus me-1"></i>Add Member Offline' +
+                        '</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now">' +
+                            '<i class="fas fa-rotate me-1"></i>Sync Now' +
+                        '</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '">' +
+                            '<i class="fas fa-trash me-1"></i>Remove Offline' +
+                        '</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        pendingList.innerHTML = fragments.join('');
+    }
+
+    pendingList.addEventListener('click', async function (event) {
+        const button = event.target.closest('button[data-action]');
+        if (!button) {
+            return;
+        }
+
+        const action = button.getAttribute('data-action');
+        if (action === 'add-member') {
+            openOfflineMemberModal(
+                button.getAttribute('data-client-uuid') || '',
+                button.getAttribute('data-group-name') || 'Pending Group'
+            );
+            return;
+        }
+
+        if (action === 'remove-group') {
+            const groupClientUuid = button.getAttribute('data-client-uuid') || '';
+            await removePendingGroup(groupClientUuid);
+            return;
+        }
+
+        if (action === 'sync-now') {
+            await syncNow();
+        }
+    });
+
+    if (saveOfflineMemberBtn) {
+        saveOfflineMemberBtn.addEventListener('click', async function () {
+            await saveOfflineMember();
+        });
+    }
+
+    window.addEventListener('online', function () {
+        renderPendingGroups();
+    });
+
+    window.addEventListener('seepo:queue-status', function () {
+        renderPendingGroups();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderPendingGroups();
+    });
+})();
+</script>
 {% endblock %}

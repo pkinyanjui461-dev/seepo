@@ -17,7 +17,7 @@ def member_list(request, group_pk):
 @login_required
 def member_create(request, group_pk):
     group = get_object_or_404(Group, pk=group_pk)
-    form = MemberForm(request.POST or None)
+    form = MemberForm(request.POST or None, group=group)
     if request.method == 'POST' and form.is_valid():
         member = form.save(commit=False)
         member.group = group
@@ -40,7 +40,7 @@ def member_create(request, group_pk):
 def member_edit(request, pk):
     member = get_object_or_404(Member, pk=pk)
     group = member.group
-    form = MemberForm(request.POST or None, instance=member)
+    form = MemberForm(request.POST or None, instance=member, group=group)
     if request.method == 'POST' and form.is_valid():
         try:
             form.save()
