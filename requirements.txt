@@ -20,3 +20,4 @@ svglib==1.5.1
 reportlab>=4.0.4,<4.1
 pyHanko
 pyhanko-certvalidator
+chardet<6

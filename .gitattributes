@@ -1,0 +1,17 @@
+# Enforce LF line endings for all text files in this repository.
+* text=auto eol=lf
+
+# Keep known binary assets untouched by EOL normalization.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.sqlite3 binary
+*.db binary
+*.exe binary
+*.o binary
