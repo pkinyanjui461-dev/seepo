@@ -33,6 +33,8 @@ class OfflineSyncApiTests(TestCase):
         self.queue_url = reverse("sync_debug_queue")
         self.status_url = reverse("sync_debug_status")
         self.clear_url = reverse("sync_debug_clear")
+        self.sw_url = reverse("service_worker")
+        self.offline_url = reverse("offline_fallback")
 
     def _push(self, model_name, records):
         return self.client.post(
@@ -211,3 +213,21 @@ class OfflineSyncApiTests(TestCase):
         self.assertEqual(self.client.get(self.ping_url).status_code, 200)
         self.client.logout()
         self.assertEqual(self.client.get(self.ping_url).status_code, 302)
+
+    def test_offline_fallback_route_is_available_without_login(self):
+        self.client.logout()
+        response = self.client.get(self.offline_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="pending-count"')
+
+    def test_service_worker_includes_offline_fallback(self):
+        self.client.logout()
+        response = self.client.get(self.sw_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("application/javascript"))
+
+        body = response.content.decode("utf-8")
+        self.assertIn("OFFLINE_FALLBACK_URL", body)
+        self.assertIn("/offline/", body)

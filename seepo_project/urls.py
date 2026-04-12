@@ -20,6 +20,7 @@ def robots_view(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', dashboard, name='dashboard'),
+    path('offline/', offline_sync_views.offline_fallback, name='offline_fallback'),
     path('api/sync/', include('offline_sync.urls')),
     path('accounts/', include('accounts.urls')),
     path('groups/', include('groups.urls')),

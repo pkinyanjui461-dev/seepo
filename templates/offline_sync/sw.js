@@ -1,39 +1,74 @@
 {% load static %}
-const CACHE_NAME = 'seepo-offline-v1';
+const CACHE_VERSION = 'v2';
+const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
+const OFFLINE_FALLBACK_URL = '/offline/';
+
 const APP_SHELL_URLS = [
-  '/',
+  OFFLINE_FALLBACK_URL,
+  '{% url "dashboard" %}',
+  '/accounts/login/',
+  '/groups/',
+  '/groups/create/',
+  '/groups/diary/',
+  '/finance/expenses/',
+  '/reports/',
   '/manifest.webmanifest',
+  '{% static "css/main.css" %}',
+  '{% static "js/sidebar.js" %}',
+  '{% static "js/calculations.js" %}',
   '{% static "js/offline-db.js" %}',
   '{% static "js/offline-sync.js" %}',
   '{% static "js/offline-form-handler.js" %}',
   '{% static "js/sw-register.js" %}',
+  '{% static "img/logo.png" %}',
   '{% static "favicon.ico" %}',
+  '{% static "robots.txt" %}',
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_URLS)).then(() => self.skipWaiting())
+async function precacheAppShell() {
+  const cache = await caches.open(SHELL_CACHE);
+
+  await Promise.all(
+    APP_SHELL_URLS.map(async (url) => {
+      try {
+        await cache.add(new Request(url, { cache: 'reload' }));
+      } catch (error) {
+        console.warn('[SW] Precache failed for:', url, error);
+      }
+    })
   );
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(precacheAppShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(
+        (keys) =>
+          Promise.all(
+            keys
+              .filter((key) => key !== SHELL_CACHE && key !== RUNTIME_CACHE)
+              .map((key) => caches.delete(key))
+          )
+      )
       .then(() => self.clients.claim())
   );
 });
 
 async function cacheFirst(request) {
-  const cached = await caches.match(request);
+  const cached = await caches.match(request, { ignoreSearch: true });
   if (cached) {
     return cached;
   }
 
   const response = await fetch(request);
-  const cache = await caches.open(CACHE_NAME);
-  if (response && response.ok) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  if (response && (response.ok || response.type === 'opaque')) {
     cache.put(request, response.clone());
   }
   return response;
@@ -42,17 +77,28 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    const cache = await caches.open(CACHE_NAME);
-    if (response && response.ok) {
+    const cache = await caches.open(RUNTIME_CACHE);
+    if (response && (response.ok || response.type === 'opaque')) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch (_error) {
-    const cached = await caches.match(request);
+  } catch (error) {
+    const cached = await caches.match(request, { ignoreSearch: true });
     if (cached) {
       return cached;
     }
-    throw _error;
+
+    const fallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
+    if (fallback) {
+      return fallback;
+    }
+
+    return new Response('Offline. Please reconnect and retry.', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
   }
 }
 
@@ -63,7 +109,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (requestUrl.pathname.startsWith('/api/sync/')) {
+  if (requestUrl.origin === self.location.origin && requestUrl.pathname.startsWith('/api/sync/')) {
     return;
   }
 
@@ -74,5 +120,16 @@ self.addEventListener('fetch', (event) => {
 
   if (['script', 'style', 'image', 'font'].includes(event.request.destination)) {
     event.respondWith(cacheFirst(event.request));
+    return;
+  }
+
+  if (requestUrl.origin === self.location.origin) {
+    event.respondWith(networkFirst(event.request));
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });

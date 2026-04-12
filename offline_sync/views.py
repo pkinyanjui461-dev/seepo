@@ -253,3 +253,8 @@ def web_manifest(request):
     response = JsonResponse(manifest)
     response['Content-Type'] = 'application/manifest+json'
     return response
+
+
+@require_GET
+def offline_fallback(request):
+    return render(request, 'offline_sync/offline.html')

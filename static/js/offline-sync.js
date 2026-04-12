@@ -10,12 +10,15 @@
       this.isSyncing = false;
       this.lastSyncError = null;
       this.statusTimer = null;
+      this.preloadTimer = null;
+      this.preloadIntervalMs = 120000;
     }
 
     async init() {
       window.addEventListener('online', async () => {
         await this.refreshStatus();
         await this.syncNow();
+        await this.preloadReadData();
       });
 
       window.addEventListener('offline', async () => {
@@ -26,9 +29,34 @@
         await this.refreshStatus();
       }, 5000);
 
+      this.preloadTimer = setInterval(async () => {
+        await this.preloadReadData();
+      }, this.preloadIntervalMs);
+
       await this.refreshStatus();
       if (navigator.onLine) {
         await this.syncNow();
+        await this.preloadReadData();
+      }
+    }
+
+    async preloadReadData() {
+      if (!navigator.onLine || this.isSyncing) {
+        return;
+      }
+
+      try {
+        for (const modelName of MODEL_ORDER) {
+          await this.pullModel(modelName);
+        }
+
+        const metaTable = window.seepoOfflineDb.db.table('sync_meta');
+        await metaTable.put({
+          model: '_last_read_preload',
+          last_pull_ts: Math.floor(Date.now() / 1000)
+        });
+      } catch (error) {
+        console.error('Read-data preload failed:', error);
       }
     }
 
@@ -141,18 +169,18 @@
       this.lastSyncError = null;
       await this.refreshStatus();
 
-      try {
-        for (const modelName of MODEL_ORDER) {
+      for (const modelName of MODEL_ORDER) {
+        try {
           await this.pushModel(modelName);
           await this.pullModel(modelName);
+        } catch (error) {
+          this.lastSyncError = error;
+          console.error('Sync failed for model', modelName, error);
         }
-      } catch (error) {
-        this.lastSyncError = error;
-        console.error('Sync failed:', error);
-      } finally {
-        this.isSyncing = false;
-        await this.refreshStatus();
       }
+
+      this.isSyncing = false;
+      await this.refreshStatus();
     }
 
     async pushModel(modelName) {
