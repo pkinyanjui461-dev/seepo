@@ -1,5 +1,7 @@
 {% load static %}
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
+const CSS_ASSET_VERSION = '8';
+const SW_REGISTER_ASSET_VERSION = '16';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -30,6 +32,7 @@ const APP_SHELL_URLS = [
   '/reports/',
   '/reports/entities/',
   '/manifest.webmanifest',
+  '{% static "css/main.css" %}?v=' + CSS_ASSET_VERSION,
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
@@ -39,6 +42,7 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-diary-sync.js" %}',
   '{% static "js/offline-draft-queue.js" %}',
   '{% static "js/offline-form-handler.js" %}',
+  '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',
   '{% static "img/logo.png" %}',
   '{% static "img/pwa-icon-192.png" %}',
