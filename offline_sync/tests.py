@@ -250,6 +250,7 @@ class OfflineSyncApiTests(TestCase):
         self.assertIn("/reports/", body)
         self.assertIn("/accounts/users/create/", body)
         self.assertIn("/reports/entities/", body)
+        self.assertIn("dev-log-tools.js", body)
 
     def test_service_worker_skips_api_requests(self):
         self.client.logout()

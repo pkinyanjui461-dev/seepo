@@ -113,6 +113,26 @@
         .host-ready-warn { background: #d97706; }
         .host-ready-error { background: #b91c1c; }
 
+        .copy-dev-logs-btn {
+            position: fixed;
+            right: 16px;
+            bottom: 58px;
+            z-index: 1090;
+            border: none;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+            color: #fff;
+            background: #334155;
+        }
+
+        .copy-dev-logs-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
         @media (max-width: 575.98px) {
             .offline-host-ready-badge {
                 left: 12px;
@@ -124,6 +144,12 @@
             .pwa-install-btn {
                 left: 12px;
                 bottom: 12px;
+            }
+
+            .copy-dev-logs-btn {
+                right: 12px;
+                bottom: 54px;
+                font-size: 0.72rem;
             }
         }
     </style>
@@ -398,6 +424,9 @@
 <div id="sync-toast" class="sync-toast" aria-live="polite"></div>
 <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">Offline Host: Checking...</div>
 <button id="pwa-install-btn" class="pwa-install-btn" type="button" hidden>Install App</button>
+{% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
+<button id="copy-dev-logs-btn" class="copy-dev-logs-btn" type="button">Copy Logs</button>
+{% endif %}
 
 <!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -406,6 +435,7 @@
 <script>lucide.createIcons();</script>
 <!-- Sidebar Toggle JS -->
 <script src="{% static 'js/sidebar.js' %}"></script>
+<script src="{% static 'js/dev-log-tools.js' %}"></script>
 <script src="{% static 'js/offline-db.js' %}"></script>
 <script src="{% static 'js/offline-sync.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>

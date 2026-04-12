@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -31,6 +31,7 @@ const APP_SHELL_URLS = [
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
+  '{% static "js/dev-log-tools.js" %}',
   '{% static "js/offline-db.js" %}',
   '{% static "js/offline-sync.js" %}',
   '{% static "js/offline-form-handler.js" %}',
