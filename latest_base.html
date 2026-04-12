@@ -165,7 +165,7 @@
     <!-- Page Content -->
     <div id="page-content-wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-card py-3 px-4 sticky-top border-bottom border-main">
-            <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
+            <div class="d-flex align-items-center">
                 <button id="menu-toggle" aria-label="Toggle sidebar" style="
                     background: linear-gradient(135deg, #6C5DD3 0%, #8B5CF6 100%);
                     border: none;
@@ -186,73 +186,10 @@
                     <span style="display:block;width:13px;height:2px;background:rgba(255,255,255,0.7);border-radius:2px;align-self:flex-start;margin-left:2px;"></span>
                     <span style="display:block;width:18px;height:2px;background:#fff;border-radius:2px;"></span>
                 </button>
-                <h2 class="fs-4 m-0 fw-bold header-title" style="color: var(--text-main); margin-right: auto !important;">{% block page_title %}Overview{% endblock %}</h2>
-                
-                <!-- MOBILE RIGHT ACTIONS: Bell & Profile -->
-                <div class="d-flex d-lg-none align-items-center ms-auto">
-                    <div class="dropdown me-3">
-                        <a class="nav-link second-text position-relative p-0" href="#" id="notifDropdownMobile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="d-flex align-items-center justify-content-center bg-app rounded-circle" style="width: 36px; height: 36px; border: 1px solid var(--border-color);">
-                                <i class="far fa-bell fs-5"></i>
-                                {% if unread_notifications_count > 0 %}
-                                <span class="position-absolute p-1 bg-danger border border-light rounded-circle" style="width: 10px; height: 10px; top: 0; right: 0;"></span>
-                                {% endif %}
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-0 bg-card position-absolute" aria-labelledby="notifDropdownMobile" style="width: 300px; border-radius: 12px; z-index: 1050;">
-                            <li class="px-3 py-3 border-bottom bg-app rounded-top">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold text-main">Notifications</span>
-                                    <span class="badge bg-primary rounded-pill">{{ unread_notifications_count }} New</span>
-                                </div>
-                            </li>
-                            <div style="max-height: 300px; overflow-y: auto;">
-                                {% for n in unread_notifications %}
-                                <li>
-                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'mark_notification_read' n.pk %}">
-                                        <div class="fw-bold small text-main">{{ n.title }}</div>
-                                        <div class="text-muted small mt-1 line-clamp-2" style="font-size: 0.8rem; line-height: 1.4;">{{ n.message }}</div>
-                                    </a>
-                                </li>
-                                {% empty %}
-                                <li class="px-3 py-5 text-center text-muted small">
-                                    <i class="fas fa-bell-slash d-block fs-3 mb-3 opacity-25"></i>
-                                    No new notifications
-                                </li>
-                                {% endfor %}
-                            </div>
-                            <li class="text-center bg-app rounded-bottom border-top">
-                                <a href="#" class="dropdown-item small py-2 text-primary fw-medium">View all notifications</a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center p-0" href="#" id="navbarDropdownMobile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=6C5DD3&color=fff&bold=true" class="rounded-circle" width="36" height="36" alt="User">
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 bg-card position-absolute mt-2" aria-labelledby="navbarDropdownMobile" style="border-radius: 12px; width: 220px; z-index: 1050;">
-                            <li class="px-3 py-2 border-bottom bg-app rounded-top mb-2">
-                                <div class="fw-bold small text-main">User Account</div>
-                            </li>
-                            <li><a class="dropdown-item py-2 text-main" href="{% url 'profile' %}"><i class="fas fa-user-circle me-3 text-muted"></i>My Profile</a></li>
-                            <li><a class="dropdown-item py-2 text-main" href="{% url 'settings' %}"><i class="fas fa-sliders-h me-3 text-muted"></i>Settings</a></li>
-                            <li><hr class="dropdown-divider border-main"></li>
-                            <li><a class="dropdown-item text-danger py-2" href="{% url 'logout' %}"><i class="fas fa-power-off me-3"></i>Sign Out</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- On mobile, only show a search bar below header without hamburger menu collapsing -->
-            <div class="d-lg-none w-100 mt-3">
-                <form action="{% url 'search' %}" method="GET" class="search-container d-flex align-items-center bg-app rounded-pill px-3 py-2">
-                    <i class="fas fa-search text-muted me-2 small"></i>
-                    <input type="text" name="q" class="form-control border-0 bg-transparent p-0" placeholder="Search Groups or Members..." style="font-size: 0.85rem; outline: none; box-shadow: none;">
-                </form>
+                <h2 class="fs-4 m-0 fw-bold" style="color: var(--text-main);">{% block page_title %}Overview{% endblock %}</h2>
             </div>
             
-            <button class="navbar-toggler d-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
