@@ -135,6 +135,17 @@ def _apply_member(payload: dict[str, Any], request) -> dict[str, Any]:
         except (TypeError, ValueError):
             raise ValueError('member_number is invalid.')
 
+    client_uuid = str(payload.get('client_uuid', '')).strip()
+    if member_number is not None:
+        duplicate_qs = Member.objects.filter(group=group, member_number=member_number)
+        if client_uuid:
+            duplicate_qs = duplicate_qs.exclude(client_uuid=client_uuid)
+        if duplicate_qs.exists():
+            raise ValueError(
+                f'member_number {member_number} already exists in this group. '
+                'Use a different member number.'
+            )
+
     return {
         'group': group,
         'member_number': member_number,

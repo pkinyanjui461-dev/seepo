@@ -4,6 +4,7 @@ from django.views.decorators.cache import cache_page
 from django.views.static import serve
 from django.conf import settings
 from pathlib import Path
+from accounts import views as accounts_views
 from seepo_project.dashboard import dashboard
 from offline_sync import views as offline_sync_views
 
@@ -18,7 +19,8 @@ def robots_view(request):
     return FileResponse(open(BASE_DIR / 'static' / 'robots.txt', 'rb'), content_type='text/plain')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', accounts_views.data_admin_console, name='admin_console_alias'),
+    path('django-admin/', admin.site.urls),
     path('', dashboard, name='dashboard'),
     path('offline/', offline_sync_views.offline_fallback, name='offline_fallback'),
     path('api/sync/', include('offline_sync.urls')),

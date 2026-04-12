@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Admin Console{% endblock %}
+{% block page_title %}Data Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .swiss-admin-shell {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    .swiss-admin-header {
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 16px;
+        margin-bottom: 12px;
+    }
+
+    .swiss-admin-title {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 3.8rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        line-height: 0.95;
+        text-transform: uppercase;
+        color: #0f172a;
+    }
+
+    .swiss-admin-subtitle {
+        margin-top: 10px;
+        margin-bottom: 0;
+        font-size: 0.88rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #334155;
+        max-width: 680px;
+    }
+
+    .swiss-model-nav {
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        border-radius: 0;
+    }
+
+    .swiss-model-link {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-decoration: none;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: #0f172a;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .swiss-model-link:last-child {
+        border-bottom: 0;
+    }
+
+    .swiss-model-link.active {
+        background: #0057ff;
+        color: #ffffff;
+    }
+
+    .swiss-model-count {
+        border-radius: 999px;
+        min-width: 24px;
+        text-align: center;
+        padding: 1px 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1e3a8a;
+    }
+
+    .swiss-model-link.active .swiss-model-count {
+        background: #ffffff;
+        color: #0057ff;
+    }
+
+    .swiss-panel {
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        padding: 16px;
+    }
+
+    .swiss-panel-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #0f172a;
+    }
+
+    .swiss-panel-subtitle {
+        margin-top: 6px;
+        margin-bottom: 0;
+        font-size: 0.76rem;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #475569;
+    }
+
+    .swiss-create-form {
+        margin-top: 18px;
+        margin-bottom: 18px;
+        border: 1px solid var(--border-color);
+        padding: 14px;
+        background: var(--muted-surface);
+    }
+
+    .swiss-form-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    .swiss-field-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    .swiss-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .swiss-field-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #334155;
+    }
+
+    .swiss-input,
+    .swiss-select,
+    .swiss-textarea {
+        border: 1px solid #94a3b8;
+        border-radius: 0;
+        background: #ffffff;
+        color: #0f172a;
+        font-size: 0.82rem;
+        padding: 7px 8px;
+    }
+
+    .swiss-textarea {
+        min-height: 66px;
+        resize: vertical;
+    }
+
+    .swiss-check {
+        width: 18px;
+        height: 18px;
+        margin-top: 6px;
+    }
+
+    .swiss-action-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+    }
+
+    .swiss-btn {
+        border: 1px solid #0f172a;
+        border-radius: 0;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        padding: 7px 12px;
+    }
+
+    .swiss-btn-primary {
+        background: #0057ff;
+        border-color: #0057ff;
+        color: #ffffff;
+    }
+
+    .swiss-btn-primary:hover,
+    .swiss-btn-primary:focus {
+        background: #0048d7;
+        border-color: #0048d7;
+        color: #ffffff;
+    }
+
+    .swiss-data-table {
+        margin-bottom: 0;
+        min-width: 100%;
+    }
+
+    .swiss-data-table thead th {
+        background: #0f172a;
+        color: #f8fafc;
+        border-bottom: 0;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 800;
+        white-space: nowrap;
+        padding: 10px 8px;
+    }
+
+    .swiss-data-table td {
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px;
+        vertical-align: top;
+    }
+
+    .swiss-id-col {
+        min-width: 88px;
+    }
+
+    .swiss-row-id {
+        font-weight: 800;
+        font-size: 0.76rem;
+        letter-spacing: 0.03em;
+        color: #0f172a;
+        white-space: nowrap;
+    }
+
+    .swiss-cell-actions {
+        display: flex;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .swiss-btn-save {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: #ffffff;
+    }
+
+    .swiss-btn-save:hover,
+    .swiss-btn-save:focus {
+        background: #111827;
+        border-color: #111827;
+        color: #ffffff;
+    }
+
+    .swiss-btn-delete {
+        background: #ffffff;
+        border-color: #dc2626;
+        color: #dc2626;
+    }
+
+    .swiss-btn-delete:hover,
+    .swiss-btn-delete:focus {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: #ffffff;
+    }
+
+    .swiss-empty-row {
+        text-align: center;
+        font-size: 0.82rem;
+        color: #475569;
+        padding: 26px !important;
+    }
+
+    .swiss-pagination-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .swiss-page-info {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #475569;
+        font-weight: 700;
+    }
+
+    .swiss-page-btn {
+        border: 1px solid #0f172a;
+        color: #0f172a;
+        background: #ffffff;
+        border-radius: 0;
+        padding: 4px 10px;
+        text-decoration: none;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .swiss-page-btn:hover {
+        background: #0f172a;
+        color: #ffffff;
+    }
+
+    [data-theme="dark"] .swiss-admin-title,
+    [data-theme="dark"] .swiss-panel-title,
+    [data-theme="dark"] .swiss-row-id,
+    [data-theme="dark"] .swiss-model-link {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .swiss-admin-header {
+        border-color: #334155;
+    }
+
+    [data-theme="dark"] .swiss-admin-subtitle,
+    [data-theme="dark"] .swiss-panel-subtitle,
+    [data-theme="dark"] .swiss-field-label,
+    [data-theme="dark"] .swiss-page-info {
+        color: #c3cde2;
+    }
+
+    [data-theme="dark"] .swiss-create-form,
+    [data-theme="dark"] .swiss-model-nav,
+    [data-theme="dark"] .swiss-panel {
+        background: #1a2233;
+        border-color: #334155;
+    }
+
+    [data-theme="dark"] .swiss-model-link {
+        border-bottom-color: #334155;
+    }
+
+    [data-theme="dark"] .swiss-model-link.active {
+        color: #ffffff;
+    }
+
+    [data-theme="dark"] .swiss-input,
+    [data-theme="dark"] .swiss-select,
+    [data-theme="dark"] .swiss-textarea {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-color: #475569;
+    }
+
+    [data-theme="dark"] .swiss-data-table thead th {
+        background: #0b1220;
+        color: #dbeafe;
+    }
+
+    [data-theme="dark"] .swiss-data-table td {
+        border-bottom-color: #334155;
+    }
+
+    [data-theme="dark"] .swiss-empty-row {
+        color: #c3cde2;
+    }
+
+    [data-theme="dark"] .swiss-btn,
+    [data-theme="dark"] .swiss-page-btn {
+        border-color: #94a3b8;
+    }
+
+    [data-theme="dark"] .swiss-btn-delete {
+        background: #0f172a;
+    }
+
+    [data-theme="dark"] .swiss-page-btn {
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="swiss-admin-shell">
+    <div class="swiss-admin-header">
+        <h1 class="swiss-admin-title">Data Admin</h1>
+        <p class="swiss-admin-subtitle">Swiss-grid editor for direct database operations. Editable fields only. Precision first.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-3 col-lg-4">
+            <div class="swiss-model-nav">
+                {% for model_item in model_specs %}
+                <a href="{% url 'data_admin_console' %}?model={{ model_item.slug }}" class="swiss-model-link {% if selected_model.slug == model_item.slug %}active{% endif %}">
+                    <span>{{ model_item.title }}</span>
+                    <span class="swiss-model-count">{{ model_item.count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-xl-9 col-lg-8">
+            <section class="swiss-panel">
+                <h2 class="swiss-panel-title">{{ selected_model.title }}</h2>
+                <p class="swiss-panel-subtitle">{{ selected_model.subtitle }}. showing editable fields only.</p>
+
+                {% if selected_model.fields %}
+                <form method="post" class="swiss-create-form" data-online-required-message="Data Admin edits require internet access.">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="model_slug" value="{{ selected_model.slug }}">
+                    <input type="hidden" name="page" value="{{ page_obj.number }}">
+
+                    <div class="swiss-form-label">Create New Record</div>
+                    <div class="swiss-field-grid">
+                        {% for cell in create_cells %}
+                        <label class="swiss-field">
+                            <span class="swiss-field-label">{{ cell.label }}</span>
+
+                            {% if cell.input_type == 'select' %}
+                            <select class="swiss-select" name="{{ cell.name }}" {% if cell.required %}required{% endif %}>
+                                <option value="">--</option>
+                                {% for option in cell.options %}
+                                <option value="{{ option.value }}" {% if option.value == cell.value %}selected{% endif %}>{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% elif cell.input_type == 'textarea' %}
+                            <textarea class="swiss-textarea" name="{{ cell.name }}" {% if cell.required %}required{% endif %}>{{ cell.value }}</textarea>
+                            {% elif cell.input_type == 'checkbox' %}
+                            <input class="swiss-check" type="checkbox" name="{{ cell.name }}" value="1" {% if cell.checked %}checked{% endif %}>
+                            {% else %}
+                            <input class="swiss-input" type="{{ cell.input_type }}" name="{{ cell.name }}" value="{{ cell.value }}" {% if cell.step %}step="{{ cell.step }}"{% endif %} {% if cell.required %}required{% endif %}>
+                            {% endif %}
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <div class="swiss-action-row">
+                        <button type="submit" class="btn swiss-btn swiss-btn-primary">Create Record</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table swiss-data-table">
+                        <thead>
+                            <tr>
+                                <th class="swiss-id-col">ID</th>
+                                {% for field in selected_model.fields %}
+                                <th>{{ field.label }}</th>
+                                {% endfor %}
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <form id="row-form-{{ row.pk }}" method="post" class="d-none" data-online-required-message="Data Admin edits require internet access.">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="model_slug" value="{{ selected_model.slug }}">
+                                <input type="hidden" name="pk" value="{{ row.pk }}">
+                                <input type="hidden" name="page" value="{{ page_obj.number }}">
+                            </form>
+                            <tr>
+                                <td class="swiss-row-id">{{ row.pk }}</td>
+                                {% for cell in row.cells %}
+                                <td>
+                                    {% if cell.input_type == 'select' %}
+                                    <select class="swiss-select" form="row-form-{{ row.pk }}" name="{{ cell.name }}" {% if cell.required %}required{% endif %}>
+                                        <option value="">--</option>
+                                        {% for option in cell.options %}
+                                        <option value="{{ option.value }}" {% if option.value == cell.value %}selected{% endif %}>{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% elif cell.input_type == 'textarea' %}
+                                    <textarea class="swiss-textarea" form="row-form-{{ row.pk }}" name="{{ cell.name }}" {% if cell.required %}required{% endif %}>{{ cell.value }}</textarea>
+                                    {% elif cell.input_type == 'checkbox' %}
+                                    <input class="swiss-check" type="checkbox" form="row-form-{{ row.pk }}" name="{{ cell.name }}" value="1" {% if cell.checked %}checked{% endif %}>
+                                    {% else %}
+                                    <input class="swiss-input" type="{{ cell.input_type }}" form="row-form-{{ row.pk }}" name="{{ cell.name }}" value="{{ cell.value }}" {% if cell.step %}step="{{ cell.step }}"{% endif %} {% if cell.required %}required{% endif %}>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td>
+                                    <div class="swiss-cell-actions">
+                                        <button type="submit" form="row-form-{{ row.pk }}" class="btn swiss-btn swiss-btn-save">Save</button>
+                                        <form method="post" class="d-inline" data-online-required-message="Data Admin edits require internet access." onsubmit="return confirm('Delete this record permanently?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="model_slug" value="{{ selected_model.slug }}">
+                                            <input type="hidden" name="pk" value="{{ row.pk }}">
+                                            <input type="hidden" name="page" value="{{ page_obj.number }}">
+                                            <button type="submit" class="btn swiss-btn swiss-btn-delete">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td class="swiss-empty-row" colspan="{{ selected_model.colspan }}">No records available for this model.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="swiss-pagination-wrap">
+                    <div class="swiss-page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} • {{ page_obj.paginator.count }} records</div>
+                    <div class="d-flex gap-2">
+                        {% if page_obj.has_previous %}
+                        <a class="swiss-page-btn" href="{% url 'data_admin_console' %}?model={{ selected_model.slug }}&page={{ page_obj.previous_page_number }}">Prev</a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                        <a class="swiss-page-btn" href="{% url 'data_admin_console' %}?model={{ selected_model.slug }}&page={{ page_obj.next_page_number }}">Next</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="swiss-create-form">
+                    <div class="swiss-empty-row" style="border: 0; padding: 0;">This model has no editable fields available in this console.</div>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

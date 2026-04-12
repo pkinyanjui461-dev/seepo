@@ -1,8 +1,9 @@
 {% load static %}
-const CACHE_VERSION = 'v18';
+const CACHE_VERSION = 'v20';
 const CSS_ASSET_VERSION = '9';
 const OFFLINE_SYNC_ASSET_VERSION = '2';
-const SW_REGISTER_ASSET_VERSION = '18';
+const OFFLINE_DB_ASSET_VERSION = '3';
+const SW_REGISTER_ASSET_VERSION = '20';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -20,9 +21,11 @@ const NAVIGATION_ROUTE_FALLBACKS = [
 const APP_SHELL_URLS = [
   OFFLINE_FALLBACK_URL,
   '{% url "dashboard" %}',
+  '/admin/',
   '/accounts/login/',
   '/accounts/profile/',
   '/accounts/settings/',
+  '/accounts/data-admin/',
   '/accounts/users/',
   '/accounts/users/create/',
   '/accounts/notifications/',
@@ -38,6 +41,7 @@ const APP_SHELL_URLS = [
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
   '{% static "js/dev-log-tools.js" %}',
+  '{% static "js/offline-db.js" %}?v=' + OFFLINE_DB_ASSET_VERSION,
   '{% static "js/offline-db.js" %}',
   '{% static "js/offline-sync.js" %}?v=' + OFFLINE_SYNC_ASSET_VERSION,
   '{% static "js/offline-sync.js" %}',

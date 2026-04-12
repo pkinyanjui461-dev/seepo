@@ -31,6 +31,21 @@ def _log_event(direction, model_name, records_count=0, conflicts_count=0, errors
     )
 
 
+def _normalize_sync_push_error(model_name, exc):
+    message = str(exc or '').strip()
+    lowered = message.lower()
+
+    if (
+        model_name == 'member'
+        and 'duplicate key value violates unique constraint' in lowered
+        and 'member_number' in lowered
+        and 'group_id' in lowered
+    ):
+        return 'member_number already exists in this group. Use a different member number.'
+
+    return message or 'Unknown server error.'
+
+
 def debug_only(view_func):
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
@@ -138,7 +153,7 @@ def sync_push(request):
             synced += 1
             records_saved.append({'client_uuid': client_uuid, 'server_id': instance.pk})
         except Exception as exc:
-            errors.append({'index': index, 'error': str(exc)})
+            errors.append({'index': index, 'error': _normalize_sync_push_error(model_name, exc)})
 
     _log_event(
         'push',

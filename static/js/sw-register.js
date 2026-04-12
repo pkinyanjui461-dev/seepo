@@ -1,5 +1,5 @@
 (function () {
-  const SW_ASSET_VERSION = '18';
+  const SW_ASSET_VERSION = '20';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const hasServiceWorkerSupport = 'serviceWorker' in navigator;
   const localHostPattern = /^(localhost|127\.0\.0\.1)(:\d+)?$/i;

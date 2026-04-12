@@ -216,6 +216,24 @@
             text-align: center;
         }
 
+        .delete-pending-syncs-btn {
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            margin-top: 8px;
+            padding: 9px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            text-align: center;
+        }
+
+        .delete-pending-syncs-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .sync-now-btn:disabled {
             opacity: 0.7;
             cursor: wait;
@@ -251,6 +269,74 @@
         .copy-dev-logs-btn:disabled {
             opacity: 0.7;
             cursor: wait;
+        }
+
+        .pending-sync-modal-header {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .pending-sync-modal-footer {
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pending-sync-list {
+            max-height: 48vh;
+            overflow-y: auto;
+            padding: 2px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--muted-surface);
+        }
+
+        .pending-sync-item {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            background: var(--card-bg);
+        }
+
+        .pending-sync-item:last-child {
+            border-bottom: none;
+        }
+
+        .pending-sync-item input[type="checkbox"] {
+            margin-top: 2px;
+        }
+
+        .pending-sync-label {
+            font-size: 0.84rem;
+            color: var(--text-main);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .pending-sync-meta {
+            margin-top: 4px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .pending-sync-model-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 1px 8px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        [data-theme="dark"] .pending-sync-model-pill {
+            background: #334155;
+            color: #e2e8f0;
         }
 
         @media (max-width: 575.98px) {
@@ -330,6 +416,10 @@
                 <a href="{% url 'user_list' %}" class="sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                     <i data-lucide="shield-check" class="sidebar-icon"></i>
                     <span class="sidebar-text">Users</span>
+                </a>
+                <a href="{% url 'data_admin_console' %}" class="sidebar-link {% if request.resolver_match.url_name == 'data_admin_console' %}active{% endif %}">
+                    <i data-lucide="table-2" class="sidebar-icon"></i>
+                    <span class="sidebar-text">Data Admin</span>
                 </a>
                 {% endif %}
             </div>
@@ -561,11 +651,39 @@
         <div id="sync-queue-chip" class="sync-queue-chip sync-queue-chip-empty">No queued records</div>
     </div>
     <button id="sync-now-btn" class="sync-now-btn" type="button"><i class="fas fa-rotate me-2"></i>Sync Now</button>
+    <button id="delete-pending-syncs-btn" class="delete-pending-syncs-btn" type="button"><i class="fas fa-trash-can me-2"></i>Delete Pending Syncs</button>
     {% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
     <button id="copy-dev-logs-btn" class="copy-dev-logs-btn" type="button"><i class="fas fa-copy me-2"></i>Copy Logs</button>
     {% endif %}
 </div>
 <button id="pwa-install-btn" class="pwa-install-btn" type="button" hidden>Install App</button>
+
+<div class="modal fade" id="delete-pending-modal" tabindex="-1" aria-labelledby="delete-pending-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header pending-sync-modal-header">
+                <h5 class="modal-title text-main" id="delete-pending-modal-title">Delete Pending Sync Records</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-2">Select queued sync records to remove from this device. This does not delete server data.</p>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button id="pending-sync-select-all-btn" class="btn btn-sm btn-outline-primary" type="button">Select all</button>
+                    <button id="pending-sync-clear-selection-btn" class="btn btn-sm btn-outline-secondary" type="button">Clear selection</button>
+                    <span id="pending-sync-selection-count" class="small text-muted align-self-center ms-auto">0 selected</span>
+                </div>
+                <div id="pending-sync-empty" class="alert alert-info py-2 px-3 mb-2 d-none">No pending sync records found.</div>
+                <div id="pending-sync-list" class="pending-sync-list"></div>
+            </div>
+            <div class="modal-footer pending-sync-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-pending-btn" disabled>
+                    <i class="fas fa-trash-can me-2"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -575,26 +693,184 @@
 <!-- Sidebar Toggle JS -->
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script src="{% static 'js/dev-log-tools.js' %}"></script>
-<script src="{% static 'js/offline-db.js' %}"></script>
+<script src="{% static 'js/offline-db.js' %}?v=3"></script>
 <script src="{% static 'js/offline-sync.js' %}?v=2"></script>
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=18"></script>
+<script src="{% static 'js/sw-register.js' %}?v=20"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
         const panel = document.getElementById('sw-tools-panel');
         const closeBtn = document.getElementById('sw-tools-close');
         const syncNowBtn = document.getElementById('sync-now-btn');
+        const deletePendingBtn = document.getElementById('delete-pending-syncs-btn');
+        const deletePendingModalEl = document.getElementById('delete-pending-modal');
+        const pendingSyncList = document.getElementById('pending-sync-list');
+        const pendingSyncEmpty = document.getElementById('pending-sync-empty');
+        const pendingSyncSelectAllBtn = document.getElementById('pending-sync-select-all-btn');
+        const pendingSyncClearSelectionBtn = document.getElementById('pending-sync-clear-selection-btn');
+        const pendingSyncSelectionCount = document.getElementById('pending-sync-selection-count');
+        const confirmDeletePendingBtn = document.getElementById('confirm-delete-pending-btn');
+        let deletePendingModal = null;
 
         if (!fab || !panel) {
             return;
         }
 
+        function showToast(message) {
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+                window.seepoOfflineSync.showToast(message);
+                return;
+            }
+
+            console.info(message);
+        }
+
         function setOpen(open) {
             panel.hidden = !open;
             fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function modelDisplayName(modelName) {
+            const map = {
+                group: 'Group',
+                member: 'Member',
+                monthly_form: 'Monthly Form',
+                expense: 'Expense',
+                user: 'User',
+            };
+
+            return map[modelName] || String(modelName || 'Record');
+        }
+
+        function formatUpdatedAt(value) {
+            if (!value) {
+                return 'updated time unavailable';
+            }
+
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+                return 'updated time unavailable';
+            }
+
+            return parsed.toLocaleString();
+        }
+
+        function setPendingEmptyState(message) {
+            if (pendingSyncEmpty) {
+                pendingSyncEmpty.textContent = message;
+                pendingSyncEmpty.classList.remove('d-none');
+            }
+
+            if (pendingSyncList) {
+                pendingSyncList.innerHTML = '';
+            }
+        }
+
+        function getSelectedPendingRows() {
+            if (!pendingSyncList) {
+                return [];
+            }
+
+            return Array.from(pendingSyncList.querySelectorAll('input.pending-sync-checkbox:checked')).map(function (checkbox) {
+                return {
+                    model: checkbox.getAttribute('data-model') || '',
+                    localId: Number(checkbox.getAttribute('data-local-id')),
+                };
+            });
+        }
+
+        function refreshSelectionCount() {
+            const selected = getSelectedPendingRows().length;
+
+            if (pendingSyncSelectionCount) {
+                pendingSyncSelectionCount.textContent = selected + ' selected';
+            }
+
+            if (confirmDeletePendingBtn) {
+                confirmDeletePendingBtn.disabled = selected === 0;
+            }
+        }
+
+        function renderPendingRows(items) {
+            if (!pendingSyncList) {
+                return;
+            }
+
+            pendingSyncList.innerHTML = '';
+
+            if (!items.length) {
+                setPendingEmptyState('No pending sync records found.');
+                refreshSelectionCount();
+                return;
+            }
+
+            if (pendingSyncEmpty) {
+                pendingSyncEmpty.classList.add('d-none');
+            }
+
+            items.forEach(function (item) {
+                const row = document.createElement('label');
+                row.className = 'pending-sync-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'pending-sync-checkbox form-check-input mt-0';
+                checkbox.setAttribute('data-model', item.model);
+                checkbox.setAttribute('data-local-id', String(item.localId));
+
+                const body = document.createElement('div');
+
+                const title = document.createElement('div');
+                title.className = 'pending-sync-label';
+                title.textContent = item.label || 'Pending record';
+
+                const meta = document.createElement('div');
+                meta.className = 'pending-sync-meta';
+
+                const modelPill = document.createElement('span');
+                modelPill.className = 'pending-sync-model-pill';
+                modelPill.textContent = modelDisplayName(item.model);
+
+                const updated = document.createElement('span');
+                updated.textContent = formatUpdatedAt(item.updatedAt);
+
+                meta.appendChild(modelPill);
+                meta.appendChild(updated);
+                body.appendChild(title);
+                body.appendChild(meta);
+
+                row.appendChild(checkbox);
+                row.appendChild(body);
+                pendingSyncList.appendChild(row);
+            });
+
+            refreshSelectionCount();
+        }
+
+        async function loadPendingRows() {
+            if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.getPendingRecordsForSelection !== 'function') {
+                setPendingEmptyState('Offline queue is unavailable on this page.');
+                refreshSelectionCount();
+                return;
+            }
+
+            const items = await window.seepoOfflineDb.getPendingRecordsForSelection();
+            renderPendingRows(items);
+        }
+
+        function getDeletePendingModal() {
+            if (!deletePendingModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+                return null;
+            }
+
+            if (!deletePendingModal) {
+                deletePendingModal = window.bootstrap.Modal.getOrCreateInstance(deletePendingModalEl);
+            }
+
+            return deletePendingModal;
         }
 
         fab.addEventListener('click', function () {
@@ -657,6 +933,96 @@
                 } finally {
                     syncNowBtn.disabled = false;
                     syncNowBtn.innerHTML = originalText;
+                }
+            });
+        }
+
+        if (deletePendingBtn) {
+            deletePendingBtn.addEventListener('click', async function () {
+                try {
+                    await loadPendingRows();
+                    const modal = getDeletePendingModal();
+                    if (modal) {
+                        modal.show();
+                    }
+                    setOpen(false);
+                } catch (error) {
+                    const detail = error && error.message ? error.message : 'Unknown error.';
+                    showToast('Could not load pending sync records: ' + detail);
+                }
+            });
+        }
+
+        if (pendingSyncList) {
+            pendingSyncList.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('pending-sync-checkbox')) {
+                    refreshSelectionCount();
+                }
+            });
+        }
+
+        if (pendingSyncSelectAllBtn) {
+            pendingSyncSelectAllBtn.addEventListener('click', function () {
+                if (!pendingSyncList) {
+                    return;
+                }
+
+                pendingSyncList.querySelectorAll('input.pending-sync-checkbox').forEach(function (checkbox) {
+                    checkbox.checked = true;
+                });
+                refreshSelectionCount();
+            });
+        }
+
+        if (pendingSyncClearSelectionBtn) {
+            pendingSyncClearSelectionBtn.addEventListener('click', function () {
+                if (!pendingSyncList) {
+                    return;
+                }
+
+                pendingSyncList.querySelectorAll('input.pending-sync-checkbox').forEach(function (checkbox) {
+                    checkbox.checked = false;
+                });
+                refreshSelectionCount();
+            });
+        }
+
+        if (confirmDeletePendingBtn) {
+            confirmDeletePendingBtn.addEventListener('click', async function () {
+                if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.deletePendingRecords !== 'function') {
+                    showToast('Delete pending is unavailable on this page.');
+                    return;
+                }
+
+                const selectedRows = getSelectedPendingRows();
+                if (!selectedRows.length) {
+                    refreshSelectionCount();
+                    return;
+                }
+
+                const originalText = confirmDeletePendingBtn.innerHTML;
+                confirmDeletePendingBtn.disabled = true;
+                confirmDeletePendingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+
+                try {
+                    const deletedCount = await window.seepoOfflineDb.deletePendingRecords(selectedRows);
+                    await loadPendingRows();
+
+                    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+                        await window.seepoOfflineSync.refreshStatus();
+                    }
+
+                    if (deletedCount > 0) {
+                        showToast('Deleted ' + deletedCount + ' pending sync record' + (deletedCount === 1 ? '' : 's') + '.');
+                    } else {
+                        showToast('No pending sync records were deleted.');
+                    }
+                } catch (error) {
+                    const detail = error && error.message ? error.message : 'Unknown error.';
+                    showToast('Could not delete pending records: ' + detail);
+                } finally {
+                    confirmDeletePendingBtn.innerHTML = originalText;
+                    refreshSelectionCount();
                 }
             });
         }
