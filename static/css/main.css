@@ -490,12 +490,35 @@ body {
     border-color: var(--border-color) !important;
 }
 
+[data-theme="dark"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-color);
+    --bs-table-striped-bg: #202838;
+    --bs-table-striped-color: #e5ebff;
+    --bs-table-hover-bg: #2a3243;
+    --bs-table-hover-color: #f2f6ff;
+}
+
 [data-theme="dark"] .table-light,
 [data-theme="dark"] .table-light > :not(caption) > * > *,
 [data-theme="dark"] .table thead,
 [data-theme="dark"] .table tfoot {
     background-color: var(--muted-surface) !important;
     color: var(--muted-text-strong) !important;
+}
+
+[data-theme="dark"] .table thead th {
+    color: #d8e1f7 !important;
+}
+
+[data-theme="dark"] .table tbody td,
+[data-theme="dark"] .table tbody th {
+    color: #edf2ff;
+}
+
+[data-theme="dark"] .table .text-muted {
+    color: #c0cadf !important;
 }
 
 [data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
@@ -556,6 +579,41 @@ body {
 [data-theme="dark"] .list-group-item {
     background: transparent;
     color: var(--text-main);
+}
+
+[data-theme="dark"] .dashboard-greeting-card {
+    background: linear-gradient(135deg, #252d55 0%, #3a245a 100%) !important;
+    border: 1px solid #3f3a62 !important;
+}
+
+[data-theme="dark"] .dashboard-greeting-title {
+    color: #f6f8ff !important;
+}
+
+[data-theme="dark"] .dashboard-greeting-subtitle {
+    color: #d2daef !important;
+}
+
+[data-theme="dark"] .dashboard-greeting-watermark {
+    opacity: 0.12 !important;
+}
+
+[data-theme="dark"] .dashboard-greeting-cta {
+    background-color: #7c5cf2 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .dashboard-recent-groups .table thead th {
+    background-color: #232c3d !important;
+    color: #dbe4fb !important;
+}
+
+[data-theme="dark"] .dashboard-recent-groups .table tbody td {
+    color: #edf2ff !important;
+}
+
+[data-theme="dark"] .dashboard-recent-groups .table tbody td.text-muted {
+    color: #c3cde2 !important;
 }
 
 .notification-unread {

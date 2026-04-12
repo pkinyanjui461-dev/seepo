@@ -1,4 +1,6 @@
 (function () {
+  const SW_ASSET_VERSION = '15';
+  const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const hasServiceWorkerSupport = 'serviceWorker' in navigator;
   const localHostPattern = /^(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
@@ -206,7 +208,7 @@
 
   window.addEventListener('load', async function () {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      const registration = await navigator.serviceWorker.register(SW_SCRIPT_URL, { scope: '/' });
 
       if (registration.waiting) {
         registration.waiting.postMessage('SKIP_WAITING');

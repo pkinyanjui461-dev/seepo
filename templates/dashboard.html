@@ -8,13 +8,13 @@
 <div class="row g-4 mb-4">
     <!-- Greeting Card (Left) -->
     <div class="col-lg-5">
-        <div class="card shadow-sm border-0 h-100" style="background-color: #E6E2FF; border-radius: var(--border-radius-lg);">
+        <div class="card shadow-sm border-0 h-100 dashboard-greeting-card" style="background-color: #E6E2FF; border-radius: var(--border-radius-lg);">
             <div class="card-body p-4 d-flex flex-column justify-content-center position-relative overflow-hidden">
-                <i class="fas fa-chart-pie position-absolute text-white" style="font-size: 15rem; right: -40px; top: -30px; opacity: 0.2; transform: rotate(-15deg);"></i>
-                <h3 class="fw-bold mb-2" style="color: var(--primary-color);">Hello {{ user.get_full_name|default:user.username }}!</h3>
-                <p class="text-muted mb-4" style="color: #6B6B8A !important;">Welcome back! Here's what's happening today.</p>
+                <i class="fas fa-chart-pie position-absolute text-white dashboard-greeting-watermark" style="font-size: 15rem; right: -40px; top: -30px; opacity: 0.2; transform: rotate(-15deg);"></i>
+                <h3 class="fw-bold mb-2 dashboard-greeting-title" style="color: var(--primary-color);">Hello {{ user.get_full_name|default:user.username }}!</h3>
+                <p class="mb-4 dashboard-greeting-subtitle">Welcome back! Here's what's happening today.</p>
                 <div>
-                   <button class="btn text-white px-4 py-2" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</button>
+                   <button class="btn text-white px-4 py-2 dashboard-greeting-cta" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</button>
                 </div>
             </div>
         </div>
@@ -114,13 +114,13 @@
 
 <div class="row">
     <div class="col-12">
-        <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg);">
+        <div class="card shadow-sm border-0 dashboard-recent-groups" style="border-radius: var(--border-radius-lg);">
             <div class="card-header bg-card border-bottom-0 pt-4 pb-0">
                 <h5 class="fw-bold" style="color: var(--text-main);">Recent Groups</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle dashboard-recent-groups-table">
                         <thead class="bg-app">
                             <tr>
                                 <th class="border-0">Name</th>
@@ -161,6 +161,11 @@
     const accentOrange = '#FFA412';
     const accentBlue = '#3F8CFF';
     const accentGreen = '#22C55E';
+    const isDarkTheme = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+    const legendTextColor = isDarkTheme ? '#dbe4fb' : '#4b5563';
+    const axisTickColor = isDarkTheme ? '#cbd5e1' : '#475569';
+    const axisGridColor = isDarkTheme ? 'rgba(148, 163, 184, 0.22)' : 'rgba(100, 116, 139, 0.2)';
+
     fetch("{% url 'api_dashboard_stats' %}")
         .then(response => response.json())
         .then(data => {
@@ -181,7 +186,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                color: legendTextColor
+                            }
+                        }
                     }
                 }
             });
@@ -218,8 +230,15 @@
                         legend: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
-                        x: { grid: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: axisTickColor },
+                            grid: { borderDash: [5, 5], color: axisGridColor }
+                        },
+                        x: {
+                            ticks: { color: axisTickColor },
+                            grid: { display: false }
+                        }
                     }
                 }
             });
