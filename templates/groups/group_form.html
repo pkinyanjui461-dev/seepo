@@ -8,12 +8,13 @@
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body p-4">
                     <form method="POST"
-                        {% if not form.instance.pk %}
                         data-offline-form="true"
                         data-offline-model="group"
-                        data-offline-redirect-url="{% url 'group_list' %}"
-                        {% endif %}>
+                            data-offline-redirect-url="{% if form.instance.pk %}{% url 'group_detail' form.instance.pk %}{% else %}{% url 'group_list' %}{% endif %}">
                     {% csrf_token %}
+                        {% if form.instance.pk %}
+                        <input type="hidden" name="client_uuid" value="{{ form.instance.client_uuid }}">
+                        {% endif %}
                     {% for field in form %}
                     <div class="mb-3">
                         <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>

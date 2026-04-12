@@ -1,9 +1,10 @@
 {% load static %}
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v13';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
 const NAVIGATION_ROUTE_FALLBACKS = [
+  { prefix: '/accounts/notifications/', fallback: '/accounts/notifications/' },
   { prefix: '/accounts/', fallback: '{% url "dashboard" %}' },
   { prefix: '/groups/', fallback: '/groups/' },
   { prefix: '/members/', fallback: '/groups/' },
@@ -21,6 +22,7 @@ const APP_SHELL_URLS = [
   '/accounts/settings/',
   '/accounts/users/',
   '/accounts/users/create/',
+  '/accounts/notifications/',
   '/groups/',
   '/groups/create/',
   '/groups/diary/',
@@ -34,6 +36,7 @@ const APP_SHELL_URLS = [
   '{% static "js/dev-log-tools.js" %}',
   '{% static "js/offline-db.js" %}',
   '{% static "js/offline-sync.js" %}',
+  '{% static "js/offline-diary-sync.js" %}',
   '{% static "js/offline-form-handler.js" %}',
   '{% static "js/sw-register.js" %}',
   '{% static "img/logo.png" %}',
@@ -41,6 +44,9 @@ const APP_SHELL_URLS = [
   '{% static "img/pwa-icon-512.png" %}',
   '{% static "favicon.ico" %}',
   '{% static "robots.txt" %}',
+  {% for group_url in offline_group_urls %}
+  '{{ group_url }}',
+  {% endfor %}
 ];
 
 async function precacheAppShell() {

@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+import uuid
 
 
 class User(AbstractUser):
@@ -11,6 +13,9 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='officer')
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['username', 'email']

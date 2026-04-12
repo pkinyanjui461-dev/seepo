@@ -1,4 +1,29 @@
 (function () {
+  function showOfflineActionMessage(formElement) {
+    const message =
+      formElement.getAttribute('data-online-required-message') ||
+      'You are offline. This action requires internet access.';
+
+    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+      window.seepoOfflineSync.showToast(message);
+      return;
+    }
+
+    alert(message);
+  }
+
+  function onUnsupportedOfflineSubmit(event) {
+    const form = event.currentTarget;
+    const method = (form.getAttribute('method') || 'GET').toUpperCase();
+
+    if (navigator.onLine || method !== 'POST') {
+      return;
+    }
+
+    event.preventDefault();
+    showOfflineActionMessage(form);
+  }
+
   function collectFormData(formElement) {
     const formData = new FormData(formElement);
     const payload = {};
@@ -86,6 +111,11 @@
     const forms = document.querySelectorAll('form[data-offline-form="true"]');
     forms.forEach((form) => {
       form.addEventListener('submit', onOfflineFormSubmit);
+    });
+
+    const unsupportedForms = document.querySelectorAll('form:not([data-offline-form="true"])');
+    unsupportedForms.forEach((form) => {
+      form.addEventListener('submit', onUnsupportedOfflineSubmit);
     });
   });
 })();

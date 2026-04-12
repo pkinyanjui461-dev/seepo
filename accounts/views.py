@@ -127,6 +127,26 @@ def search_view(request):
 
 
 @login_required
+def notification_list(request):
+    from accounts.models import Notification
+
+    if request.method == 'POST' and request.POST.get('action') == 'mark_all_read':
+        updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        messages.success(request, f'Marked {updated} notification(s) as read.')
+        return redirect('notification_list')
+
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(
+        request,
+        'accounts/notification_list.html',
+        {
+            'notifications': notifications,
+            'unread_total': notifications.filter(is_read=False).count(),
+        },
+    )
+
+
+@login_required
 def mark_notification_read(request, pk):
     from accounts.models import Notification
     notification = get_object_or_404(Notification, pk=pk, user=request.user)

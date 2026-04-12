@@ -12,5 +12,6 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('settings/', views.settings_view, name='settings'),
     path('search/', views.search_view, name='search'),
+    path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:pk>/read/', views.mark_notification_read, name='mark_notification_read'),
 ]

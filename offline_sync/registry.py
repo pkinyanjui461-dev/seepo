@@ -8,6 +8,7 @@ from typing import Any, Callable
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
+from accounts.models import User
 from finance.models import Expense, MonthlyForm
 from groups.models import Group
 from members.models import Member
@@ -231,6 +232,56 @@ def _apply_expense(payload: dict[str, Any], request) -> dict[str, Any]:
     return defaults
 
 
+def _serialize_user(user: User) -> dict[str, Any]:
+    return {
+        'server_id': user.pk,
+        'client_uuid': str(user.client_uuid),
+        'client_updated_at': user.client_updated_at.isoformat(),
+        'updated_at': user.updated_at.isoformat(),
+        'phone_number': user.phone_number,
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'role': user.role,
+        'is_active': user.is_active,
+    }
+
+
+def _apply_user(payload: dict[str, Any], request) -> dict[str, Any]:
+    if not request.user.is_authenticated or not (
+        request.user.is_superuser or request.user.role in ('admin', 'ict')
+    ):
+        raise ValueError('Only administrators can sync users.')
+
+    phone_number = str(payload.get('phone_number', '')).strip()
+    username = str(payload.get('username', '')).strip()
+    if not phone_number or not username:
+        raise ValueError('phone_number and username are required.')
+
+    role_choices = {choice[0] for choice in User.ROLE_CHOICES}
+    role = str(payload.get('role') or 'officer').strip()
+    if role not in role_choices:
+        role = 'officer'
+
+    defaults = {
+        'phone_number': phone_number,
+        'username': username,
+        'first_name': str(payload.get('first_name', '')).strip(),
+        'last_name': str(payload.get('last_name', '')).strip(),
+        'email': str(payload.get('email', '')).strip(),
+        'role': role,
+        'is_active': _to_bool(payload.get('is_active', True)),
+        'client_updated_at': _parse_client_updated_at(payload.get('client_updated_at')),
+    }
+
+    password = str(payload.get('password', '')).strip()
+    if password:
+        defaults['password'] = password
+
+    return defaults
+
+
 def register_models() -> None:
     global _initialized
 
@@ -262,6 +313,12 @@ def register_models() -> None:
                 order=4,
                 serialize=_serialize_expense,
                 apply_payload=_apply_expense,
+            ),
+            'user': SyncModelSpec(
+                model=User,
+                order=5,
+                serialize=_serialize_user,
+                apply_payload=_apply_user,
             ),
         }
     )

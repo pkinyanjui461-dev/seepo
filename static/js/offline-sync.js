@@ -3,7 +3,22 @@
     return;
   }
 
-  const MODEL_ORDER = ['group', 'member', 'monthly_form', 'expense'];
+  const DEFAULT_MODEL_ORDER = ['group', 'member', 'monthly_form', 'expense'];
+
+  function resolveModelOrder() {
+    const body = document.body;
+    const raw = body ? body.getAttribute('data-offline-models') : '';
+    if (!raw) {
+      return DEFAULT_MODEL_ORDER;
+    }
+
+    const allowed = raw
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item && window.seepoOfflineDb.modelTableMap[item]);
+
+    return allowed.length ? allowed : DEFAULT_MODEL_ORDER;
+  }
 
   class SeepoOfflineSync {
     constructor() {
@@ -12,6 +27,7 @@
       this.statusTimer = null;
       this.preloadTimer = null;
       this.preloadIntervalMs = 120000;
+      this.modelOrder = resolveModelOrder();
     }
 
     async init() {
@@ -46,7 +62,7 @@
       }
 
       try {
-        for (const modelName of MODEL_ORDER) {
+        for (const modelName of this.modelOrder) {
           await this.pullModel(modelName);
         }
 
@@ -169,7 +185,7 @@
       this.lastSyncError = null;
       await this.refreshStatus();
 
-      for (const modelName of MODEL_ORDER) {
+      for (const modelName of this.modelOrder) {
         try {
           await this.pushModel(modelName);
           await this.pullModel(modelName);

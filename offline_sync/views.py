@@ -54,6 +54,8 @@ def sync_pull(request):
     spec = get_sync_spec(model_name)
     if not spec:
         return JsonResponse({'error': 'Unsupported model.'}, status=400)
+    if model_name == 'user' and not (request.user.is_superuser or request.user.role in ('admin', 'ict')):
+        return JsonResponse({'error': 'Forbidden for this model.'}, status=403)
 
     since_raw = request.GET.get('since', '0')
     try:
@@ -89,6 +91,8 @@ def sync_push(request):
     spec = get_sync_spec(model_name)
     if not spec:
         return JsonResponse({'error': 'Unsupported model.'}, status=400)
+    if model_name == 'user' and not (request.user.is_superuser or request.user.role in ('admin', 'ict')):
+        return JsonResponse({'error': 'Forbidden for this model.'}, status=403)
 
     synced = 0
     conflicts = 0
@@ -106,6 +110,7 @@ def sync_push(request):
 
             defaults = spec.apply_payload(record, request)
             incoming_client_updated_at = defaults.get('client_updated_at')
+            raw_password = defaults.pop('password', None)
 
             existing = spec.model.objects.filter(client_uuid=client_uuid).first()
             if existing:
@@ -120,10 +125,15 @@ def sync_push(request):
 
                 for field_name, value in defaults.items():
                     setattr(existing, field_name, value)
+                if raw_password and hasattr(existing, 'set_password'):
+                    existing.set_password(raw_password)
                 existing.save()
                 instance = existing
             else:
-                instance = spec.model.objects.create(client_uuid=client_uuid, **defaults)
+                instance = spec.model(client_uuid=client_uuid, **defaults)
+                if raw_password and hasattr(instance, 'set_password'):
+                    instance.set_password(raw_password)
+                instance.save()
 
             synced += 1
             records_saved.append({'client_uuid': client_uuid, 'server_id': instance.pk})
@@ -221,7 +231,26 @@ def debug_clear(request):
 
 @require_GET
 def service_worker(request):
-    response = render(request, 'offline_sync/sw.js')
+    offline_group_urls = []
+    try:
+        from groups.models import Group
+
+        group_ids = Group.objects.values_list('pk', flat=True)[:300]
+        for group_id in group_ids:
+            offline_group_urls.extend(
+                [
+                    f'/groups/{group_id}/',
+                    f'/groups/{group_id}/edit/',
+                    f'/members/group/{group_id}/',
+                    f'/members/group/{group_id}/add/',
+                    f'/finance/group/{group_id}/forms/',
+                    f'/finance/group/{group_id}/forms/create/',
+                ]
+            )
+    except Exception:
+        offline_group_urls = []
+
+    response = render(request, 'offline_sync/sw.js', {'offline_group_urls': offline_group_urls})
     response['Content-Type'] = 'application/javascript'
     response['Service-Worker-Allowed'] = '/'
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'

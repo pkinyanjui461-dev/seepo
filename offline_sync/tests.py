@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -23,6 +23,13 @@ class OfflineSyncApiTests(TestCase):
             email="sync@example.com",
             password="StrongPass123!",
             role="ict",
+        )
+        cls.workspace_group = Group.objects.create(
+            name='Workspace Group',
+            location='Nairobi',
+            date_created=date(2026, 4, 1),
+            officer_name='Workspace Officer',
+            banking_type='office',
         )
 
     def setUp(self):
@@ -158,8 +165,9 @@ class OfflineSyncApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         body = response.json()
-        self.assertEqual(body["count"], 1)
-        self.assertEqual(body["records"][0]["name"], "New Group")
+        self.assertGreaterEqual(body["count"], 1)
+        record_names = {record["name"] for record in body["records"]}
+        self.assertIn("New Group", record_names)
 
     def test_bulk_push_100_records(self):
         records = [
@@ -249,8 +257,20 @@ class OfflineSyncApiTests(TestCase):
         self.assertIn("/finance/", body)
         self.assertIn("/reports/", body)
         self.assertIn("/accounts/users/create/", body)
+        self.assertIn("/accounts/notifications/", body)
         self.assertIn("/reports/entities/", body)
         self.assertIn("dev-log-tools.js", body)
+        self.assertIn("offline-diary-sync.js", body)
+
+    def test_service_worker_includes_known_group_workspace_urls(self):
+        self.client.logout()
+        response = self.client.get(self.sw_url)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode("utf-8")
+        self.assertIn(f"/groups/{self.workspace_group.pk}/", body)
+        self.assertIn(f"/members/group/{self.workspace_group.pk}/add/", body)
+        self.assertIn(f"/finance/group/{self.workspace_group.pk}/forms/", body)
 
     def test_service_worker_skips_api_requests(self):
         self.client.logout()

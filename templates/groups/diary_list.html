@@ -37,6 +37,9 @@
         border-bottom: 1px solid #edf1f7;
         padding: 1rem;
     }
+    .editable.pending-offline-cell {
+        background-color: #fff7df !important;
+    }
     .table-custom tbody tr:last-child td {
         border-bottom: none;
     }
@@ -123,6 +126,88 @@
     const toggleBtn = document.getElementById('toggle-edit');
     const editText = document.getElementById('edit-text');
 
+    function showDiaryToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function renderDisplayValue(value) {
+        const cleaned = String(value || '').trim();
+        return cleaned || '-';
+    }
+
+    async function saveDiaryUpdateOnline(diaryId, field, value) {
+        const response = await fetch(`/groups/api/diary/${diaryId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                field: field,
+                value: value
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Unknown save error');
+        }
+    }
+
+    function queueDiaryUpdate(diaryId, field, value) {
+        if (!window.seepoOfflineDiary || typeof window.seepoOfflineDiary.queueUpdate !== 'function') {
+            return false;
+        }
+
+        return window.seepoOfflineDiary.queueUpdate({
+            diaryId: Number(diaryId),
+            field: field,
+            value: value
+        });
+    }
+
+    async function persistDiaryChange(td, diaryId, field, originalValue, newValue) {
+        td.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+
+        const displayValue = renderDisplayValue(newValue);
+        if (!navigator.onLine) {
+            const queued = queueDiaryUpdate(diaryId, field, newValue);
+            if (queued) {
+                td.innerText = displayValue;
+                td.classList.add('pending-offline-cell');
+                showDiaryToast('Saved offline. Diary change queued for sync.');
+            } else {
+                td.innerText = renderDisplayValue(originalValue);
+                showDiaryToast('Offline queue unavailable. Change was not saved.');
+            }
+            return;
+        }
+
+        try {
+            await saveDiaryUpdateOnline(diaryId, field, newValue);
+            td.innerText = displayValue;
+            td.classList.remove('pending-offline-cell');
+        } catch (error) {
+            const queued = queueDiaryUpdate(diaryId, field, newValue);
+            if (queued) {
+                td.innerText = displayValue;
+                td.classList.add('pending-offline-cell');
+                showDiaryToast('Network unavailable. Diary change queued offline.');
+            } else {
+                td.innerText = renderDisplayValue(originalValue);
+                showDiaryToast('Error saving change: ' + error.message);
+            }
+        }
+    }
+
     toggleBtn.addEventListener('click', () => {
         isEditMode = !isEditMode;
         if (isEditMode) {
@@ -163,49 +248,42 @@
         td.appendChild(input);
         input.focus();
 
-        const save = () => {
+        let saveRequested = false;
+
+        const save = async () => {
+            if (saveRequested) {
+                return;
+            }
+            saveRequested = true;
+
             const newValue = input.value.trim();
             if (newValue === originalValue) {
                 td.innerText = originalValue || '-';
                 return;
             }
-            
-            // Show saving state
-            td.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
-            
-            fetch(`/groups/api/diary/${diaryId}/update/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    field: field,
-                    value: newValue
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    td.innerText = newValue || '-';
-                } else {
-                    alert('Error saving change: ' + data.error);
-                    td.innerText = originalValue || '-';
-                }
-            })
-            .catch(err => {
-                alert('Network error while saving.');
-                td.innerText = originalValue || '-';
-            });
+
+            await persistDiaryChange(td, diaryId, field, originalValue, newValue);
         };
 
-        input.onblur = save;
+        input.onblur = () => {
+            void save();
+        };
         input.onkeydown = (e) => {
-            if (e.key === 'Enter') save();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                input.blur();
+            }
             if (e.key === 'Escape') {
+                saveRequested = true;
                 td.innerText = originalValue || '-';
             }
         };
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.seepoOfflineDiary && navigator.onLine) {
+            window.seepoOfflineDiary.syncNow();
+        }
+    });
 </script>
 {% endblock %}

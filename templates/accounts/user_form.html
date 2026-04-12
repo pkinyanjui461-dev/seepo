@@ -15,8 +15,14 @@
                     <h4 class="fw-bold mb-0" style="color: var(--text-main);">{{ title }}</h4>
                 </div>
 
-                <form method="POST">
+                                <form method="POST"
+                                            data-offline-form="true"
+                                            data-offline-model="user"
+                                            data-offline-redirect-url="{% url 'user_list' %}">
                     {% csrf_token %}
+                                        {% if edit_user %}
+                                        <input type="hidden" name="client_uuid" value="{{ edit_user.client_uuid }}">
+                                        {% endif %}
                     <div class="row g-3">
                         {% for field in form %}
                         <div class="col-md-{% if field.name == 'phone_number' or field.name == 'username' %}6{% else %}12{% endif %}">
