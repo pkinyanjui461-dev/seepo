@@ -89,6 +89,48 @@
     [data-theme="dark"] .editable.pending-offline-cell {
         background-color: #3f3519 !important;
     }
+
+    .diary-mobile-list {
+        display: none;
+    }
+
+    .diary-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .diary-mobile-meta {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+
+    .diary-mobile-months {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        font-size: 0.78rem;
+    }
+
+    .diary-month-chip {
+        background: #f5f7fb;
+        border: 1px solid #e6ebf2;
+        border-radius: 8px;
+        padding: 5px 6px;
+    }
+
+    @media (max-width: 767.98px) {
+        .diary-table-wrap {
+            display: none;
+        }
+
+        .diary-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -102,8 +144,14 @@
                     <i class="fas fa-edit me-1"></i> <span id="edit-text">Enable Edit Mode</span>
                 </button>
             </div>
+
+            <div id="offline-pending-groups-note" class="alert alert-warning mx-4 mt-3 mb-0 d-none">
+                <i class="fas fa-wifi-slash me-2"></i>
+                <span id="offline-pending-groups-note-text">Pending offline groups are visible in this schedule.</span>
+            </div>
+
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive diary-table-wrap">
                     <table class="table table-custom table-hover" id="diary-table">
                         <thead>
                             <tr>
@@ -125,7 +173,7 @@
                                 <th>DECEMBER</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="diary-table-body">
                             {% for d in diaries %}
                             <tr data-id="{{ d.pk }}">
                                 <td class="text-muted">{{ forloop.counter }}</td>
@@ -146,7 +194,7 @@
                                 <td class="text-center editable" data-field="december" style="cursor: pointer;">{{ d.december|default:"-" }}</td>
                             </tr>
                             {% empty %}
-                            <tr>
+                            <tr id="diary-empty-row">
                                 <td colspan="16" class="text-center py-5 text-muted">
                                     <i class="fas fa-folder-open mb-3 fs-3" style="color: #cbd5e0;"></i>
                                     <p class="mb-0">No groups found in the system. Create a group to see it on the schedule.</p>
@@ -155,6 +203,34 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div id="diary-mobile-list" class="diary-mobile-list">
+                    {% for d in diaries %}
+                    <div class="diary-mobile-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="fw-bold" style="color: var(--text-main);">{{ d.group.name }}</div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary">Live</span>
+                        </div>
+                        <div class="diary-mobile-meta mb-3">Venue: {{ d.venue|default:"-" }} | Time: {{ d.time|default:"-" }}</div>
+                        <div class="diary-mobile-months">
+                            <div class="diary-month-chip">Jan: {{ d.january|default:"-" }}</div>
+                            <div class="diary-month-chip">Feb: {{ d.february|default:"-" }}</div>
+                            <div class="diary-month-chip">Mar: {{ d.march|default:"-" }}</div>
+                            <div class="diary-month-chip">Apr: {{ d.april|default:"-" }}</div>
+                            <div class="diary-month-chip">May: {{ d.may|default:"-" }}</div>
+                            <div class="diary-month-chip">Jun: {{ d.june|default:"-" }}</div>
+                            <div class="diary-month-chip">Jul: {{ d.july|default:"-" }}</div>
+                            <div class="diary-month-chip">Aug: {{ d.august|default:"-" }}</div>
+                            <div class="diary-month-chip">Sep: {{ d.september|default:"-" }}</div>
+                            <div class="diary-month-chip">Oct: {{ d.october|default:"-" }}</div>
+                            <div class="diary-month-chip">Nov: {{ d.november|default:"-" }}</div>
+                            <div class="diary-month-chip">Dec: {{ d.december|default:"-" }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div id="diary-mobile-empty" class="text-center text-muted py-4">No groups found in the system.</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -167,6 +243,136 @@
     let isEditMode = false;
     const toggleBtn = document.getElementById('toggle-edit');
     const editText = document.getElementById('edit-text');
+    const diaryTableBody = document.getElementById('diary-table-body');
+    const diaryMobileList = document.getElementById('diary-mobile-list');
+    const diaryPendingNote = document.getElementById('offline-pending-groups-note');
+    const diaryPendingNoteText = document.getElementById('offline-pending-groups-note-text');
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    async function getPendingOfflineGroups() {
+        if (!window.seepoOfflineDb) {
+            return [];
+        }
+
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            return window.seepoOfflineDb.getPendingRecordsByModel('group');
+        }
+
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        return groupsTable.where('synced').equals(0).toArray();
+    }
+
+    function renderPendingGroupsInDiaryTable(groups) {
+        if (!diaryTableBody) {
+            return;
+        }
+
+        diaryTableBody.querySelectorAll('tr[data-offline-pending-group="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('diary-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const monthCells =
+            '<td class="text-center">-</td>'.repeat(12);
+
+        const rows = groups.map(function (group) {
+            return (
+                '<tr data-offline-pending-group="true" style="background:#fff7e6;">' +
+                    '<td class="text-muted">P</td>' +
+                    '<td class="fw-medium">' +
+                        htmlEscape(group.name || 'Unnamed Group') +
+                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</td>' +
+                    '<td>' + htmlEscape(group.location || '-') + '</td>' +
+                    '<td>-</td>' +
+                    monthCells +
+                '</tr>'
+            );
+        }).join('');
+
+        diaryTableBody.insertAdjacentHTML('afterbegin', rows);
+    }
+
+    function renderPendingGroupsInDiaryMobile(groups) {
+        if (!diaryMobileList) {
+            return;
+        }
+
+        diaryMobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('diary-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const cards = groups.map(function (group) {
+            return (
+                '<div class="diary-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="diary-mobile-meta mb-3">Venue: ' + htmlEscape(group.location || '-') + ' | Time: -</div>' +
+                    '<div class="diary-mobile-months">' +
+                        '<div class="diary-month-chip">Jan: -</div>' +
+                        '<div class="diary-month-chip">Feb: -</div>' +
+                        '<div class="diary-month-chip">Mar: -</div>' +
+                        '<div class="diary-month-chip">Apr: -</div>' +
+                        '<div class="diary-month-chip">May: -</div>' +
+                        '<div class="diary-month-chip">Jun: -</div>' +
+                        '<div class="diary-month-chip">Jul: -</div>' +
+                        '<div class="diary-month-chip">Aug: -</div>' +
+                        '<div class="diary-month-chip">Sep: -</div>' +
+                        '<div class="diary-month-chip">Oct: -</div>' +
+                        '<div class="diary-month-chip">Nov: -</div>' +
+                        '<div class="diary-month-chip">Dec: -</div>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        diaryMobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function renderPendingGroupsInDiary() {
+        const groups = await getPendingOfflineGroups();
+        renderPendingGroupsInDiaryTable(groups);
+        renderPendingGroupsInDiaryMobile(groups);
+
+        if (!diaryPendingNote || !diaryPendingNoteText) {
+            return;
+        }
+
+        if (!groups.length) {
+            diaryPendingNote.classList.add('d-none');
+            return;
+        }
+
+        diaryPendingNote.classList.remove('d-none');
+        diaryPendingNoteText.textContent = groups.length + ' pending offline group' + (groups.length === 1 ? '' : 's') + ' shown in this schedule.';
+    }
 
     function isDarkThemeEnabled() {
         return (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
@@ -349,6 +555,16 @@
         if (window.seepoOfflineDiary && navigator.onLine) {
             window.seepoOfflineDiary.syncNow();
         }
+
+        renderPendingGroupsInDiary();
+    });
+
+    window.addEventListener('seepo:queue-status', () => {
+        renderPendingGroupsInDiary();
+    });
+
+    window.addEventListener('online', () => {
+        renderPendingGroupsInDiary();
     });
 </script>
 {% endblock %}

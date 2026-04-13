@@ -2,6 +2,38 @@
 {% block title %}{{ group.name }} Workspace{% endblock %}
 {% block page_title %}Workspace Overview{% endblock %}
 
+{% block extra_css %}
+<style>
+    .members-mobile-list {
+        display: none;
+    }
+
+    .member-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .member-mobile-meta {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .members-table-wrap {
+            display: none;
+        }
+
+        .members-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card shadow-sm border-0 mb-4" style="border-radius: var(--border-radius-lg); overflow: hidden;">
     <div class="card-body p-4 position-relative" style="background-color: #ffffff;">
@@ -50,9 +82,15 @@
             <h5 class="fw-bold mb-0" style="color: var(--text-main);">Active Members</h5>
             <a href="{% url 'member_create' group.pk %}" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>Add Member</a>
         </div>
+
+        <div id="offline-pending-members-note" class="alert alert-warning d-none">
+            <i class="fas fa-wifi-slash me-2"></i>
+            <span id="offline-pending-members-note-text">Pending offline members available.</span>
+        </div>
+
         <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive members-table-wrap">
                     <table class="table table-hover align-middle mb-0">
                         <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
                             <tr>
@@ -63,7 +101,7 @@
                                 <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="member-table-body">
                             {% for member in members %}
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td class="ps-4">
@@ -91,10 +129,32 @@
                                 </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="5" class="text-center text-muted py-5"><i class="fas fa-user-slash fs-3 mb-3 d-block opacity-50"></i>No members added yet.</td></tr>
+                            <tr id="members-empty-row"><td colspan="5" class="text-center text-muted py-5"><i class="fas fa-user-slash fs-3 mb-3 d-block opacity-50"></i>No members added yet.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div id="members-mobile-list" class="members-mobile-list">
+                    {% for member in members %}
+                    <div class="member-mobile-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="fw-bold" style="color: var(--text-main);">{{ member.name }}</div>
+                            {% if member.member_number %}
+                            <span class="badge" style="background-color: rgba(108,93,211,0.1); color: var(--primary-color);">#{{ member.member_number }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="member-mobile-meta mb-3">
+                            {{ member.phone|default:"-" }} | Joined {{ member.join_date|date:"d M Y" }}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-2"></i>Edit Member</a>
+                            <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt me-2"></i>Remove Member</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div id="members-mobile-empty" class="text-center text-muted py-4">No members added yet.</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -175,4 +235,391 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-member-edit-modal" tabindex="-1" aria-labelledby="offline-member-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-member-edit-modal-title">Edit Pending Offline Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-member-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-member-edit-number" class="form-label fw-bold">Member Number</label>
+                    <input id="offline-member-edit-number" class="form-control" type="number" min="1" placeholder="e.g. 1">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-name" class="form-label fw-bold">Name</label>
+                    <input id="offline-member-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-phone" class="form-label fw-bold">Phone</label>
+                    <input id="offline-member-edit-phone" class="form-control" type="text">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-join-date" class="form-label fw-bold">Join Date</label>
+                    <input id="offline-member-edit-join-date" class="form-control" type="date" required>
+                </div>
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="offline-member-edit-active">
+                    <label class="form-check-label" for="offline-member-edit-active">Active Member</label>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-member-edit-btn" class="btn btn-primary">Save Offline Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const groupClientUuid = '{{ group.client_uuid }}';
+    const tableBody = document.getElementById('member-table-body');
+    const mobileList = document.getElementById('members-mobile-list');
+    const noteWrap = document.getElementById('offline-pending-members-note');
+    const noteText = document.getElementById('offline-pending-members-note-text');
+
+    const memberEditModalEl = document.getElementById('offline-member-edit-modal');
+    const memberEditClientUuidInput = document.getElementById('offline-member-edit-client-uuid');
+    const memberEditNumberInput = document.getElementById('offline-member-edit-number');
+    const memberEditNameInput = document.getElementById('offline-member-edit-name');
+    const memberEditPhoneInput = document.getElementById('offline-member-edit-phone');
+    const memberEditJoinDateInput = document.getElementById('offline-member-edit-join-date');
+    const memberEditActiveInput = document.getElementById('offline-member-edit-active');
+    const saveOfflineMemberEditBtn = document.getElementById('save-offline-member-edit-btn');
+
+    let memberEditModal = null;
+
+    if (!tableBody || !window.seepoOfflineDb || !groupClientUuid) {
+        return;
+    }
+
+    function showToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getMemberEditModal() {
+        if (!memberEditModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!memberEditModal) {
+            memberEditModal = window.bootstrap.Modal.getOrCreateInstance(memberEditModalEl);
+        }
+
+        return memberEditModal;
+    }
+
+    async function getPendingMembers() {
+        let members = [];
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            members = await window.seepoOfflineDb.getPendingRecordsByModel('member');
+        } else {
+            const membersTable = window.seepoOfflineDb.tableForModel('member');
+            members = await membersTable.where('synced').equals(0).toArray();
+        }
+
+        return members.filter(function (member) {
+            return String(member.group_client_uuid || '').trim() === String(groupClientUuid).trim();
+        });
+    }
+
+    function formatJoinDate(value) {
+        const text = String(value || '').trim();
+        if (!text) {
+            return '-';
+        }
+        const date = new Date(text);
+        if (Number.isNaN(date.getTime())) {
+            return text;
+        }
+        return date.toLocaleDateString();
+    }
+
+    function renderPendingMembersInTable(members) {
+        tableBody.querySelectorAll('tr[data-offline-pending-row="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('members-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = members.length ? 'none' : '';
+        }
+
+        if (!members.length) {
+            return;
+        }
+
+        const rows = members.map(function (member) {
+            const number = String(member.member_number || '').trim();
+            return (
+                '<tr data-offline-pending-row="true" style="border-bottom: 1px solid var(--border-color); background:#fff7e6;">' +
+                    '<td class="ps-4">' +
+                        (number ?
+                            '<span class="badge" style="background-color: rgba(108,93,211,0.1); color: var(--primary-color); font-size: 0.8rem; padding: 5px 8px; border-radius: 6px; font-weight: 700;">' + htmlEscape(number) + '</span>' :
+                            '<span class="text-muted small">—</span>') +
+                    '</td>' +
+                    '<td class="fw-bold" style="color: var(--text-main);">' +
+                        '<div class="d-flex align-items-center">' +
+                            '<img src="https://ui-avatars.com/api/?name=' + encodeURIComponent(member.name || 'Member') + '&background=FFE8A3&color=333" class="rounded-circle me-3" width="36" height="36" alt="User">' +
+                            htmlEscape(member.name || 'Member') +
+                            '<span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="text-muted">' + htmlEscape(member.phone || '-') + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(formatJoinDate(member.join_date)) + '</td>' +
+                    '<td class="text-end pe-4">' +
+                        '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-offline-member-action="edit" data-client-uuid="' + htmlEscape(member.client_uuid) + '"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-success" data-offline-member-action="sync"><i class="fas fa-rotate"></i></button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-member-action="remove" data-client-uuid="' + htmlEscape(member.client_uuid) + '"><i class="fas fa-trash"></i></button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        tableBody.insertAdjacentHTML('afterbegin', rows);
+    }
+
+    function renderPendingMembersInMobile(members) {
+        if (!mobileList) {
+            return;
+        }
+
+        mobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('members-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = members.length ? 'none' : '';
+        }
+
+        if (!members.length) {
+            return;
+        }
+
+        const cards = members.map(function (member) {
+            const number = String(member.member_number || '').trim();
+            return (
+                '<div class="member-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(member.name || 'Member') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="member-mobile-meta mb-2">' +
+                        (number ? ('#' + htmlEscape(number) + ' | ') : '') + htmlEscape(member.phone || '-') +
+                    '</div>' +
+                    '<div class="member-mobile-meta mb-3">Joined ' + htmlEscape(formatJoinDate(member.join_date)) + '</div>' +
+                    '<div class="d-grid gap-2">' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-offline-member-action="edit" data-client-uuid="' + htmlEscape(member.client_uuid) + '"><i class="fas fa-pen me-2"></i>Edit Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-offline-member-action="sync"><i class="fas fa-rotate me-2"></i>Sync Now</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-member-action="remove" data-client-uuid="' + htmlEscape(member.client_uuid) + '"><i class="fas fa-trash me-2"></i>Remove Offline</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        mobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function syncNow() {
+        if (!navigator.onLine) {
+            showToast('You are offline. Connect to internet to sync.');
+            return;
+        }
+
+        if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+            showToast('Sync tools are unavailable on this page.');
+            return;
+        }
+
+        await window.seepoOfflineSync.syncNow();
+        await renderPendingMembers();
+        window.location.reload();
+    }
+
+    async function removePendingMember(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.deletePendingRecordByClientUuid !== 'function') {
+            showToast('Offline delete is unavailable on this page.');
+            return;
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('member', clientUuid);
+        if (!deleted) {
+            showToast('This member is already synced. Remove it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline member from this device.');
+        await renderPendingMembers();
+    }
+
+    async function openPendingMemberEditModal(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.getPendingRecordByClientUuid !== 'function') {
+            showToast('Offline member editing is unavailable on this page.');
+            return;
+        }
+
+        const member = await window.seepoOfflineDb.getPendingRecordByClientUuid('member', clientUuid);
+        if (!member) {
+            showToast('This member is already synced. Edit while online.');
+            return;
+        }
+
+        memberEditClientUuidInput.value = member.client_uuid || '';
+        memberEditNumberInput.value = member.member_number || '';
+        memberEditNameInput.value = member.name || '';
+        memberEditPhoneInput.value = member.phone || '';
+        memberEditJoinDateInput.value = member.join_date || '';
+        memberEditActiveInput.checked = member.is_active === true || String(member.is_active).toLowerCase() === 'true' || String(member.is_active) === '1';
+
+        const modal = getMemberEditModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function savePendingMemberEdit() {
+        const clientUuid = (memberEditClientUuidInput.value || '').trim();
+        if (!clientUuid) {
+            showToast('Pending member identifier is missing.');
+            return;
+        }
+
+        const numberText = String(memberEditNumberInput.value || '').trim();
+        const payload = {
+            member_number: numberText ? Number(numberText) : '',
+            name: String(memberEditNameInput.value || '').trim(),
+            phone: String(memberEditPhoneInput.value || '').trim(),
+            join_date: String(memberEditJoinDateInput.value || '').trim(),
+            is_active: !!memberEditActiveInput.checked,
+        };
+
+        if (!payload.name || !payload.join_date) {
+            showToast('Name and join date are required.');
+            return;
+        }
+
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
+            showToast('Offline member editing is unavailable on this page.');
+            return;
+        }
+
+        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('member', clientUuid, payload);
+        if (!updated) {
+            showToast('This member is already synced. Edit while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getMemberEditModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Offline member updated locally.');
+        await renderPendingMembers();
+    }
+
+    async function handlePendingMemberAction(button) {
+        const action = button.getAttribute('data-offline-member-action');
+        if (action === 'edit') {
+            await openPendingMemberEditModal(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
+        if (action === 'remove') {
+            await removePendingMember(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
+        if (action === 'sync') {
+            await syncNow();
+        }
+    }
+
+    async function renderPendingMembers() {
+        const members = await getPendingMembers();
+        renderPendingMembersInTable(members);
+        renderPendingMembersInMobile(members);
+
+        if (!noteWrap || !noteText) {
+            return;
+        }
+
+        if (!members.length) {
+            noteWrap.classList.add('d-none');
+            return;
+        }
+
+        noteWrap.classList.remove('d-none');
+        noteText.textContent = members.length + ' pending offline member' + (members.length === 1 ? '' : 's') + ' shown in this list.';
+    }
+
+    tableBody.addEventListener('click', async function (event) {
+        const button = event.target.closest('button[data-offline-member-action]');
+        if (!button) {
+            return;
+        }
+
+        await handlePendingMemberAction(button);
+    });
+
+    if (mobileList) {
+        mobileList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-offline-member-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingMemberAction(button);
+        });
+    }
+
+    if (saveOfflineMemberEditBtn) {
+        saveOfflineMemberEditBtn.addEventListener('click', async function () {
+            await savePendingMemberEdit();
+        });
+    }
+
+    window.addEventListener('online', function () {
+        renderPendingMembers();
+    });
+
+    window.addEventListener('seepo:queue-status', function () {
+        renderPendingMembers();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderPendingMembers();
+    });
+})();
+</script>
 {% endblock %}

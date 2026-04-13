@@ -2,6 +2,38 @@
 {% block title %}Groups{% endblock %}
 {% block page_title %}Groups{% endblock %}
 
+{% block extra_css %}
+<style>
+    .groups-mobile-list {
+        display: none;
+    }
+
+    .groups-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .groups-mobile-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 767.98px) {
+        .groups-table-wrap {
+            display: none;
+        }
+
+        .groups-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="fw-bold mb-0" style="color: var(--text-main);">Groups</h3>
@@ -14,14 +46,14 @@
             <h5 class="fw-bold mb-0" style="color: var(--text-main);">Offline Pending Groups</h5>
             <span id="offline-pending-groups-count" class="badge" style="background-color: #ECEBFA; color: var(--primary-color);">0</span>
         </div>
-        <p class="text-muted small mb-3">Groups saved on this device and not synced yet. You can add members to them now, then sync when online.</p>
+        <p class="text-muted small mb-3">Groups saved on this device and not synced yet. You can edit, add members, then sync when online.</p>
         <div id="offline-pending-groups-list" class="d-flex flex-column gap-2"></div>
     </div>
 </div>
 
 <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive groups-table-wrap">
             <table class="table table-hover align-middle mb-0">
                 <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
                     <tr>
@@ -54,6 +86,23 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <div id="groups-mobile-list" class="groups-mobile-list">
+            {% for group in groups %}
+            <div class="groups-mobile-card">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <div class="fw-bold" style="color: var(--text-main);">{{ group.name }}</div>
+                    <span class="badge" style="background-color:#ECEBFA;color:var(--primary-color);">{{ group.member_count }} members</span>
+                </div>
+                <div class="groups-mobile-meta mb-3">
+                    {{ group.location }} | {{ group.date_created|date:"d M Y" }} | {{ group.officer_name }}
+                </div>
+                <a href="{% url 'group_detail' group.pk %}" class="btn btn-sm workspace-action-btn w-100"><i class="fas fa-folder-open me-2"></i>Open Workspace</a>
+            </div>
+            {% empty %}
+            <div id="groups-mobile-empty" class="text-center text-muted py-4">No groups created yet.</div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -92,6 +141,47 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-group-edit-modal" tabindex="-1" aria-labelledby="offline-group-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-group-edit-modal-title">Edit Pending Offline Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-group-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-group-edit-name" class="form-label fw-bold">Group Name</label>
+                    <input id="offline-group-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-location" class="form-label fw-bold">Location</label>
+                    <input id="offline-group-edit-location" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-date" class="form-label fw-bold">Date Created</label>
+                    <input id="offline-group-edit-date" class="form-control" type="date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-officer" class="form-label fw-bold">Officer Name</label>
+                    <input id="offline-group-edit-officer" class="form-control" type="text" required>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-group-edit-banking" class="form-label fw-bold">Banking Type</label>
+                    <select id="offline-group-edit-banking" class="form-select">
+                        <option value="office">Office Account</option>
+                        <option value="group">Group Account</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-group-edit-btn" class="btn btn-primary">Save Offline Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -101,6 +191,7 @@
     const pendingList = document.getElementById('offline-pending-groups-list');
     const pendingCount = document.getElementById('offline-pending-groups-count');
     const groupTableBody = document.getElementById('group-table-body');
+    const groupMobileList = document.getElementById('groups-mobile-list');
 
     const memberModalEl = document.getElementById('offline-member-modal');
     const memberGroupClientUuid = document.getElementById('offline-member-group-client-uuid');
@@ -111,7 +202,17 @@
     const memberJoinDateInput = document.getElementById('offline-member-join-date');
     const saveOfflineMemberBtn = document.getElementById('save-offline-member-btn');
 
+    const groupEditModalEl = document.getElementById('offline-group-edit-modal');
+    const groupEditClientUuidInput = document.getElementById('offline-group-edit-client-uuid');
+    const groupEditNameInput = document.getElementById('offline-group-edit-name');
+    const groupEditLocationInput = document.getElementById('offline-group-edit-location');
+    const groupEditDateInput = document.getElementById('offline-group-edit-date');
+    const groupEditOfficerInput = document.getElementById('offline-group-edit-officer');
+    const groupEditBankingInput = document.getElementById('offline-group-edit-banking');
+    const saveOfflineGroupEditBtn = document.getElementById('save-offline-group-edit-btn');
+
     let memberModal = null;
+    let groupEditModal = null;
 
     if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
         return;
@@ -160,6 +261,18 @@
         return memberModal;
     }
 
+    function getGroupEditModal() {
+        if (!groupEditModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!groupEditModal) {
+            groupEditModal = window.bootstrap.Modal.getOrCreateInstance(groupEditModalEl);
+        }
+
+        return groupEditModal;
+    }
+
     async function getPendingGroups() {
         const groupsTable = window.seepoOfflineDb.tableForModel('group');
         const pendingGroups = await groupsTable.where('synced').equals(0).toArray();
@@ -200,6 +313,75 @@
         }
 
         showToast('Removed pending offline group and its pending members.');
+        await renderPendingGroups();
+    }
+
+    async function openPendingGroupEditModal(groupClientUuid) {
+        if (!groupEditClientUuidInput || !window.seepoOfflineDb || typeof window.seepoOfflineDb.getPendingRecordByClientUuid !== 'function') {
+            showToast('Offline group editing is unavailable on this page.');
+            return;
+        }
+
+        const group = await window.seepoOfflineDb.getPendingRecordByClientUuid('group', groupClientUuid);
+        if (!group) {
+            showToast('This group is already synced. Edit it while online.');
+            return;
+        }
+
+        groupEditClientUuidInput.value = group.client_uuid || '';
+        groupEditNameInput.value = group.name || '';
+        groupEditLocationInput.value = group.location || '';
+        groupEditDateInput.value = group.date_created || '';
+        groupEditOfficerInput.value = group.officer_name || '';
+        groupEditBankingInput.value = group.banking_type || 'office';
+
+        const modal = getGroupEditModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function savePendingGroupEdit() {
+        const clientUuid = (groupEditClientUuidInput.value || '').trim();
+        if (!clientUuid) {
+            showToast('Pending group identifier is missing.');
+            return;
+        }
+
+        const payload = {
+            name: (groupEditNameInput.value || '').trim(),
+            location: (groupEditLocationInput.value || '').trim(),
+            date_created: (groupEditDateInput.value || '').trim(),
+            officer_name: (groupEditOfficerInput.value || '').trim(),
+            banking_type: (groupEditBankingInput.value || 'office').trim(),
+        };
+
+        if (!payload.name || !payload.location || !payload.date_created || !payload.officer_name) {
+            showToast('Group name, location, date, and officer are required.');
+            return;
+        }
+
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
+            showToast('Offline group editing is unavailable on this page.');
+            return;
+        }
+
+        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('group', clientUuid, payload);
+        if (!updated) {
+            showToast('This group is already synced. Edit it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getGroupEditModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Offline group updated locally.');
         await renderPendingGroups();
     }
 
@@ -308,6 +490,7 @@
                     '</td>' +
                     '<td class="text-end pe-4">' +
                         '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Manage Offline</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove</button>' +
@@ -320,8 +503,60 @@
         groupTableBody.insertAdjacentHTML('afterbegin', tableRows);
     }
 
+    function renderPendingGroupsInMobile(groups) {
+        if (!groupMobileList) {
+            return;
+        }
+
+        groupMobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('groups-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const cards = groups.map(function (item) {
+            const group = item.group;
+            const memberCount = item.memberCount;
+
+            return (
+                '<div class="groups-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="groups-mobile-meta mb-3">' +
+                        htmlEscape(group.location || '-') +
+                        ' | ' + htmlEscape(formatDate(group.date_created)) +
+                        ' | ' + htmlEscape(group.officer_name || '-') +
+                        ' | Members: ' + String(memberCount) +
+                    '</div>' +
+                    '<div class="d-grid gap-2">' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync Now</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove Offline</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        groupMobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
     async function handlePendingAction(button) {
         const action = button.getAttribute('data-action');
+        if (action === 'edit-group') {
+            await openPendingGroupEditModal(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
         if (action === 'add-member') {
             openOfflineMemberModal(
                 button.getAttribute('data-client-uuid') || '',
@@ -349,6 +584,7 @@
             pendingList.innerHTML = '';
             pendingCount.textContent = '0';
             renderPendingGroupsInTable([]);
+            renderPendingGroupsInMobile([]);
             return;
         }
 
@@ -390,6 +626,7 @@
 
         pendingList.innerHTML = fragments.join('');
         renderPendingGroupsInTable(groupsForTable);
+        renderPendingGroupsInMobile(groupsForTable);
     }
 
     pendingList.addEventListener('click', async function (event) {
@@ -412,9 +649,26 @@
         });
     }
 
+    if (groupMobileList) {
+        groupMobileList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingAction(button);
+        });
+    }
+
     if (saveOfflineMemberBtn) {
         saveOfflineMemberBtn.addEventListener('click', async function () {
             await saveOfflineMember();
+        });
+    }
+
+    if (saveOfflineGroupEditBtn) {
+        saveOfflineGroupEditBtn.addEventListener('click', async function () {
+            await savePendingGroupEdit();
         });
     }
 
