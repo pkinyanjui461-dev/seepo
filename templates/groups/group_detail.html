@@ -259,7 +259,7 @@
                                 <td class="text-end pe-4">
                                     <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
                                         <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); border-radius: 6px;" title="Edit Member"><i class="fas fa-edit" style="color: var(--primary-color);"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Manage Offline"
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Manage Offline" data-offline-only="true"
                                                 data-offline-member-action="manage"
                                                 data-client-uuid="{{ member.client_uuid }}"
                                                 data-member-number="{{ member.member_number|default_if_none:'' }}"
@@ -294,7 +294,7 @@
                         </div>
                         <div class="d-grid gap-2">
                             <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-2"></i>Edit Member</a>
-                            <button type="button" class="btn btn-sm btn-outline-primary"
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true"
                                     data-offline-member-action="manage"
                                     data-client-uuid="{{ member.client_uuid }}"
                                     data-member-number="{{ member.member_number|default_if_none:'' }}"
