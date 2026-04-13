@@ -271,26 +271,7 @@ def debug_clear(request):
 
 @require_GET
 def service_worker(request):
-    offline_group_urls = []
-    try:
-        from groups.models import Group
-
-        group_ids = Group.objects.values_list('pk', flat=True)[:300]
-        for group_id in group_ids:
-            offline_group_urls.extend(
-                [
-                    f'/groups/{group_id}/',
-                    f'/groups/{group_id}/edit/',
-                    f'/members/group/{group_id}/',
-                    f'/members/group/{group_id}/add/',
-                    f'/finance/group/{group_id}/forms/',
-                    f'/finance/group/{group_id}/forms/create/',
-                ]
-            )
-    except Exception:
-        offline_group_urls = []
-
-    response = render(request, 'offline_sync/sw.js', {'offline_group_urls': offline_group_urls})
+    response = render(request, 'offline_sync/sw.js')
     response['Content-Type'] = 'application/javascript'
     response['Service-Worker-Allowed'] = '/'
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'

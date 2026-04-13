@@ -151,7 +151,7 @@ async syncNow() {
 
   // 3. Update UI
   await this.refreshStatus();
-  
+
   // 4. Show result
   return { success: true, errors: [] };
 }
@@ -226,7 +226,7 @@ db.version(2).stores({
   client_updated_at: '2024-04-13T10:00:00Z',  // When modified
   synced: 0,                      // 0=pending, 1=synced
   server_id: null,                // Set after successful push
-  
+
   // Model data:
   name: 'Group A',
   location: 'Downtown',
@@ -241,7 +241,7 @@ db.version(2).stores({
 ```javascript
 form.addEventListener('submit', async (event) => {
   const modelName = form.getAttribute('data-offline-model');
-  
+
   if (!seepoOfflineSync) return;
   if (!form.checkValidity()) {
     form.reportValidity();
@@ -364,17 +364,17 @@ Result: Single group with server's data
 async pullModel(modelName) {
   const response = await fetch(`/api/sync/pull/?model=${modelName}`);
   const { records } = await response.json();
-  
+
   for (const record of records) {
     const existing = await table
       .where('client_uuid')
       .equals(record.client_uuid)
       .first();
-    
+
     if (existing) {
       const serverTime = new Date(record.client_updated_at);
       const localTime = new Date(existing.client_updated_at);
-      
+
       if (serverTime > localTime) {
         // Server is newer, overwrite
         await table.update(existing._localId, record);
@@ -426,7 +426,7 @@ Server needs to accept POST to the form's action endpoint and:
 
 ### IndexedDB Limits
 - Chrome: 50% of disk space (unlimited on Android)
-- Firefox: 10% of disk space  
+- Firefox: 10% of disk space
 - Safari: 50MB per origin
 - Edge: Same as Chrome
 

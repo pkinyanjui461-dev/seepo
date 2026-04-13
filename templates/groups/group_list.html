@@ -238,52 +238,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="offline-workspace-modal" tabindex="-1" aria-labelledby="offline-workspace-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content bg-card border-main">
-            <div class="modal-header border-main">
-                <div>
-                    <h5 class="modal-title" id="offline-workspace-modal-title">Offline Workspace</h5>
-                    <p id="offline-workspace-modal-subtitle" class="small text-muted mb-0">Pending group workspace</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="offline-workspace-chip"><i class="fas fa-user-friends text-primary"></i>Members <strong id="offline-workspace-members-count">0</strong></span>
-                    <span class="offline-workspace-chip"><i class="fas fa-file-invoice-dollar text-info"></i>Forms <strong id="offline-workspace-forms-count">0</strong></span>
-                </div>
-
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-2" style="color: var(--text-main);">Members</h6>
-                    <div id="offline-workspace-members-empty" class="alert alert-light border mb-2">No pending offline members yet.</div>
-                    <div id="offline-workspace-members-list" class="offline-workspace-list"></div>
-                </div>
-
-                <div>
-                    <h6 class="fw-bold mb-2" style="color: var(--text-main);">Monthly Forms</h6>
-                    <div id="offline-workspace-forms-empty" class="alert alert-light border mb-2">No pending offline monthly forms yet.</div>
-                    <div id="offline-workspace-forms-list" class="offline-workspace-list"></div>
-                </div>
-            </div>
-            <div class="modal-footer border-main d-flex justify-content-between">
-                <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" id="offline-workspace-add-member-btn" data-offline-only="true" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-user-plus me-1"></i>Add Member Offline
-                    </button>
-                    <button type="button" id="offline-workspace-add-form-btn" data-offline-only="true" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-file-circle-plus me-1"></i>Create Form Offline
-                    </button>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" id="offline-workspace-sync-btn" class="btn btn-sm btn-outline-success"><i class="fas fa-rotate me-1"></i>Sync</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="offline-monthly-form-modal" tabindex="-1" aria-labelledby="offline-monthly-form-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-card border-main">
@@ -386,10 +340,8 @@
 
     let memberModal = null;
     let groupEditModal = null;
-    let workspaceModal = null;
     let monthlyFormModal = null;
     let activeWorkspaceGroup = null;
-    let reopenWorkspaceAfterChildModal = false;
 
     if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
         return;
@@ -451,15 +403,7 @@
     }
 
     function getWorkspaceModal() {
-        if (!offlineWorkspaceModalEl || !window.bootstrap || !window.bootstrap.Modal) {
-            return null;
-        }
-
-        if (!workspaceModal) {
-            workspaceModal = window.bootstrap.Modal.getOrCreateInstance(offlineWorkspaceModalEl);
-        }
-
-        return workspaceModal;
+        return null;
     }
 
     function getMonthlyFormModal() {
@@ -474,30 +418,9 @@
         return monthlyFormModal;
     }
 
-    function pauseWorkspaceModalForChild() {
-        if (!offlineWorkspaceModalEl || !offlineWorkspaceModalEl.classList.contains('show')) {
-            reopenWorkspaceAfterChildModal = false;
-            return;
-        }
+    function pauseWorkspaceModalForChild() {}
 
-        reopenWorkspaceAfterChildModal = true;
-        const modal = getWorkspaceModal();
-        if (modal) {
-            modal.hide();
-        }
-    }
-
-    function restoreWorkspaceModalAfterChild() {
-        if (!reopenWorkspaceAfterChildModal || !activeWorkspaceGroup) {
-            return;
-        }
-
-        reopenWorkspaceAfterChildModal = false;
-        const modal = getWorkspaceModal();
-        if (modal) {
-            modal.show();
-        }
-    }
+    function restoreWorkspaceModalAfterChild() {}
 
     function refreshOfflineOnlyActions() {
         const showOfflineActions = !navigator.onLine;

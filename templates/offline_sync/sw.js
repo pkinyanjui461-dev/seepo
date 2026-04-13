@@ -1,9 +1,9 @@
 {% load static %}
-const CACHE_VERSION = 'v29';
+const CACHE_VERSION = 'v30';
 const CSS_ASSET_VERSION = '11';
 const OFFLINE_SYNC_ASSET_VERSION = '4';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '28';
+const SW_REGISTER_ASSET_VERSION = '29';
 const DEXIE_ASSET_VERSION = '1';
 const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
 const OFFLINE_GLOBAL_STATE_VERSION = '1';
@@ -47,7 +47,7 @@ const APP_SHELL_URLS = [
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
-  '{% static "js/dev-log-tools.js' %}',
+  '{% static "js/dev-log-tools.js" %}',
   '{% static "js/vendor/dexie.min.js" %}?v=' + DEXIE_ASSET_VERSION,
   '{% static "js/vendor/dexie.min.js" %}',
   '{% static "js/offline-db.js" %}?v=' + OFFLINE_DB_ASSET_VERSION,
@@ -67,10 +67,7 @@ const APP_SHELL_URLS = [
   '{% static "img/pwa-icon-192.png" %}',
   '{% static "img/pwa-icon-512.png" %}',
   '{% static "favicon.ico" %}',
-  '{% static "robots.txt" %}',
-  {% for group_url in offline_group_urls %}
-  '{{ group_url }}',
-  {% endfor %}
+  '{% static "robots.txt" %}'
 ];
 
 async function precacheAppShell() {

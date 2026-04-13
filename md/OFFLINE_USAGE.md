@@ -28,7 +28,7 @@ Add this attribute to forms to enable offline creation:
 
 Supported models:
 - `group` - Create groups
-- `member` - Create members  
+- `member` - Create members
 - `monthly_form` - Create monthly forms
 - `expense` - Create expenses
 - `user` - Create users
@@ -76,7 +76,7 @@ When offline:
 
 ### Option A: Full CRUD (Create/Update/Delete)
 ```html
-<form method="POST" 
+<form method="POST"
       data-offline-model="member"
       data-group-client-uuid="GROUP-UUID">
   <input type="text" name="name" required>
@@ -87,7 +87,7 @@ When offline:
 
 ### Option B: Draft Queue (Save for Later)
 ```html
-<form method="POST" 
+<form method="POST"
       action="/members/create/"
       data-offline-draft-label="member"
       data-offline-draft-key="create-member">

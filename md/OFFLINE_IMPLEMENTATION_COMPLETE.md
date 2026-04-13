@@ -12,7 +12,7 @@ A **production-ready offline-first system** where users can create, edit, and ma
    - 7-day expiry per field
    - Works on ANY form (zero configuration)
 
-2. **Offline Data Creation** 
+2. **Offline Data Creation**
    - Create groups, members, expenses, forms offline
    - Data saves to local IndexedDB
    - Shows "Saved offline" toast

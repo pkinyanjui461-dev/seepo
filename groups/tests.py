@@ -70,11 +70,11 @@ class GroupWorkspaceOfflineUiTests(TestCase):
 		self.assertContains(response, 'getPendingExpenses')
 		self.assertContains(response, 'renderWorkspaceSnapshot')
 
-	def test_group_list_contains_offline_workspace_modal_hooks(self):
+	def test_group_list_uses_full_page_workspace_instead_of_modal(self):
 		response = self.client.get(reverse('group_list'))
 
 		self.assertEqual(response.status_code, 200)
-		self.assertContains(response, 'id="offline-workspace-modal"')
+		self.assertNotContains(response, 'id="offline-workspace-modal"')
 		self.assertContains(response, 'id="offline-monthly-form-modal"')
 		self.assertContains(response, 'data-action="open-workspace"')
 		self.assertContains(response, 'data-offline-only="true"')

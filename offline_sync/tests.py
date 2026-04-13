@@ -319,15 +319,15 @@ class OfflineSyncApiTests(TestCase):
         self.assertIn("offline-diary-sync.js", body)
         self.assertIn("offline-draft-queue.js", body)
 
-    def test_service_worker_includes_known_group_workspace_urls(self):
+    def test_service_worker_does_not_inline_dynamic_group_workspace_urls(self):
         self.client.logout()
         response = self.client.get(self.sw_url)
 
         self.assertEqual(response.status_code, 200)
         body = response.content.decode("utf-8")
-        self.assertIn(f"/groups/{self.workspace_group.pk}/", body)
-        self.assertIn(f"/members/group/{self.workspace_group.pk}/add/", body)
-        self.assertIn(f"/finance/group/{self.workspace_group.pk}/forms/", body)
+        self.assertNotIn(f"/groups/{self.workspace_group.pk}/", body)
+        self.assertNotIn(f"/members/group/{self.workspace_group.pk}/add/", body)
+        self.assertNotIn(f"/finance/group/{self.workspace_group.pk}/forms/", body)
 
     def test_service_worker_skips_api_requests(self):
         self.client.logout()
