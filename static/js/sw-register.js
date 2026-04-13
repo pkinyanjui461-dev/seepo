@@ -1,7 +1,8 @@
 (function () {
-  const SW_ASSET_VERSION = '29';
+  const SW_ASSET_VERSION = '30';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const SW_FORCE_UPDATE_INTERVAL_MS = 90 * 1000;
+  const SW_UPDATE_WARN_THROTTLE_MS = 120 * 1000;
   const SW_REFRESH_TOAST_FLAG_KEY = 'seepoSwRefreshedToastV1';
   const SW_REFRESH_TOAST_MAX_AGE_MS = 2 * 60 * 1000;
   const hasServiceWorkerSupport = 'serviceWorker' in navigator;
@@ -13,6 +14,7 @@
   let hostReadyBadge = null;
   let hostReadyTimer = null;
   let swForceUpdateTimer = null;
+  let lastSwUpdateWarnAt = 0;
 
   function showInstallMessage(message) {
     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
@@ -279,28 +281,121 @@
     button.hidden = !shouldShow;
   }
 
-  async function forceServiceWorkerUpdate(registration) {
+  function resolveRegistrationScriptUrl(registration) {
     if (!registration) {
-      return;
+      return '';
+    }
+
+    const worker = registration.installing || registration.waiting || registration.active;
+    return worker && worker.scriptURL ? String(worker.scriptURL) : '';
+  }
+
+  function normalizeScriptUrl(scriptUrl) {
+    if (!scriptUrl) {
+      return '(unknown script)';
     }
 
     try {
-      await registration.update();
-      if (registration.waiting) {
-        registration.waiting.postMessage('SKIP_WAITING');
-      }
+      const parsed = new URL(scriptUrl, window.location.origin);
+      return parsed.pathname + parsed.search;
     } catch (error) {
-      console.warn('Service worker update check failed.', error);
+      return String(scriptUrl);
     }
   }
 
-  function startForceUpdateCycle(registration) {
+  function hasExpectedScriptVersion(scriptUrl) {
+    if (!scriptUrl) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(scriptUrl, window.location.origin);
+      return parsed.pathname === '/sw.js' && parsed.searchParams.get('v') === SW_ASSET_VERSION;
+    } catch (error) {
+      return scriptUrl.indexOf('/sw.js?v=' + SW_ASSET_VERSION) !== -1;
+    }
+  }
+
+  function warnUpdateFailure(message, error) {
+    const now = Date.now();
+    if (now - lastSwUpdateWarnAt < SW_UPDATE_WARN_THROTTLE_MS) {
+      return;
+    }
+
+    lastSwUpdateWarnAt = now;
+    console.warn(message, error);
+  }
+
+  async function recoverRegistration(registration) {
+    try {
+      if (registration) {
+        await registration.unregister();
+      }
+
+      const freshRegistration = await navigator.serviceWorker.register(SW_SCRIPT_URL, {
+        scope: '/',
+        updateViaCache: 'none',
+      });
+
+      if (freshRegistration.waiting) {
+        freshRegistration.waiting.postMessage('SKIP_WAITING');
+      }
+
+      return freshRegistration;
+    } catch (error) {
+      warnUpdateFailure('Service worker recovery failed.', error);
+      return registration;
+    }
+  }
+
+  async function forceServiceWorkerUpdate(registration) {
+    if (!registration) {
+      return null;
+    }
+
+    let activeRegistration = registration;
+    const currentScriptUrl = resolveRegistrationScriptUrl(activeRegistration);
+
+    if (currentScriptUrl && !hasExpectedScriptVersion(currentScriptUrl)) {
+      activeRegistration = await recoverRegistration(activeRegistration);
+    }
+
+    try {
+      await activeRegistration.update();
+      if (activeRegistration.waiting) {
+        activeRegistration.waiting.postMessage('SKIP_WAITING');
+      }
+      return activeRegistration;
+    } catch (error) {
+      const failedScriptUrl = resolveRegistrationScriptUrl(activeRegistration) || currentScriptUrl;
+      warnUpdateFailure(
+        'Service worker update check failed for ' + normalizeScriptUrl(failedScriptUrl) + '.',
+        error
+      );
+
+      if (failedScriptUrl && !hasExpectedScriptVersion(failedScriptUrl)) {
+        return recoverRegistration(activeRegistration);
+      }
+
+      return activeRegistration;
+    }
+  }
+
+  function startForceUpdateCycle(initialRegistration) {
     if (swForceUpdateTimer) {
       clearInterval(swForceUpdateTimer);
     }
 
+    let registration = initialRegistration;
+
     swForceUpdateTimer = setInterval(function () {
-      forceServiceWorkerUpdate(registration);
+      forceServiceWorkerUpdate(registration)
+        .then(function (updatedRegistration) {
+          if (updatedRegistration) {
+            registration = updatedRegistration;
+          }
+        })
+        .catch(function () {});
     }, SW_FORCE_UPDATE_INTERVAL_MS);
   }
 
@@ -355,12 +450,12 @@
 
   window.addEventListener('load', async function () {
     try {
-      const registration = await navigator.serviceWorker.register(SW_SCRIPT_URL, {
+      let registration = await navigator.serviceWorker.register(SW_SCRIPT_URL, {
         scope: '/',
         updateViaCache: 'none',
       });
 
-      await forceServiceWorkerUpdate(registration);
+      registration = (await forceServiceWorkerUpdate(registration)) || registration;
       startForceUpdateCycle(registration);
 
       if (registration.waiting) {

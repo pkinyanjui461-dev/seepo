@@ -736,7 +736,7 @@
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=29"></script>
+<script src="{% static 'js/sw-register.js' %}?v=30"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
@@ -969,6 +969,29 @@
             }
 
             return deletePendingModal;
+        }
+
+        function blurFocusedElementInside(element) {
+            if (!element) {
+                return;
+            }
+
+            const focused = document.activeElement;
+            if (focused && element.contains(focused) && typeof focused.blur === 'function') {
+                focused.blur();
+            }
+        }
+
+        if (deletePendingModalEl) {
+            deletePendingModalEl.addEventListener('hide.bs.modal', function () {
+                blurFocusedElementInside(deletePendingModalEl);
+            });
+
+            deletePendingModalEl.addEventListener('hidden.bs.modal', function () {
+                if (fab && typeof fab.focus === 'function') {
+                    fab.focus();
+                }
+            });
         }
 
         fab.addEventListener('click', function () {
