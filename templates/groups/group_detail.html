@@ -51,6 +51,30 @@
         color: var(--text-muted);
     }
 
+    .workspace-snapshot-fab {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 1055;
+        border-radius: 999px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .workspace-snapshot-fab .badge {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        border-radius: 999px;
+        font-weight: 700;
+        padding: 0.2rem 0.45rem;
+    }
+
+    .workspace-snapshot-modal .modal-dialog {
+        max-width: 740px;
+    }
+
     [data-theme="dark"] .workspace-snapshot-item {
         background: var(--muted-surface);
     }
@@ -109,29 +133,41 @@
     </div>
 </div>
 
-<div id="offline-workspace-snapshot" class="card shadow-sm border-0 mb-4 d-none" style="border-radius: var(--border-radius-lg); overflow: hidden;">
-    <div class="card-body p-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-            <div>
-                <h5 class="fw-bold mb-1" style="color: var(--text-main);">
-                    <i class="fas fa-clipboard-check me-2 text-primary"></i>Offline Workspace Snapshot
-                </h5>
-                <p class="text-muted small mb-0">Audit pending member, form, and expense queues before syncing.</p>
+<button id="workspace-snapshot-fab" data-offline-only="true" type="button" class="btn btn-primary workspace-snapshot-fab d-none" aria-label="Open offline workspace snapshot">
+    <i class="fas fa-clipboard-check"></i>
+    <span>Snapshot</span>
+    <span id="workspace-snapshot-fab-count" class="badge">0</span>
+</button>
+
+<div class="modal fade workspace-snapshot-modal" id="offline-workspace-snapshot-modal" tabindex="-1" aria-labelledby="offline-workspace-snapshot-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div id="offline-workspace-snapshot" class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <div>
+                    <h5 class="modal-title fw-bold mb-1" id="offline-workspace-snapshot-modal-title" style="color: var(--text-main);">
+                        <i class="fas fa-clipboard-check me-2 text-primary"></i>Offline Workspace Snapshot
+                    </h5>
+                    <p class="text-muted small mb-0">Audit pending member, form, and expense queues before syncing.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <button id="workspace-snapshot-sync-now-btn" type="button" class="btn btn-sm btn-outline-success">
-                <i class="fas fa-rotate me-1"></i>Sync Now
-            </button>
-        </div>
+            <div class="modal-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="workspace-snapshot-chip"><i class="fas fa-user-friends text-primary"></i>Members <strong id="workspace-snapshot-members-count">0</strong></span>
+                        <span class="workspace-snapshot-chip"><i class="fas fa-file-invoice-dollar text-info"></i>Forms <strong id="workspace-snapshot-forms-count">0</strong></span>
+                        <span class="workspace-snapshot-chip"><i class="fas fa-coins text-warning"></i>Expenses (Device) <strong id="workspace-snapshot-expenses-count">0</strong></span>
+                        <span class="workspace-snapshot-chip"><i class="fas fa-layer-group text-success"></i>Total Pending <strong id="workspace-snapshot-total-count">0</strong></span>
+                    </div>
+                    <button id="workspace-snapshot-sync-now-btn" type="button" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-rotate me-1"></i>Sync Now
+                    </button>
+                </div>
 
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="workspace-snapshot-chip"><i class="fas fa-user-friends text-primary"></i>Members <strong id="workspace-snapshot-members-count">0</strong></span>
-            <span class="workspace-snapshot-chip"><i class="fas fa-file-invoice-dollar text-info"></i>Forms <strong id="workspace-snapshot-forms-count">0</strong></span>
-            <span class="workspace-snapshot-chip"><i class="fas fa-coins text-warning"></i>Expenses (Device) <strong id="workspace-snapshot-expenses-count">0</strong></span>
-            <span class="workspace-snapshot-chip"><i class="fas fa-layer-group text-success"></i>Total Pending <strong id="workspace-snapshot-total-count">0</strong></span>
+                <div id="workspace-snapshot-empty" class="alert alert-light border mb-0">No pending offline records for this workspace audit.</div>
+                <div id="workspace-snapshot-list" class="workspace-snapshot-list"></div>
+            </div>
         </div>
-
-        <div id="workspace-snapshot-empty" class="alert alert-light border mb-0">No pending offline records for this workspace audit.</div>
-        <div id="workspace-snapshot-list" class="workspace-snapshot-list"></div>
     </div>
 </div>
 
@@ -155,7 +191,7 @@
             <h5 class="fw-bold mb-0" style="color: var(--text-main);">Active Members</h5>
             <div class="d-flex gap-2">
                 <a href="{% url 'member_create' group.pk %}" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>Add Member</a>
-                <button id="add-offline-member-btn" type="button" class="btn btn-outline-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-wifi-slash me-2"></i>Add Member Offline</button>
+                <button id="add-offline-member-btn" data-offline-only="true" type="button" class="btn btn-outline-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-wifi-slash me-2"></i>Add Member Offline</button>
             </div>
         </div>
 
@@ -391,6 +427,9 @@
     const formsNoteText = document.getElementById('offline-pending-forms-note-text');
 
     const snapshotPanel = document.getElementById('offline-workspace-snapshot');
+    const snapshotFab = document.getElementById('workspace-snapshot-fab');
+    const snapshotFabCount = document.getElementById('workspace-snapshot-fab-count');
+    const snapshotModalEl = document.getElementById('offline-workspace-snapshot-modal');
     const snapshotMembersCount = document.getElementById('workspace-snapshot-members-count');
     const snapshotFormsCount = document.getElementById('workspace-snapshot-forms-count');
     const snapshotExpensesCount = document.getElementById('workspace-snapshot-expenses-count');
@@ -410,6 +449,7 @@
     const saveOfflineMemberEditBtn = document.getElementById('save-offline-member-edit-btn');
 
     let memberEditModal = null;
+    let snapshotModal = null;
     let memberEditMode = 'edit';
 
     if (!tableBody || !window.seepoOfflineDb || !groupClientUuid) {
@@ -443,6 +483,18 @@
         }
 
         return memberEditModal;
+    }
+
+    function getSnapshotModal() {
+        if (!snapshotModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!snapshotModal) {
+            snapshotModal = window.bootstrap.Modal.getOrCreateInstance(snapshotModalEl);
+        }
+
+        return snapshotModal;
     }
 
     function parseBool(value) {
@@ -946,7 +998,15 @@
         };
         const total = counts.members + counts.forms + counts.expenses;
 
-        snapshotPanel.classList.remove('d-none');
+        if (snapshotFab && snapshotFabCount) {
+            snapshotFabCount.textContent = String(total);
+            const showFab = total > 0 || !navigator.onLine;
+            snapshotFab.classList.toggle('d-none', !showFab);
+        }
+
+        if (snapshotPanel) {
+            snapshotPanel.classList.remove('d-none');
+        }
         if (snapshotMembersCount) {
             snapshotMembersCount.textContent = String(counts.members);
         }
@@ -1206,6 +1266,15 @@
     if (snapshotSyncNowBtn) {
         snapshotSyncNowBtn.addEventListener('click', async function () {
             await syncNow();
+        });
+    }
+
+    if (snapshotFab) {
+        snapshotFab.addEventListener('click', function () {
+            const modal = getSnapshotModal();
+            if (modal) {
+                modal.show();
+            }
         });
     }
 

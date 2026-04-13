@@ -16,7 +16,12 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/main.css' %}?v=10">
     <link rel="manifest" href="{% url 'web_manifest' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/pwa-icon-192.png' %}">
     <meta name="theme-color" content="#6C5DD3">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SEEPO">
     <style>
         :root {
             --offline-banner-offset: 0px;
@@ -729,7 +734,7 @@
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=23"></script>
+<script src="{% static 'js/sw-register.js' %}?v=24"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
@@ -1154,6 +1159,46 @@
                 }
             });
         }
+    })();
+</script>
+<script>
+    (function () {
+        function showOfflineMessage(message) {
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+                window.seepoOfflineSync.showToast(message);
+                return;
+            }
+
+            alert(message);
+        }
+
+        function refreshOfflineOnlyElements() {
+            const showOfflineActions = !navigator.onLine;
+            document.querySelectorAll('[data-offline-only="true"]').forEach(function (element) {
+                if (showOfflineActions) {
+                    element.classList.remove('d-none');
+                } else {
+                    element.classList.add('d-none');
+                }
+            });
+        }
+
+        function onMockLinkClick(event) {
+            const anchor = event.target.closest('a[data-online-required-message]');
+            if (!anchor || navigator.onLine) {
+                return;
+            }
+
+            event.preventDefault();
+            const message = anchor.getAttribute('data-online-required-message') ||
+                'You are offline. This action requires internet.';
+            showOfflineMessage(message);
+        }
+
+        document.addEventListener('click', onMockLinkClick);
+        window.addEventListener('online', refreshOfflineOnlyElements);
+        window.addEventListener('offline', refreshOfflineOnlyElements);
+        document.addEventListener('DOMContentLoaded', refreshOfflineOnlyElements);
     })();
 </script>
 {% block extra_js %}{% endblock %}

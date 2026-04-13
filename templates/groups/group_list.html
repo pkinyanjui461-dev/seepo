@@ -380,6 +380,7 @@
     let workspaceModal = null;
     let monthlyFormModal = null;
     let activeWorkspaceGroup = null;
+    let reopenWorkspaceAfterChildModal = false;
 
     if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
         return;
@@ -462,6 +463,31 @@
         }
 
         return monthlyFormModal;
+    }
+
+    function pauseWorkspaceModalForChild() {
+        if (!offlineWorkspaceModalEl || !offlineWorkspaceModalEl.classList.contains('show')) {
+            reopenWorkspaceAfterChildModal = false;
+            return;
+        }
+
+        reopenWorkspaceAfterChildModal = true;
+        const modal = getWorkspaceModal();
+        if (modal) {
+            modal.hide();
+        }
+    }
+
+    function restoreWorkspaceModalAfterChild() {
+        if (!reopenWorkspaceAfterChildModal || !activeWorkspaceGroup) {
+            return;
+        }
+
+        reopenWorkspaceAfterChildModal = false;
+        const modal = getWorkspaceModal();
+        if (modal) {
+            modal.show();
+        }
     }
 
     function refreshOfflineOnlyActions() {
@@ -707,9 +733,14 @@
         await renderPendingGroups();
     }
 
-    function openOfflineMemberModal(groupClientUuid, groupName) {
+    function openOfflineMemberModal(groupClientUuid, groupName, options) {
         if (!memberGroupClientUuid || !memberNameInput || !memberJoinDateInput) {
             return;
+        }
+
+        const fromWorkspace = !!(options && options.fromWorkspace);
+        if (fromWorkspace) {
+            pauseWorkspaceModalForChild();
         }
 
         memberGroupClientUuid.value = groupClientUuid;
@@ -763,6 +794,8 @@
         if (!activeWorkspaceGroup || !monthlyFormYearInput || !monthlyFormMonthInput) {
             return;
         }
+
+        pauseWorkspaceModalForChild();
 
         if (monthlyFormGroupName) {
             monthlyFormGroupName.textContent = 'Group: ' + activeWorkspaceGroup.name;
@@ -1137,7 +1170,7 @@
             if (!activeWorkspaceGroup) {
                 return;
             }
-            openOfflineMemberModal(activeWorkspaceGroup.client_uuid, activeWorkspaceGroup.name);
+            openOfflineMemberModal(activeWorkspaceGroup.client_uuid, activeWorkspaceGroup.name, { fromWorkspace: true });
         });
     }
 
@@ -1162,6 +1195,18 @@
     if (saveOfflineGroupEditBtn) {
         saveOfflineGroupEditBtn.addEventListener('click', async function () {
             await savePendingGroupEdit();
+        });
+    }
+
+    if (memberModalEl) {
+        memberModalEl.addEventListener('hidden.bs.modal', function () {
+            restoreWorkspaceModalAfterChild();
+        });
+    }
+
+    if (monthlyFormModalEl) {
+        monthlyFormModalEl.addEventListener('hidden.bs.modal', function () {
+            restoreWorkspaceModalAfterChild();
         });
     }
 

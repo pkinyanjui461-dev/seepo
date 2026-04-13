@@ -9,7 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
     <link rel="manifest" href="{% url 'web_manifest' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/pwa-icon-192.png' %}">
     <meta name="theme-color" content="#6C5DD3">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SEEPO">
+    <meta name="description" content="SEEPO Accounting progressive web application.">
     <style>
         :root {
             --primary: #6C5DD3;
@@ -190,7 +196,7 @@
                 flex: none;
             }
         }
-        
+
         @media (max-width: 576px) {
             .login-image-side {
                 min-height: 250px;
@@ -210,6 +216,47 @@
                 font-size: 26px;
             }
         }
+
+        .pwa-install-btn {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 1090;
+            border: none;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+            color: #fff;
+            background: #1d4ed8;
+        }
+
+        .pwa-install-btn[hidden] {
+            display: none !important;
+        }
+
+        .offline-host-ready-badge {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 1090;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #fff;
+            background: #64748b;
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .host-ready-checking { background: #475569; }
+        .host-ready-ok { background: #15803d; }
+        .host-ready-warn { background: #d97706; }
+        .host-ready-error { background: #b91c1c; }
     </style>
 </head>
 <body>
@@ -244,7 +291,7 @@
                     <label for="{{ form.username.id_for_label }}" class="form-label">Phone Number</label>
                     {{ form.username }}
                 </div>
-                
+
                 <div class="mb-4">
                     <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
                     <div class="position-relative d-flex align-items-center">
@@ -266,6 +313,9 @@
         </div>
     </div>
 </div>
+
+<button id="pwa-install-btn" class="pwa-install-btn" type="button" hidden>Install App</button>
+<div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">OH-Checking</div>
 
 <script>
     document.getElementById('togglePassword')?.addEventListener('click', function() {
@@ -292,7 +342,7 @@
         });
     });
 </script>
-<script src="{% static 'js/sw-register.js' %}"></script>
+<script src="{% static 'js/sw-register.js' %}?v=24"></script>
 
 </body>
 </html>

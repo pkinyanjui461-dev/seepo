@@ -48,6 +48,7 @@ class GroupWorkspaceOfflineUiTests(TestCase):
 
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'id="add-offline-member-btn"')
+		self.assertContains(response, 'data-offline-only="true"')
 		self.assertContains(response, 'data-offline-member-action="manage"')
 		self.assertContains(response, 'id="offline-pending-members-note"')
 
