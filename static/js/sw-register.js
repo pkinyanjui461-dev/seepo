@@ -194,7 +194,8 @@
       return;
     }
 
-    button.hidden = !isVisible || inStandaloneMode();
+    const shouldShow = Boolean(isVisible) && Boolean(deferredInstallPrompt) && !inStandaloneMode();
+    button.hidden = !shouldShow;
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
@@ -212,7 +213,7 @@
   window.addEventListener('DOMContentLoaded', function () {
     getHostReadyBadge();
     getInstallButton();
-    setInstallButtonVisible(true);
+    setInstallButtonVisible(false);
     updateOfflineHostReadyStatus();
 
     if (!hostReadyTimer) {

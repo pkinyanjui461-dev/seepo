@@ -91,6 +91,29 @@
         font-size: 0.8rem;
     }
 
+    .group-workspace-tab {
+        border-radius: 8px;
+        font-weight: 500;
+        color: var(--text-muted);
+        background: transparent;
+        transition: color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .group-workspace-tab:hover {
+        color: var(--text-main);
+    }
+
+    .group-workspace-tab.active,
+    .group-workspace-tab.show {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+    }
+
+    .group-workspace-tab.active i,
+    .group-workspace-tab.show i {
+        color: #ffffff !important;
+    }
+
     @media (max-width: 767.98px) {
         .members-table-wrap {
             display: none;
@@ -173,12 +196,12 @@
 
 <ul class="nav nav-pills mb-4 gap-2" id="groupTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link px-4 py-2 {% if active_tab == 'members' %}active{% endif %}" id="members-tab" data-bs-toggle="pill" data-bs-target="#members" type="button" role="tab" style="{% if active_tab == 'members' %}background-color: var(--primary-color); border-radius: 8px; font-weight: 500;{% else %}color: var(--text-muted); font-weight: 500;{% endif %}">
+        <button class="nav-link group-workspace-tab px-4 py-2 {% if active_tab == 'members' %}active{% endif %}" id="members-tab" data-bs-toggle="pill" data-bs-target="#members" type="button" role="tab">
             <i class="fas fa-user-friends me-2"></i>Members ({{ members.count }})
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link px-4 py-2 {% if active_tab == 'forms' %}active{% endif %}" id="forms-tab" data-bs-toggle="pill" data-bs-target="#forms" type="button" role="tab" style="{% if active_tab == 'forms' %}background-color: var(--primary-color); border-radius: 8px; font-weight: 500;{% else %}color: var(--text-muted); font-weight: 500;{% endif %}">
+        <button class="nav-link group-workspace-tab px-4 py-2 {% if active_tab == 'forms' %}active{% endif %}" id="forms-tab" data-bs-toggle="pill" data-bs-target="#forms" type="button" role="tab">
             <i class="fas fa-file-invoice-dollar me-2"></i>Monthly Forms
         </button>
     </li>
