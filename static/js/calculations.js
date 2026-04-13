@@ -2,8 +2,174 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = document.getElementById('financeTable');
     if (!table) return;
 
+    const OFFLINE_ROW_QUEUE_KEY = 'seepoMemberRecordRowQueueV1';
     const saveUrlBase = table.dataset.saveUrl.replace('/0/', '/ID/');
     const rowTimeouts = {};
+    const saveStatusToast = document.getElementById('saveStatus');
+
+    function showSyncToast(message, isError) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+
+        if (!saveStatusToast) {
+            if (isError) {
+                console.error(message);
+            } else {
+                console.info(message);
+            }
+            return;
+        }
+
+        const toastBody = saveStatusToast.querySelector('.toast-body span');
+        const toastCard = saveStatusToast.querySelector('.toast');
+        if (toastBody) {
+            toastBody.innerHTML = isError
+                ? '<i class="fas fa-exclamation-triangle me-2"></i> ' + message
+                : '<i class="fas fa-check-circle me-2"></i> ' + message;
+        }
+        if (toastCard) {
+            toastCard.classList.remove('bg-success', 'bg-danger');
+            toastCard.classList.add(isError ? 'bg-danger' : 'bg-success');
+        }
+        saveStatusToast.style.display = 'block';
+        setTimeout(() => (saveStatusToast.style.display = 'none'), 2200);
+    }
+
+    function getRowQueue() {
+        try {
+            const raw = localStorage.getItem(OFFLINE_ROW_QUEUE_KEY);
+            if (!raw) {
+                return [];
+            }
+
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_error) {
+            return [];
+        }
+    }
+
+    function setRowQueue(queue) {
+        localStorage.setItem(OFFLINE_ROW_QUEUE_KEY, JSON.stringify(queue));
+    }
+
+    function queueRowPayload(recordId, url, data) {
+        const dedupeKey = String(recordId || '') + '|' + String(url || '');
+        const queue = getRowQueue();
+
+        const payload = {
+            id: dedupeKey,
+            recordId: String(recordId || ''),
+            url: url,
+            data: data,
+            updatedAt: new Date().toISOString(),
+        };
+
+        const existingIndex = queue.findIndex((item) => item.id === dedupeKey);
+        if (existingIndex >= 0) {
+            queue[existingIndex] = payload;
+        } else {
+            queue.push(payload);
+        }
+
+        setRowQueue(queue);
+        markRowPending(recordId, true);
+    }
+
+    function clearQueuedRow(recordId, url) {
+        const dedupeKey = String(recordId || '') + '|' + String(url || '');
+        const queue = getRowQueue();
+        const filtered = queue.filter((item) => item.id !== dedupeKey);
+
+        if (filtered.length !== queue.length) {
+            setRowQueue(filtered);
+        }
+
+        const stillPendingForRecord = filtered.some((item) => String(item.recordId) === String(recordId));
+        markRowPending(recordId, stillPendingForRecord);
+    }
+
+    function markRowPending(recordId, isPending) {
+        const row = document.querySelector('.record-row[data-record-id="' + String(recordId) + '"]');
+        if (!row) {
+            return;
+        }
+
+        if (isPending) {
+            row.classList.add('row-pending-sync');
+        } else {
+            row.classList.remove('row-pending-sync');
+        }
+    }
+
+    function applyQueuedDraftsToRows() {
+        const queue = getRowQueue();
+        queue.forEach((item) => {
+            const row = document.querySelector('.record-row[data-record-id="' + String(item.recordId) + '"]');
+            if (!row || !item.data) {
+                return;
+            }
+
+            Object.keys(item.data).forEach((fieldName) => {
+                const input = row.querySelector('[data-field="' + fieldName + '"]');
+                if (input) {
+                    input.value = item.data[fieldName];
+                }
+            });
+
+            markRowPending(item.recordId, true);
+        });
+    }
+
+    async function syncQueuedRows() {
+        if (!navigator.onLine) {
+            return { synced: 0, remaining: getRowQueue().length };
+        }
+
+        const queue = getRowQueue();
+        if (!queue.length) {
+            return { synced: 0, remaining: 0 };
+        }
+
+        const remaining = [];
+        let synced = 0;
+
+        for (const item of queue) {
+            try {
+                const res = await fetch(item.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify(item.data || {}),
+                });
+
+                const result = await res.json();
+                if (!res.ok || !result.success) {
+                    remaining.push(item);
+                    continue;
+                }
+
+                synced += 1;
+                markRowPending(item.recordId, false);
+            } catch (_error) {
+                remaining.push(item);
+            }
+        }
+
+        setRowQueue(remaining);
+
+        remaining.forEach((item) => markRowPending(item.recordId, true));
+
+        if (synced > 0) {
+            showSyncToast('Synced ' + synced + ' queued row change' + (synced === 1 ? '' : 's') + '.', false);
+        }
+
+        return { synced: synced, remaining: remaining.length };
+    }
 
     // Attach input listeners
     table.querySelectorAll('.calc-input').forEach(input => {
@@ -14,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 performRowCalculations(tr);
                 calculateTotals();
-                
+
                 // Debounce save per row
                 clearTimeout(rowTimeouts[rowId]);
                 rowTimeouts[rowId] = setTimeout(() => {
@@ -34,25 +200,27 @@ document.addEventListener('DOMContentLoaded', () => {
             manualSaveBtn.disabled = true;
 
             const rows = document.querySelectorAll('.record-row');
-            const promises = [];
-            rows.forEach(tr => {
-                promises.push(saveRowData(tr));
-            });
+            if (!navigator.onLine) {
+                rows.forEach((tr) => {
+                    saveRowData(tr);
+                });
+                showSyncToast('Saved offline and queued. Changes will sync automatically when online.', false);
+            } else {
+                const promises = [];
+                rows.forEach(tr => {
+                    promises.push(saveRowData(tr));
+                });
 
-            await Promise.all(promises);
+                await Promise.all(promises);
+                await syncQueuedRows();
+            }
 
             // Clear any pending debounced row saves
             Object.keys(rowTimeouts).forEach(rowId => clearTimeout(rowTimeouts[rowId]));
             for (let prop in rowTimeouts) { delete rowTimeouts[prop]; }
 
             manualSaveBtn.innerHTML = '<i class="fas fa-check me-1"></i> Saved';
-            
-            // Show the toast indicator
-            const toast = document.getElementById('saveStatus');
-            if (toast) {
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 2000);
-            }
+            showSyncToast('Saved', false);
 
             setTimeout(() => {
                 manualSaveBtn.innerHTML = originalHTML;
@@ -100,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Calculated fields
         const loanInterest = Math.round(loanBf * 0.015);
-        
+
         // NEW LOGIC: If total repaid is 0, shares this month is 0.
         // If principal is 0 OR there are withdrawals, interest/principal is NOT deducted from repaid.
         let shares = 0;
@@ -112,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Deduct principal and interest, but don't let shares go negative
             shares = Math.max(0, repaid - (principal + loanInterest));
         }
-        
+
         const savCf        = savBf + shares - withdrawals;
         const loanCf       = loanBf - principal;
 
@@ -138,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const recordId = tr.dataset.recordId;
         const loanCell = document.getElementById(`loan-bf-cell-${recordId}`);
         const savCell = document.getElementById(`savings-cf-cell-${recordId}`);
-        
+
         let rowHasError = false;
 
         // Collect accumulated errors per cell
@@ -186,9 +354,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotals() {
-        const fields = ['savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal', 
+        const fields = ['savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal',
                         'loan_interest', 'shares_this_month', 'withdrawals', 'fines_charges', 'savings_share_cf', 'loan_balance_cf'];
-        
+
         const totals = {};
         fields.forEach(f => totals[f] = 0);
 
@@ -219,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Validate Footer Totals
         const loanTd = document.getElementById('tot-loan-bf');
         const savTd = document.getElementById('tot-savings-cf');
-        
+
         const expTotalLoan = totals['principal'] + totals['loan_balance_cf'];
         if (totals['loan_balance_bf'] !== expTotalLoan) {
             loanTd.classList.add('cell-error', 'text-danger');
@@ -242,11 +410,16 @@ document.addEventListener('DOMContentLoaded', () => {
     async function saveRowData(tr) {
         const recordId = tr.dataset.recordId;
         const url = saveUrlBase.replace('ID', recordId);
-        
+
         const data = {};
         tr.querySelectorAll('.calc-input').forEach(input => {
             data[input.dataset.field] = input.value || "0";
         });
+
+        if (!navigator.onLine) {
+            queueRowPayload(recordId, url, data);
+            return { queued: true };
+        }
 
         try {
             const res = await fetch(url, {
@@ -258,18 +431,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(data)
             });
             const result = await res.json();
-            
+
             if (result.success) {
-                // Show brief save toast
-                const toast = document.getElementById('saveStatus');
-                if (toast) {
-                    toast.style.display = 'block';
-                    setTimeout(() => toast.style.display = 'none', 1500);
-                }
+                clearQueuedRow(recordId, url);
             }
         } catch (e) {
+            queueRowPayload(recordId, url, data);
             console.error("Failed to save row", e);
         }
+
+        return { queued: false };
     }
 
     // ── Run initial setup on page load ─────────────────────────────────
@@ -280,13 +451,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Recalculate all computed fields (Loan Interest, Shares, Savings C/F, Loan C/F)
+    // 2. Apply offline queued row drafts before recalculating.
+    applyQueuedDraftsToRows();
+
+    // 3. Recalculate all computed fields (Loan Interest, Shares, Savings C/F, Loan C/F)
     //    using the saved data already in the DOM. This ensures calculated fields like
     //    "Shares This Month" are freshly derived on every page load, not stale DB values.
     document.querySelectorAll('.record-row').forEach(tr => {
         performRowCalculations(tr);
     });
 
-    // 3. Update footer totals
+    // 4. Update footer totals
     calculateTotals();
+
+    if (navigator.onLine) {
+        syncQueuedRows();
+    }
+
+    window.addEventListener('online', () => {
+        syncQueuedRows();
+    });
 });

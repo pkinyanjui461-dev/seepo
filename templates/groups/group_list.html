@@ -33,7 +33,7 @@
                         <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="group-table-body">
                     {% for group in groups %}
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td class="ps-4 fw-bold" style="color: var(--text-main);">{{ group.name }}</td>
@@ -50,7 +50,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-users-slash fs-3 mb-3 d-block opacity-50"></i>No groups created yet.</td></tr>
+                    <tr id="groups-empty-row"><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-users-slash fs-3 mb-3 d-block opacity-50"></i>No groups created yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -100,6 +100,7 @@
     const pendingWrap = document.getElementById('offline-pending-groups-wrap');
     const pendingList = document.getElementById('offline-pending-groups-list');
     const pendingCount = document.getElementById('offline-pending-groups-count');
+    const groupTableBody = document.getElementById('group-table-body');
 
     const memberModalEl = document.getElementById('offline-member-modal');
     const memberGroupClientUuid = document.getElementById('offline-member-group-client-uuid');
@@ -269,6 +270,77 @@
         window.location.reload();
     }
 
+    function renderPendingGroupsInTable(groups) {
+        if (!groupTableBody) {
+            return;
+        }
+
+        groupTableBody.querySelectorAll('tr[data-offline-pending-row="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('groups-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const tableRows = groups.map(function (item) {
+            const group = item.group;
+            const memberCount = item.memberCount;
+
+            return (
+                '<tr data-offline-pending-row="true" style="border-bottom: 1px solid var(--border-color); background: #fff7e6;">' +
+                    '<td class="ps-4 fw-bold" style="color: var(--text-main);">' +
+                        htmlEscape(group.name || 'Unnamed Group') +
+                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</td>' +
+                    '<td class="text-muted">' + htmlEscape(group.location || '-') + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(formatDate(group.date_created)) + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(group.officer_name || '-') + '</td>' +
+                    '<td>' +
+                        '<div class="d-inline-flex align-items-center justify-content-center fw-bold" style="background-color:#FFF3CD;color:#7C5400;border-radius:6px;padding:4px 10px;font-size:0.85rem;">' +
+                            String(memberCount) +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="text-end pe-4">' +
+                        '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Manage Offline</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        groupTableBody.insertAdjacentHTML('afterbegin', tableRows);
+    }
+
+    async function handlePendingAction(button) {
+        const action = button.getAttribute('data-action');
+        if (action === 'add-member') {
+            openOfflineMemberModal(
+                button.getAttribute('data-client-uuid') || '',
+                button.getAttribute('data-group-name') || 'Pending Group'
+            );
+            return;
+        }
+
+        if (action === 'remove-group') {
+            const groupClientUuid = button.getAttribute('data-client-uuid') || '';
+            await removePendingGroup(groupClientUuid);
+            return;
+        }
+
+        if (action === 'sync-now') {
+            await syncNow();
+        }
+    }
+
     async function renderPendingGroups() {
         const groups = await getPendingGroups();
 
@@ -276,6 +348,7 @@
             pendingWrap.classList.add('d-none');
             pendingList.innerHTML = '';
             pendingCount.textContent = '0';
+            renderPendingGroupsInTable([]);
             return;
         }
 
@@ -283,8 +356,10 @@
         pendingCount.textContent = String(groups.length);
 
         const fragments = [];
+        const groupsForTable = [];
         for (const group of groups) {
             const memberCount = await countPendingMembers(group.client_uuid);
+            groupsForTable.push({ group: group, memberCount: memberCount });
             fragments.push(
                 '<div class="border rounded p-3" style="border-color: var(--border-color) !important;">' +
                     '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
@@ -314,6 +389,7 @@
         }
 
         pendingList.innerHTML = fragments.join('');
+        renderPendingGroupsInTable(groupsForTable);
     }
 
     pendingList.addEventListener('click', async function (event) {
@@ -322,25 +398,19 @@
             return;
         }
 
-        const action = button.getAttribute('data-action');
-        if (action === 'add-member') {
-            openOfflineMemberModal(
-                button.getAttribute('data-client-uuid') || '',
-                button.getAttribute('data-group-name') || 'Pending Group'
-            );
-            return;
-        }
-
-        if (action === 'remove-group') {
-            const groupClientUuid = button.getAttribute('data-client-uuid') || '';
-            await removePendingGroup(groupClientUuid);
-            return;
-        }
-
-        if (action === 'sync-now') {
-            await syncNow();
-        }
+        await handlePendingAction(button);
     });
+
+    if (groupTableBody) {
+        groupTableBody.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingAction(button);
+        });
+    }
 
     if (saveOfflineMemberBtn) {
         saveOfflineMemberBtn.addEventListener('click', async function () {

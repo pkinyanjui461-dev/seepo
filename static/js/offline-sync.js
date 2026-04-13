@@ -29,6 +29,8 @@
       this.preloadTimer = null;
       this.preloadIntervalMs = 120000;
       this.modelOrder = resolveModelOrder();
+      this.fabFlashTimer = null;
+      this.fabFlashUntil = 0;
     }
 
     normalizeError(error, context) {
@@ -197,6 +199,49 @@
       badge.className = 'sync-badge';
       badge.classList.add('sync-state-' + state);
       badge.textContent = text;
+      this.setFabBaseState(state);
+    }
+
+    setFabClass(stateClass) {
+      const fab = document.getElementById('sw-tools-fab');
+      if (!fab) {
+        return;
+      }
+
+      fab.classList.remove('fab-state-online', 'fab-state-offline', 'fab-state-success', 'fab-state-error');
+      fab.classList.add(stateClass);
+    }
+
+    setFabBaseState(state) {
+      if (Date.now() < this.fabFlashUntil) {
+        return;
+      }
+
+      if (state === 'offline') {
+        this.setFabClass('fab-state-offline');
+        return;
+      }
+
+      if (state === 'error') {
+        this.setFabClass('fab-state-error');
+        return;
+      }
+
+      this.setFabClass('fab-state-online');
+    }
+
+    flashFabState(type, durationMs) {
+      const duration = Number(durationMs) || 10000;
+      const flashClass = type === 'success' ? 'fab-state-success' : 'fab-state-error';
+
+      this.fabFlashUntil = Date.now() + duration;
+      this.setFabClass(flashClass);
+
+      clearTimeout(this.fabFlashTimer);
+      this.fabFlashTimer = setTimeout(async () => {
+        this.fabFlashUntil = 0;
+        await this.refreshStatus();
+      }, duration);
     }
 
     showOfflineBanner(show) {
@@ -204,7 +249,19 @@
       if (!banner) {
         return;
       }
-      banner.style.display = show ? 'block' : 'none';
+
+      const root = document.documentElement;
+      if (show) {
+        banner.style.display = 'block';
+        const offset = Math.ceil(banner.getBoundingClientRect().height || banner.offsetHeight || 0);
+        root.style.setProperty('--offline-banner-offset', offset + 'px');
+        document.body.classList.add('offline-banner-visible');
+        return;
+      }
+
+      banner.style.display = 'none';
+      root.style.setProperty('--offline-banner-offset', '0px');
+      document.body.classList.remove('offline-banner-visible');
     }
 
     showToast(message) {
@@ -335,6 +392,12 @@
         success: this.lastSyncErrors.length === 0,
         errors: this.lastSyncErrors.slice(),
       };
+
+      if (result.success) {
+        this.flashFabState('success', 10000);
+      } else {
+        this.flashFabState('error', 10000);
+      }
 
       if (!result.success && syncOptions.throwOnError) {
         const first = result.errors[0] && result.errors[0].message ? result.errors[0].message : 'Unknown sync error.';
