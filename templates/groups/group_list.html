@@ -331,6 +331,7 @@
 {% block extra_js %}
 <script>
 (function () {
+    const offlineWorkspaceRoute = "{% url 'offline_workspace' %}";
     const pendingWrap = document.getElementById('offline-pending-groups-wrap');
     const pendingList = document.getElementById('offline-pending-groups-list');
     const pendingCount = document.getElementById('offline-pending-groups-count');
@@ -617,20 +618,14 @@
             return;
         }
 
-        activeWorkspaceGroup = {
-            client_uuid: String(groupClientUuid || '').trim(),
-            name: String(groupName || 'Pending Group').trim() || 'Pending Group',
-        };
+        const targetUuid = String(groupClientUuid || '').trim();
+        const targetName = String(groupName || 'Pending Group').trim() || 'Pending Group';
+        const targetUrl =
+            offlineWorkspaceRoute +
+            '?group_client_uuid=' + encodeURIComponent(targetUuid) +
+            '&group_name=' + encodeURIComponent(targetName);
 
-        if (offlineWorkspaceSubtitle) {
-            offlineWorkspaceSubtitle.textContent = activeWorkspaceGroup.name + ' (Offline Pending Group)';
-        }
-
-        await renderWorkspaceContents();
-        const modal = getWorkspaceModal();
-        if (modal) {
-            modal.show();
-        }
+        window.location.href = targetUrl;
     }
 
     async function removePendingGroup(groupClientUuid) {

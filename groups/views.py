@@ -42,6 +42,26 @@ def group_detail(request, pk):
 
 
 @login_required
+def offline_workspace(request):
+    """Render a normal-layout workspace shell for pending offline groups."""
+    group_client_uuid = (request.GET.get('group_client_uuid') or '').strip()
+    group_name = (request.GET.get('group_name') or '').strip() or 'Offline Pending Group'
+
+    if not group_client_uuid:
+        messages.warning(request, 'Offline workspace link is missing a group identifier.')
+        return redirect('group_list')
+
+    return render(
+        request,
+        'groups/offline_workspace.html',
+        {
+            'group_client_uuid': group_client_uuid,
+            'group_name': group_name,
+        },
+    )
+
+
+@login_required
 def group_edit(request, pk):
     group = get_object_or_404(Group, pk=pk)
     form = GroupForm(request.POST or None, instance=group)
@@ -67,13 +87,13 @@ def group_delete(request, pk):
 def diary_list(request):
     """View to display the diary/schedule for all groups."""
     from groups.models import DiaryEntry
-    
+
     # Ensure every group has a DiaryEntry created
     groups = Group.objects.all().order_by('name')
     for g in groups:
         if not hasattr(g, 'diary'):
             DiaryEntry.objects.create(group=g)
-            
+
     diaries = DiaryEntry.objects.all().select_related('group').order_by('group__name')
     return render(request, 'groups/diary_list.html', {'diaries': diaries})
 
@@ -85,12 +105,12 @@ def api_diary_update(request, pk):
     """AJAX endpoint to update DiaryEntry fields."""
     from groups.models import DiaryEntry
     diary = get_object_or_404(DiaryEntry, pk=pk)
-    
+
     try:
         data = json.loads(request.body)
         field = data.get('field')
         value = data.get('value')
-        
+
         if field and hasattr(diary, field.lower()):
             setattr(diary, field.lower(), value)
             diary.save()

@@ -1,0 +1,1236 @@
+{% extends 'base.html' %}
+{% block title %}Offline Workspace{% endblock %}
+{% block page_title %}Offline Workspace{% endblock %}
+
+{% block extra_css %}
+<style>
+    .group-workspace-tab {
+        border-radius: 8px;
+        font-weight: 500;
+        color: var(--text-muted);
+        background: transparent;
+        transition: color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .group-workspace-tab:hover {
+        color: var(--text-main);
+    }
+
+    .group-workspace-tab.active,
+    .group-workspace-tab.show {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+    }
+
+    .group-workspace-tab.active i,
+    .group-workspace-tab.show i {
+        color: #ffffff !important;
+    }
+
+    .offline-member-table-wrap .table {
+        margin-bottom: 0;
+    }
+
+    .offline-pending-flag {
+        background-color: #fff3cd;
+        color: #7c5400;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .offline-sheet-summary {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--card-bg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 mb-4" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-4 position-relative" style="background-color: #ffffff;">
+        <div class="position-absolute" style="top: 0; right: 0; width: 150px; height: 100%; background: linear-gradient(90deg, transparent, rgba(108, 93, 211, 0.05)); border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;"></div>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background-color: #ECEBFA; color: var(--primary-color); border-radius: 12px;">
+                        <i class="fas fa-users-cog fs-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-1" id="offline-group-name" style="color: var(--text-main);">{{ group_name|default:'Offline Pending Group' }}</h3>
+                        <p class="text-muted mb-0 fw-medium" style="font-size: 0.9rem;" id="offline-group-meta">
+                            <i class="fas fa-map-marker-alt me-1 text-primary"></i> <span id="offline-group-location">-</span> &nbsp;<span class="text-light mx-1">|</span>&nbsp;
+                            <i class="fas fa-calendar-alt me-1 text-primary"></i> Founded <span id="offline-group-founded">-</span> &nbsp;<span class="text-light mx-1">|</span>&nbsp;
+                            <i class="fas fa-user-tie me-1 text-primary"></i> Officer: <span id="offline-group-officer">-</span>
+                        </p>
+                    </div>
+                </div>
+                <span class="offline-pending-flag">Offline Pending Workspace</span>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0 position-relative z-index-1 d-flex flex-wrap justify-content-md-end gap-2">
+                <button id="offline-sync-now-header-btn" type="button" class="btn btn-outline-success px-3 py-2 fw-medium" style="border-radius: 8px;"><i class="fas fa-rotate me-2"></i>Sync Now</button>
+                <button id="edit-offline-group-btn" type="button" class="btn px-3 py-2 fw-medium workspace-action-btn"><i class="fas fa-edit me-2"></i>Edit Offline</button>
+                <button id="remove-offline-group-btn" type="button" class="btn btn-outline-danger px-3 py-2 fw-medium" style="border-radius: 8px;"><i class="fas fa-trash-alt me-2"></i>Remove Offline</button>
+                <a href="{% url 'group_list' %}" class="btn btn-outline-secondary px-3 py-2 fw-medium" style="border-radius: 8px;"><i class="fas fa-arrow-left me-2"></i>Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="offline-workspace-warning" class="alert alert-warning d-none"></div>
+
+<ul class="nav nav-pills mb-4 gap-2" id="offlineWorkspaceTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link group-workspace-tab px-4 py-2 active" id="offline-members-tab" data-bs-toggle="pill" data-bs-target="#offline-members-pane" type="button" role="tab">
+            <i class="fas fa-user-friends me-2"></i>Members (<span id="offline-members-count">0</span>)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link group-workspace-tab px-4 py-2" id="offline-forms-tab" data-bs-toggle="pill" data-bs-target="#offline-forms-pane" type="button" role="tab">
+            <i class="fas fa-file-invoice-dollar me-2"></i>Monthly Forms (<span id="offline-forms-count">0</span>)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="offlineWorkspaceTabsContent">
+    <div class="tab-pane fade show active" id="offline-members-pane" role="tabpanel" aria-labelledby="offline-members-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0" style="color: var(--text-main);">Active Members</h5>
+            <div class="d-flex gap-2">
+                <button id="add-offline-member-page-btn" type="button" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>Add Member Offline</button>
+                <button id="offline-sync-now-members-btn" type="button" class="btn btn-outline-success px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-rotate me-2"></i>Sync</button>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 offline-member-table-wrap" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
+                            <tr>
+                                <th class="ps-4 py-3 text-muted fw-bold border-0" style="width: 80px;">No.</th>
+                                <th class="py-3 text-muted fw-bold border-0">Name</th>
+                                <th class="py-3 text-muted fw-bold border-0">Phone</th>
+                                <th class="py-3 text-muted fw-bold border-0">Join Date</th>
+                                <th class="py-3 text-muted fw-bold border-0">Status</th>
+                                <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="offline-members-table-body">
+                            <tr id="offline-members-empty-row">
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="fas fa-user-slash fs-3 mb-3 d-block opacity-50"></i>
+                                    No pending offline members for this group yet.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="offline-forms-pane" role="tabpanel" aria-labelledby="offline-forms-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0" style="color: var(--text-main);">Financial Forms</h5>
+            <div class="d-flex gap-2">
+                <button id="create-offline-form-btn" type="button" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-plus me-2"></i>New Offline Form</button>
+                <button id="offline-sync-now-forms-btn" type="button" class="btn btn-outline-success px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-rotate me-2"></i>Sync</button>
+            </div>
+        </div>
+
+        <div id="offline-forms-row" class="row g-4"></div>
+        <div id="offline-forms-empty-wrap" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="background-color: var(--muted-surface); border-radius: var(--border-radius-lg); border: 1px dashed var(--border-color);">
+            <i class="fas fa-folder-open fs-1 mb-3 opacity-25" style="color: var(--primary-color);"></i>
+            <h5 class="fw-bold" style="color: var(--text-main);">No offline forms yet</h5>
+            <p class="text-muted mb-4">Create an offline monthly form for this pending workspace.</p>
+            <button id="create-offline-form-empty-btn" type="button" class="btn btn-primary px-4" style="border-radius: 8px; font-weight: 500;">Create First Offline Form</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-group-edit-modal" tabindex="-1" aria-labelledby="offline-group-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-group-edit-modal-title">Edit Pending Offline Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-group-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-group-edit-name" class="form-label fw-bold">Group Name</label>
+                    <input id="offline-group-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-location" class="form-label fw-bold">Location</label>
+                    <input id="offline-group-edit-location" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-date" class="form-label fw-bold">Date Created</label>
+                    <input id="offline-group-edit-date" class="form-control" type="date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-officer" class="form-label fw-bold">Officer Name</label>
+                    <input id="offline-group-edit-officer" class="form-control" type="text" required>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-group-edit-banking" class="form-label fw-bold">Banking Type</label>
+                    <select id="offline-group-edit-banking" class="form-select">
+                        <option value="office">Office Account</option>
+                        <option value="group">Group Account</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-group-edit-btn" class="btn btn-primary">Save Offline Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-member-edit-modal" tabindex="-1" aria-labelledby="offline-member-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-member-edit-modal-title">Add Offline Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-member-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-member-edit-number" class="form-label fw-bold">Member Number</label>
+                    <input id="offline-member-edit-number" class="form-control" type="number" min="1" placeholder="e.g. 1">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-name" class="form-label fw-bold">Name</label>
+                    <input id="offline-member-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-phone" class="form-label fw-bold">Phone</label>
+                    <input id="offline-member-edit-phone" class="form-control" type="text">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-edit-join-date" class="form-label fw-bold">Join Date</label>
+                    <input id="offline-member-edit-join-date" class="form-control" type="date" required>
+                </div>
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="offline-member-edit-active" checked>
+                    <label class="form-check-label" for="offline-member-edit-active">Active Member</label>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-member-edit-btn" class="btn btn-primary">Save Offline Member</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-monthly-form-modal" tabindex="-1" aria-labelledby="offline-monthly-form-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-monthly-form-modal-title">Create Offline Monthly Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="offline-monthly-form-month" class="form-label fw-bold">Month</label>
+                    <select id="offline-monthly-form-month" class="form-select">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-monthly-form-year" class="form-label fw-bold">Year</label>
+                    <input id="offline-monthly-form-year" class="form-control" type="number" min="2000" max="2100" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-monthly-form-status" class="form-label fw-bold">Status</label>
+                    <select id="offline-monthly-form-status" class="form-select">
+                        <option value="draft">Draft</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="approved">Approved</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-monthly-form-notes" class="form-label fw-bold">Notes (Optional)</label>
+                    <textarea id="offline-monthly-form-notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-monthly-form-btn" class="btn btn-primary">Save Form Offline</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-pending-form-sheet-modal" tabindex="-1" aria-labelledby="offline-pending-form-sheet-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <div>
+                    <h5 class="modal-title" id="offline-pending-form-sheet-modal-title">Offline Accounting Mock Sheet</h5>
+                    <p id="offline-pending-form-sheet-modal-subtitle" class="small text-muted mb-0">Pending monthly form</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-pending-form-sheet-client-uuid" value="">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="offline-sheet-deposits" class="form-label fw-bold">Deposits</label>
+                        <input id="offline-sheet-deposits" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="offline-sheet-fines" class="form-label fw-bold">Fines</label>
+                        <input id="offline-sheet-fines" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="offline-sheet-loan-repayment" class="form-label fw-bold">Loan Repayment</label>
+                        <input id="offline-sheet-loan-repayment" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="offline-sheet-loans" class="form-label fw-bold">Loans Disbursed</label>
+                        <input id="offline-sheet-loans" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="offline-sheet-withdrawals" class="form-label fw-bold">Withdrawals</label>
+                        <input id="offline-sheet-withdrawals" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="offline-sheet-expenses" class="form-label fw-bold">Expenses</label>
+                        <input id="offline-sheet-expenses" type="number" step="0.01" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="offline-sheet-members-expected" class="form-label fw-bold">Members Expected</label>
+                        <input id="offline-sheet-members-expected" type="number" step="1" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="offline-sheet-members-paid" class="form-label fw-bold">Members Paid</label>
+                        <input id="offline-sheet-members-paid" type="number" step="1" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-12">
+                        <label for="offline-sheet-notes" class="form-label fw-bold">Diary/Notes</label>
+                        <textarea id="offline-sheet-notes" class="form-control" rows="3" placeholder="Capture offline notes for this pending form"></textarea>
+                    </div>
+                </div>
+
+                <div class="offline-sheet-summary mt-3 mb-0">
+                    <div><strong>Computed Balance:</strong> <span id="offline-sheet-balance-preview">0</span></div>
+                    <div><strong>Arrears Members:</strong> <span id="offline-sheet-arrears-preview">0</span></div>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="offline-sheet-save-btn" class="btn btn-primary">Save Offline Draft</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const groupClientUuid = '{{ group_client_uuid|escapejs }}';
+    const initialGroupName = '{{ group_name|escapejs }}';
+    const groupListUrl = "{% url 'group_list' %}";
+    const offlineDraftStorageKey = 'seepoPendingMonthlyFormSheetDraftsV1';
+
+    const groupNameEl = document.getElementById('offline-group-name');
+    const groupLocationEl = document.getElementById('offline-group-location');
+    const groupFoundedEl = document.getElementById('offline-group-founded');
+    const groupOfficerEl = document.getElementById('offline-group-officer');
+    const warningEl = document.getElementById('offline-workspace-warning');
+
+    const membersCountEl = document.getElementById('offline-members-count');
+    const formsCountEl = document.getElementById('offline-forms-count');
+    const membersTableBody = document.getElementById('offline-members-table-body');
+    const membersEmptyRow = document.getElementById('offline-members-empty-row');
+
+    const formsRow = document.getElementById('offline-forms-row');
+    const formsEmptyWrap = document.getElementById('offline-forms-empty-wrap');
+
+    const addOfflineMemberBtn = document.getElementById('add-offline-member-page-btn');
+    const createOfflineFormBtn = document.getElementById('create-offline-form-btn');
+    const createOfflineFormEmptyBtn = document.getElementById('create-offline-form-empty-btn');
+
+    const syncNowHeaderBtn = document.getElementById('offline-sync-now-header-btn');
+    const syncNowMembersBtn = document.getElementById('offline-sync-now-members-btn');
+    const syncNowFormsBtn = document.getElementById('offline-sync-now-forms-btn');
+
+    const editOfflineGroupBtn = document.getElementById('edit-offline-group-btn');
+    const removeOfflineGroupBtn = document.getElementById('remove-offline-group-btn');
+
+    const groupEditModalEl = document.getElementById('offline-group-edit-modal');
+    const groupEditClientUuidInput = document.getElementById('offline-group-edit-client-uuid');
+    const groupEditNameInput = document.getElementById('offline-group-edit-name');
+    const groupEditLocationInput = document.getElementById('offline-group-edit-location');
+    const groupEditDateInput = document.getElementById('offline-group-edit-date');
+    const groupEditOfficerInput = document.getElementById('offline-group-edit-officer');
+    const groupEditBankingInput = document.getElementById('offline-group-edit-banking');
+    const saveOfflineGroupEditBtn = document.getElementById('save-offline-group-edit-btn');
+
+    const memberModalEl = document.getElementById('offline-member-edit-modal');
+    const memberModalTitle = document.getElementById('offline-member-edit-modal-title');
+    const memberEditClientUuidInput = document.getElementById('offline-member-edit-client-uuid');
+    const memberEditNumberInput = document.getElementById('offline-member-edit-number');
+    const memberEditNameInput = document.getElementById('offline-member-edit-name');
+    const memberEditPhoneInput = document.getElementById('offline-member-edit-phone');
+    const memberEditJoinDateInput = document.getElementById('offline-member-edit-join-date');
+    const memberEditActiveInput = document.getElementById('offline-member-edit-active');
+    const saveOfflineMemberEditBtn = document.getElementById('save-offline-member-edit-btn');
+
+    const monthlyFormModalEl = document.getElementById('offline-monthly-form-modal');
+    const monthlyFormMonthInput = document.getElementById('offline-monthly-form-month');
+    const monthlyFormYearInput = document.getElementById('offline-monthly-form-year');
+    const monthlyFormStatusInput = document.getElementById('offline-monthly-form-status');
+    const monthlyFormNotesInput = document.getElementById('offline-monthly-form-notes');
+    const saveOfflineMonthlyFormBtn = document.getElementById('save-offline-monthly-form-btn');
+
+    const sheetModalEl = document.getElementById('offline-pending-form-sheet-modal');
+    const sheetModalSubtitle = document.getElementById('offline-pending-form-sheet-modal-subtitle');
+    const sheetClientUuidInput = document.getElementById('offline-pending-form-sheet-client-uuid');
+    const sheetDeposits = document.getElementById('offline-sheet-deposits');
+    const sheetFines = document.getElementById('offline-sheet-fines');
+    const sheetLoanRepayment = document.getElementById('offline-sheet-loan-repayment');
+    const sheetLoans = document.getElementById('offline-sheet-loans');
+    const sheetWithdrawals = document.getElementById('offline-sheet-withdrawals');
+    const sheetExpenses = document.getElementById('offline-sheet-expenses');
+    const sheetMembersExpected = document.getElementById('offline-sheet-members-expected');
+    const sheetMembersPaid = document.getElementById('offline-sheet-members-paid');
+    const sheetNotes = document.getElementById('offline-sheet-notes');
+    const sheetBalancePreview = document.getElementById('offline-sheet-balance-preview');
+    const sheetArrearsPreview = document.getElementById('offline-sheet-arrears-preview');
+    const sheetSaveBtn = document.getElementById('offline-sheet-save-btn');
+
+    let groupEditModal = null;
+    let memberEditModal = null;
+    let monthlyFormModal = null;
+    let sheetModal = null;
+    let memberEditMode = 'create';
+
+    if (!window.seepoOfflineDb || !groupClientUuid) {
+        if (warningEl) {
+            warningEl.classList.remove('d-none');
+            warningEl.textContent = 'Offline workspace identifier is missing. Redirecting to groups list...';
+        }
+        setTimeout(function () {
+            window.location.href = groupListUrl;
+        }, 1200);
+        return;
+    }
+
+    function showToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function toDateLabel(value) {
+        const text = String(value || '').trim();
+        if (!text) {
+            return '-';
+        }
+        const parsed = new Date(text);
+        if (Number.isNaN(parsed.getTime())) {
+            return text;
+        }
+        return parsed.toLocaleDateString();
+    }
+
+    function monthLabel(month) {
+        const names = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const index = Number(month) - 1;
+        if (index < 0 || index >= names.length) {
+            return String(month || '?');
+        }
+        return names[index];
+    }
+
+    function statusBadge(status) {
+        const normalized = String(status || 'draft').toLowerCase();
+        if (normalized === 'approved') {
+            return '<span class="badge" style="background-color:#D4EDDA;color:#155724;font-weight:600;padding:6px 10px;border-radius:6px;">Approved</span>';
+        }
+        if (normalized === 'submitted') {
+            return '<span class="badge" style="background-color:#CCE5FF;color:#004085;font-weight:600;padding:6px 10px;border-radius:6px;">Submitted</span>';
+        }
+        return '<span class="badge" style="background-color:#FFF3CD;color:#856404;font-weight:600;padding:6px 10px;border-radius:6px;">Draft</span>';
+    }
+
+    function getModal(el, existing) {
+        if (!el || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+        if (!existing.value) {
+            existing.value = window.bootstrap.Modal.getOrCreateInstance(el);
+        }
+        return existing.value;
+    }
+
+    async function getPendingGroup() {
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        let groups = [];
+        try {
+            groups = await groupsTable.toArray();
+        } catch (error) {
+            return null;
+        }
+
+        return groups.find(function (group) {
+            return String(group.client_uuid || '').trim() === groupClientUuid && Number(group.synced) === 0;
+        }) || null;
+    }
+
+    async function getPendingMembers() {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        let members = [];
+
+        try {
+            members = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        } catch (error) {
+            members = await membersTable.toArray();
+        }
+
+        return members.filter(function (member) {
+            return String(member.group_client_uuid || '').trim() === groupClientUuid && Number(member.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    async function getPendingForms() {
+        const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+        let forms = [];
+
+        try {
+            forms = await formsTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        } catch (error) {
+            forms = await formsTable.toArray();
+        }
+
+        return forms.filter(function (form) {
+            return String(form.group_client_uuid || '').trim() === groupClientUuid && Number(form.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    function loadDraftsMap() {
+        try {
+            const raw = window.localStorage.getItem(offlineDraftStorageKey);
+            if (!raw) {
+                return {};
+            }
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function saveDraftsMap(map) {
+        try {
+            window.localStorage.setItem(offlineDraftStorageKey, JSON.stringify(map || {}));
+        } catch (error) {
+            showToast('Unable to save offline sheet draft.');
+        }
+    }
+
+    function getDraft(clientUuid) {
+        const map = loadDraftsMap();
+        return map[String(clientUuid || '').trim()] || null;
+    }
+
+    function setDraft(clientUuid, payload) {
+        const key = String(clientUuid || '').trim();
+        if (!key) {
+            return;
+        }
+        const map = loadDraftsMap();
+        map[key] = payload;
+        saveDraftsMap(map);
+    }
+
+    function deleteDraft(clientUuid) {
+        const key = String(clientUuid || '').trim();
+        if (!key) {
+            return;
+        }
+        const map = loadDraftsMap();
+        if (Object.prototype.hasOwnProperty.call(map, key)) {
+            delete map[key];
+            saveDraftsMap(map);
+        }
+    }
+
+    function safeNumber(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function refreshSheetSummary() {
+        const deposits = safeNumber(sheetDeposits ? sheetDeposits.value : 0);
+        const fines = safeNumber(sheetFines ? sheetFines.value : 0);
+        const loanRepayment = safeNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0);
+        const loans = safeNumber(sheetLoans ? sheetLoans.value : 0);
+        const withdrawals = safeNumber(sheetWithdrawals ? sheetWithdrawals.value : 0);
+        const expenses = safeNumber(sheetExpenses ? sheetExpenses.value : 0);
+        const expected = safeNumber(sheetMembersExpected ? sheetMembersExpected.value : 0);
+        const paid = safeNumber(sheetMembersPaid ? sheetMembersPaid.value : 0);
+
+        const balance = (deposits + fines + loanRepayment) - (loans + withdrawals + expenses);
+        const arrears = Math.max(0, expected - paid);
+
+        if (sheetBalancePreview) {
+            sheetBalancePreview.textContent = balance.toLocaleString();
+        }
+        if (sheetArrearsPreview) {
+            sheetArrearsPreview.textContent = String(arrears);
+        }
+    }
+
+    function renderGroupHeader(group) {
+        const payload = group || {};
+        if (groupNameEl) {
+            groupNameEl.textContent = payload.name || initialGroupName || 'Offline Pending Group';
+        }
+        if (groupLocationEl) {
+            groupLocationEl.textContent = payload.location || '-';
+        }
+        if (groupFoundedEl) {
+            groupFoundedEl.textContent = toDateLabel(payload.date_created);
+        }
+        if (groupOfficerEl) {
+            groupOfficerEl.textContent = payload.officer_name || '-';
+        }
+
+        if (groupEditClientUuidInput) {
+            groupEditClientUuidInput.value = groupClientUuid;
+        }
+        if (groupEditNameInput) {
+            groupEditNameInput.value = payload.name || initialGroupName || '';
+        }
+        if (groupEditLocationInput) {
+            groupEditLocationInput.value = payload.location || '';
+        }
+        if (groupEditDateInput) {
+            groupEditDateInput.value = payload.date_created || '';
+        }
+        if (groupEditOfficerInput) {
+            groupEditOfficerInput.value = payload.officer_name || '';
+        }
+        if (groupEditBankingInput) {
+            groupEditBankingInput.value = payload.banking_type || 'office';
+        }
+    }
+
+    function renderMembers(members) {
+        if (!membersTableBody) {
+            return;
+        }
+
+        membersTableBody.querySelectorAll('tr[data-offline-member-row="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        if (membersCountEl) {
+            membersCountEl.textContent = String(members.length);
+        }
+
+        if (!members.length) {
+            if (membersEmptyRow) {
+                membersEmptyRow.classList.remove('d-none');
+            }
+            return;
+        }
+
+        if (membersEmptyRow) {
+            membersEmptyRow.classList.add('d-none');
+        }
+
+        const rowsHtml = members.map(function (member) {
+            const number = String(member.member_number || '').trim();
+            return (
+                '<tr data-offline-member-row="true" style="border-bottom: 1px solid var(--border-color); background:#fff7e6;">' +
+                    '<td class="ps-4">' +
+                        (number ? '<span class="badge" style="background-color: rgba(108,93,211,0.1); color: var(--primary-color); font-size: 0.8rem; padding: 5px 8px; border-radius: 6px; font-weight: 700;">' + htmlEscape(number) + '</span>' : '<span class="text-muted small">-</span>') +
+                    '</td>' +
+                    '<td class="fw-bold" style="color: var(--text-main);">' + htmlEscape(member.name || 'Member') + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(member.phone || '-') + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(toDateLabel(member.join_date)) + '</td>' +
+                    '<td><span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span></td>' +
+                    '<td class="text-end pe-4">' +
+                        '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-member-action="edit" data-client-uuid="' + htmlEscape(member.client_uuid || '') + '"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" data-member-action="remove" data-client-uuid="' + htmlEscape(member.client_uuid || '') + '"><i class="fas fa-trash"></i></button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        membersTableBody.insertAdjacentHTML('afterbegin', rowsHtml);
+    }
+
+    function renderForms(forms) {
+        if (!formsRow) {
+            return;
+        }
+
+        formsRow.innerHTML = '';
+        if (formsCountEl) {
+            formsCountEl.textContent = String(forms.length);
+        }
+
+        if (!forms.length) {
+            if (formsEmptyWrap) {
+                formsEmptyWrap.classList.remove('d-none');
+            }
+            return;
+        }
+
+        if (formsEmptyWrap) {
+            formsEmptyWrap.classList.add('d-none');
+        }
+
+        const cardsHtml = forms.map(function (form) {
+            const month = monthLabel(form.month);
+            const year = String(form.year || '?');
+            const draft = getDraft(form.client_uuid || '');
+            return (
+                '<div class="col-md-6 col-lg-4">' +
+                    '<div class="card shadow-sm h-100 border-0" style="border-radius: var(--border-radius-lg); position: relative; overflow: hidden; background:#fff7e6;">' +
+                        '<div style="height: 4px; width: 100%; background-color: #f59e0b; position: absolute; top: 0; left: 0;"></div>' +
+                        '<div class="card-body p-4">' +
+                            '<div class="d-flex justify-content-between align-items-start mb-3">' +
+                                '<div>' +
+                                    '<h5 class="fw-bold mb-1" style="color: var(--text-main);">' + htmlEscape(month + ' ' + year) + '</h5>' +
+                                    '<p class="text-muted small mb-0"><i class="far fa-clock me-1"></i>Awaiting sync</p>' +
+                                '</div>' +
+                                '<div class="d-grid gap-1 text-end">' +
+                                    statusBadge(form.status) +
+                                    (draft ? '<span class="badge" style="background-color:#d1fae5;color:#065f46;">Draft Saved</span>' : '') +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="d-grid gap-2 mt-4">' +
+                                '<button type="button" class="btn btn-sm" style="background-color: #ECEBFA; color: var(--primary-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;" data-form-action="open-sheet" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '" data-month="' + htmlEscape(month) + '" data-year="' + htmlEscape(year) + '"><i class="fas fa-table me-2"></i>Accounting Sheet (Offline)</button>' +
+                                '<button type="button" class="btn btn-sm" style="background-color: #F8F9FA; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;" data-form-action="performance"><i class="fas fa-chart-line me-2 text-muted"></i>Group Performance</button>' +
+                                '<button type="button" class="btn btn-sm" style="background-color: #FFF0ED; color: #FF754C; border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;" data-form-action="remove" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '"><i class="fas fa-trash-alt me-2"></i>Delete Form</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        formsRow.insertAdjacentHTML('afterbegin', cardsHtml);
+    }
+
+    function openMemberModal(mode, payload) {
+        memberEditMode = mode === 'edit' ? 'edit' : 'create';
+        if (memberModalTitle) {
+            memberModalTitle.textContent = memberEditMode === 'edit' ? 'Manage Offline Member' : 'Add Offline Member';
+        }
+        if (memberEditClientUuidInput) {
+            memberEditClientUuidInput.value = payload.client_uuid || '';
+        }
+        if (memberEditNumberInput) {
+            memberEditNumberInput.value = payload.member_number || '';
+        }
+        if (memberEditNameInput) {
+            memberEditNameInput.value = payload.name || '';
+        }
+        if (memberEditPhoneInput) {
+            memberEditPhoneInput.value = payload.phone || '';
+        }
+        if (memberEditJoinDateInput) {
+            memberEditJoinDateInput.value = payload.join_date || new Date().toISOString().slice(0, 10);
+        }
+        if (memberEditActiveInput) {
+            memberEditActiveInput.checked = payload.is_active !== false;
+        }
+
+        const modal = getModal(memberModalEl, { value: memberEditModal });
+        if (modal) {
+            memberEditModal = modal;
+            memberEditModal.show();
+        }
+    }
+
+    async function saveMember() {
+        const clientUuid = String(memberEditClientUuidInput ? memberEditClientUuidInput.value : '').trim();
+        const payload = {
+            group_client_uuid: groupClientUuid,
+            member_number: String(memberEditNumberInput ? memberEditNumberInput.value : '').trim(),
+            name: String(memberEditNameInput ? memberEditNameInput.value : '').trim(),
+            phone: String(memberEditPhoneInput ? memberEditPhoneInput.value : '').trim(),
+            join_date: String(memberEditJoinDateInput ? memberEditJoinDateInput.value : '').trim(),
+            is_active: !!(memberEditActiveInput && memberEditActiveInput.checked),
+        };
+
+        if (!payload.name || !payload.join_date) {
+            showToast('Name and join date are required.');
+            return;
+        }
+
+        if (memberEditMode === 'edit') {
+            const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('member', clientUuid, payload);
+            if (!updated) {
+                await window.seepoOfflineSync.saveOffline('member', {
+                    ...payload,
+                    client_uuid: clientUuid,
+                });
+            }
+        } else {
+            await window.seepoOfflineSync.saveOffline('member', payload);
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        if (memberEditModal) {
+            memberEditModal.hide();
+        }
+        showToast(memberEditMode === 'edit' ? 'Offline member updated.' : 'Offline member added.');
+        await refreshWorkspace();
+    }
+
+    async function removeMember(clientUuid) {
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('member', clientUuid);
+        if (!deleted) {
+            showToast('This member is already synced.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline member.');
+        await refreshWorkspace();
+    }
+
+    function openFormModal() {
+        const now = new Date();
+        if (monthlyFormMonthInput) {
+            monthlyFormMonthInput.value = String(now.getMonth() + 1);
+        }
+        if (monthlyFormYearInput) {
+            monthlyFormYearInput.value = String(now.getFullYear());
+        }
+        if (monthlyFormStatusInput) {
+            monthlyFormStatusInput.value = 'draft';
+        }
+        if (monthlyFormNotesInput) {
+            monthlyFormNotesInput.value = '';
+        }
+
+        const modal = getModal(monthlyFormModalEl, { value: monthlyFormModal });
+        if (modal) {
+            monthlyFormModal = modal;
+            monthlyFormModal.show();
+        }
+    }
+
+    async function saveForm() {
+        const month = Number(monthlyFormMonthInput ? monthlyFormMonthInput.value : 0);
+        const year = Number(monthlyFormYearInput ? monthlyFormYearInput.value : 0);
+        const status = String(monthlyFormStatusInput ? monthlyFormStatusInput.value : 'draft').trim() || 'draft';
+        const notes = String(monthlyFormNotesInput ? monthlyFormNotesInput.value : '').trim();
+
+        if (month < 1 || month > 12 || year < 2000 || year > 2100) {
+            showToast('Month and year are required and must be valid.');
+            return;
+        }
+
+        const existing = await getPendingForms();
+        const duplicate = existing.find(function (item) {
+            return Number(item.month || 0) === month && Number(item.year || 0) === year;
+        });
+
+        if (duplicate) {
+            showToast('An offline form for this month already exists.');
+            return;
+        }
+
+        await window.seepoOfflineSync.saveOffline('monthly_form', {
+            group_client_uuid: groupClientUuid,
+            month: month,
+            year: year,
+            status: status,
+            notes: notes,
+        });
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        if (monthlyFormModal) {
+            monthlyFormModal.hide();
+        }
+
+        showToast('Offline monthly form created.');
+        await refreshWorkspace();
+    }
+
+    function openSheet(clientUuid, month, year) {
+        const key = String(clientUuid || '').trim();
+        if (!key) {
+            return;
+        }
+
+        const draft = getDraft(key) || {};
+        if (sheetClientUuidInput) {
+            sheetClientUuidInput.value = key;
+        }
+        if (sheetModalSubtitle) {
+            sheetModalSubtitle.textContent = month + ' ' + year + ' (Offline Pending)';
+        }
+
+        if (sheetDeposits) {
+            sheetDeposits.value = String(safeNumber(draft.deposits));
+        }
+        if (sheetFines) {
+            sheetFines.value = String(safeNumber(draft.fines));
+        }
+        if (sheetLoanRepayment) {
+            sheetLoanRepayment.value = String(safeNumber(draft.loan_repayment));
+        }
+        if (sheetLoans) {
+            sheetLoans.value = String(safeNumber(draft.loans));
+        }
+        if (sheetWithdrawals) {
+            sheetWithdrawals.value = String(safeNumber(draft.withdrawals));
+        }
+        if (sheetExpenses) {
+            sheetExpenses.value = String(safeNumber(draft.expenses));
+        }
+        if (sheetMembersExpected) {
+            sheetMembersExpected.value = String(safeNumber(draft.members_expected));
+        }
+        if (sheetMembersPaid) {
+            sheetMembersPaid.value = String(safeNumber(draft.members_paid));
+        }
+        if (sheetNotes) {
+            sheetNotes.value = String(draft.notes || '');
+        }
+
+        refreshSheetSummary();
+
+        const modal = getModal(sheetModalEl, { value: sheetModal });
+        if (modal) {
+            sheetModal = modal;
+            sheetModal.show();
+        }
+    }
+
+    function saveSheetDraft() {
+        const clientUuid = String(sheetClientUuidInput ? sheetClientUuidInput.value : '').trim();
+        if (!clientUuid) {
+            showToast('Missing pending form identifier.');
+            return;
+        }
+
+        setDraft(clientUuid, {
+            deposits: safeNumber(sheetDeposits ? sheetDeposits.value : 0),
+            fines: safeNumber(sheetFines ? sheetFines.value : 0),
+            loan_repayment: safeNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0),
+            loans: safeNumber(sheetLoans ? sheetLoans.value : 0),
+            withdrawals: safeNumber(sheetWithdrawals ? sheetWithdrawals.value : 0),
+            expenses: safeNumber(sheetExpenses ? sheetExpenses.value : 0),
+            members_expected: safeNumber(sheetMembersExpected ? sheetMembersExpected.value : 0),
+            members_paid: safeNumber(sheetMembersPaid ? sheetMembersPaid.value : 0),
+            notes: String(sheetNotes ? sheetNotes.value : '').trim(),
+            updated_at: new Date().toISOString(),
+        });
+
+        if (sheetModal) {
+            sheetModal.hide();
+        }
+        showToast('Offline form draft saved on this device.');
+        refreshWorkspace();
+    }
+
+    async function removeForm(clientUuid) {
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', clientUuid);
+        if (!deleted) {
+            showToast('This form is already synced.');
+            return;
+        }
+
+        deleteDraft(clientUuid);
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline form.');
+        await refreshWorkspace();
+    }
+
+    async function syncNow() {
+        if (!navigator.onLine) {
+            showToast('You are offline. Connect to internet to sync.');
+            return;
+        }
+
+        if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+            showToast('Sync tools are unavailable on this page.');
+            return;
+        }
+
+        await window.seepoOfflineSync.syncNow();
+        showToast('Sync completed. Returning to groups list.');
+        window.location.href = groupListUrl;
+    }
+
+    async function removeOfflineGroup() {
+        if (!window.confirm('Remove this pending offline group and all pending records under it?')) {
+            return;
+        }
+
+        const members = await getPendingMembers();
+        for (const member of members) {
+            await window.seepoOfflineDb.deletePendingRecordByClientUuid('member', member.client_uuid);
+        }
+
+        const forms = await getPendingForms();
+        for (const form of forms) {
+            await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', form.client_uuid);
+            deleteDraft(form.client_uuid);
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('group', groupClientUuid);
+        if (!deleted) {
+            showToast('This group is already synced.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Offline pending group removed.');
+        window.location.href = groupListUrl;
+    }
+
+    async function saveGroupEdit() {
+        const payload = {
+            name: String(groupEditNameInput ? groupEditNameInput.value : '').trim(),
+            location: String(groupEditLocationInput ? groupEditLocationInput.value : '').trim(),
+            date_created: String(groupEditDateInput ? groupEditDateInput.value : '').trim(),
+            officer_name: String(groupEditOfficerInput ? groupEditOfficerInput.value : '').trim(),
+            banking_type: String(groupEditBankingInput ? groupEditBankingInput.value : 'office').trim() || 'office',
+        };
+
+        if (!payload.name || !payload.location || !payload.date_created || !payload.officer_name) {
+            showToast('Group name, location, date, and officer are required.');
+            return;
+        }
+
+        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('group', groupClientUuid, payload);
+        if (!updated) {
+            showToast('This group is already synced.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        if (groupEditModal) {
+            groupEditModal.hide();
+        }
+
+        showToast('Offline group details updated.');
+        await refreshWorkspace();
+    }
+
+    async function refreshWorkspace() {
+        const group = await getPendingGroup();
+        renderGroupHeader(group);
+
+        const members = await getPendingMembers();
+        renderMembers(members);
+
+        const forms = await getPendingForms();
+        renderForms(forms);
+
+        if (!group && warningEl) {
+            warningEl.classList.remove('d-none');
+            warningEl.textContent = 'This group may already be synced. You can still review pending member/form records on this device.';
+        } else if (warningEl) {
+            warningEl.classList.add('d-none');
+        }
+    }
+
+    if (addOfflineMemberBtn) {
+        addOfflineMemberBtn.addEventListener('click', function () {
+            openMemberModal('create', {
+                client_uuid: '',
+                member_number: '',
+                name: '',
+                phone: '',
+                join_date: new Date().toISOString().slice(0, 10),
+                is_active: true,
+            });
+        });
+    }
+
+    if (saveOfflineMemberEditBtn) {
+        saveOfflineMemberEditBtn.addEventListener('click', function () {
+            saveMember();
+        });
+    }
+
+    if (membersTableBody) {
+        membersTableBody.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-member-action]');
+            if (!button) {
+                return;
+            }
+
+            const action = button.getAttribute('data-member-action');
+            const clientUuid = button.getAttribute('data-client-uuid') || '';
+            if (action === 'remove') {
+                await removeMember(clientUuid);
+                return;
+            }
+
+            if (action === 'edit') {
+                const record = await window.seepoOfflineDb.getPendingRecordByClientUuid('member', clientUuid);
+                if (!record) {
+                    showToast('This member is already synced.');
+                    return;
+                }
+                openMemberModal('edit', record);
+            }
+        });
+    }
+
+    if (createOfflineFormBtn) {
+        createOfflineFormBtn.addEventListener('click', openFormModal);
+    }
+
+    if (createOfflineFormEmptyBtn) {
+        createOfflineFormEmptyBtn.addEventListener('click', openFormModal);
+    }
+
+    if (saveOfflineMonthlyFormBtn) {
+        saveOfflineMonthlyFormBtn.addEventListener('click', function () {
+            saveForm();
+        });
+    }
+
+    if (formsRow) {
+        formsRow.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-form-action]');
+            if (!button) {
+                return;
+            }
+
+            const action = button.getAttribute('data-form-action');
+            const clientUuid = button.getAttribute('data-client-uuid') || '';
+            if (action === 'remove') {
+                await removeForm(clientUuid);
+                return;
+            }
+            if (action === 'performance') {
+                showToast('Group performance will be available after sync, using the normal form route.');
+                return;
+            }
+            if (action === 'open-sheet') {
+                openSheet(
+                    clientUuid,
+                    button.getAttribute('data-month') || '?',
+                    button.getAttribute('data-year') || '?'
+                );
+            }
+        });
+    }
+
+    [sheetDeposits, sheetFines, sheetLoanRepayment, sheetLoans, sheetWithdrawals, sheetExpenses, sheetMembersExpected, sheetMembersPaid].forEach(function (input) {
+        if (!input) {
+            return;
+        }
+        input.addEventListener('input', refreshSheetSummary);
+    });
+
+    if (sheetSaveBtn) {
+        sheetSaveBtn.addEventListener('click', saveSheetDraft);
+    }
+
+    if (syncNowHeaderBtn) {
+        syncNowHeaderBtn.addEventListener('click', syncNow);
+    }
+    if (syncNowMembersBtn) {
+        syncNowMembersBtn.addEventListener('click', syncNow);
+    }
+    if (syncNowFormsBtn) {
+        syncNowFormsBtn.addEventListener('click', syncNow);
+    }
+
+    if (editOfflineGroupBtn) {
+        editOfflineGroupBtn.addEventListener('click', function () {
+            const modal = getModal(groupEditModalEl, { value: groupEditModal });
+            if (modal) {
+                groupEditModal = modal;
+                groupEditModal.show();
+            }
+        });
+    }
+
+    if (saveOfflineGroupEditBtn) {
+        saveOfflineGroupEditBtn.addEventListener('click', saveGroupEdit);
+    }
+
+    if (removeOfflineGroupBtn) {
+        removeOfflineGroupBtn.addEventListener('click', removeOfflineGroup);
+    }
+
+    window.addEventListener('seepo:queue-status', refreshWorkspace);
+    window.addEventListener('online', refreshWorkspace);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        refreshWorkspace();
+    });
+})();
+</script>
+{% endblock %}
