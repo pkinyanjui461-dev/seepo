@@ -1,10 +1,12 @@
 {% load static %}
-const CACHE_VERSION = 'v28';
-const CSS_ASSET_VERSION = '10';
+const CACHE_VERSION = 'v29';
+const CSS_ASSET_VERSION = '11';
 const OFFLINE_SYNC_ASSET_VERSION = '4';
 const OFFLINE_DB_ASSET_VERSION = '4';
 const SW_REGISTER_ASSET_VERSION = '28';
 const DEXIE_ASSET_VERSION = '1';
+const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
+const OFFLINE_GLOBAL_STATE_VERSION = '1';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -35,7 +37,9 @@ const APP_SHELL_URLS = [
   '/groups/offline/workspace/',
   '/groups/create/',
   '/groups/diary/',
+  '/members/create/',
   '/finance/expenses/',
+  '/finance/monthly-forms/',
   '/reports/',
   '/reports/entities/',
   '/manifest.webmanifest',
@@ -43,7 +47,7 @@ const APP_SHELL_URLS = [
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
-  '{% static "js/dev-log-tools.js" %}',
+  '{% static "js/dev-log-tools.js' %}',
   '{% static "js/vendor/dexie.min.js" %}?v=' + DEXIE_ASSET_VERSION,
   '{% static "js/vendor/dexie.min.js" %}',
   '{% static "js/offline-db.js" %}?v=' + OFFLINE_DB_ASSET_VERSION,
@@ -53,6 +57,10 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-diary-sync.js" %}',
   '{% static "js/offline-draft-queue.js" %}',
   '{% static "js/offline-form-handler.js" %}',
+  '{% static "js/offline-form-auto-persist.js" %}?v=' + OFFLINE_FORM_AUTO_PERSIST_VERSION,
+  '{% static "js/offline-form-auto-persist.js" %}',
+  '{% static "js/offline-global-state.js" %}?v=' + OFFLINE_GLOBAL_STATE_VERSION,
+  '{% static "js/offline-global-state.js" %}',
   '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',
   '{% static "img/logo.png" %}',
