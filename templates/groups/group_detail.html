@@ -8,6 +8,53 @@
         display: none;
     }
 
+    .workspace-snapshot-chip {
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        background: var(--card-bg);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .workspace-snapshot-chip strong {
+        color: var(--text-main);
+    }
+
+    .workspace-snapshot-list {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .workspace-snapshot-item {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.7rem 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+        background: var(--card-bg);
+    }
+
+    .workspace-snapshot-item-title {
+        font-weight: 700;
+        color: var(--text-main);
+        font-size: 0.9rem;
+    }
+
+    .workspace-snapshot-item-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .workspace-snapshot-item {
+        background: var(--muted-surface);
+    }
+
     .member-mobile-card {
         border: 1px solid var(--border-color);
         border-radius: 12px;
@@ -59,6 +106,32 @@
                 <a href="{% url 'group_delete' group.pk %}" class="btn btn-outline-danger px-3 py-2 fw-medium" style="border-radius: 8px;"><i class="fas fa-trash-alt me-2"></i> Delete Group</a>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="offline-workspace-snapshot" class="card shadow-sm border-0 mb-4 d-none" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1" style="color: var(--text-main);">
+                    <i class="fas fa-clipboard-check me-2 text-primary"></i>Offline Workspace Snapshot
+                </h5>
+                <p class="text-muted small mb-0">Audit pending member, form, and expense queues before syncing.</p>
+            </div>
+            <button id="workspace-snapshot-sync-now-btn" type="button" class="btn btn-sm btn-outline-success">
+                <i class="fas fa-rotate me-1"></i>Sync Now
+            </button>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="workspace-snapshot-chip"><i class="fas fa-user-friends text-primary"></i>Members <strong id="workspace-snapshot-members-count">0</strong></span>
+            <span class="workspace-snapshot-chip"><i class="fas fa-file-invoice-dollar text-info"></i>Forms <strong id="workspace-snapshot-forms-count">0</strong></span>
+            <span class="workspace-snapshot-chip"><i class="fas fa-coins text-warning"></i>Expenses (Device) <strong id="workspace-snapshot-expenses-count">0</strong></span>
+            <span class="workspace-snapshot-chip"><i class="fas fa-layer-group text-success"></i>Total Pending <strong id="workspace-snapshot-total-count">0</strong></span>
+        </div>
+
+        <div id="workspace-snapshot-empty" class="alert alert-light border mb-0">No pending offline records for this workspace audit.</div>
+        <div id="workspace-snapshot-list" class="workspace-snapshot-list"></div>
     </div>
 </div>
 
@@ -316,6 +389,15 @@
     const formsEmpty = document.getElementById('group-monthly-forms-empty');
     const formsNoteWrap = document.getElementById('offline-pending-forms-note');
     const formsNoteText = document.getElementById('offline-pending-forms-note-text');
+
+    const snapshotPanel = document.getElementById('offline-workspace-snapshot');
+    const snapshotMembersCount = document.getElementById('workspace-snapshot-members-count');
+    const snapshotFormsCount = document.getElementById('workspace-snapshot-forms-count');
+    const snapshotExpensesCount = document.getElementById('workspace-snapshot-expenses-count');
+    const snapshotTotalCount = document.getElementById('workspace-snapshot-total-count');
+    const snapshotEmpty = document.getElementById('workspace-snapshot-empty');
+    const snapshotList = document.getElementById('workspace-snapshot-list');
+    const snapshotSyncNowBtn = document.getElementById('workspace-snapshot-sync-now-btn');
 
     const memberEditModalEl = document.getElementById('offline-member-edit-modal');
     const memberEditModalTitle = document.getElementById('offline-member-edit-modal-title');
@@ -600,7 +682,7 @@
         }
 
         showToast('Removed pending offline member from this device.');
-        await renderPendingMembers();
+        await renderOfflineWorkspaceState();
     }
 
     async function openPendingMemberEditModal(clientUuid) {
@@ -680,7 +762,7 @@
         }
 
         showToast(memberEditMode === 'create' ? 'Offline member saved locally.' : 'Offline member update queued locally.');
-        await renderPendingMembers();
+        await renderOfflineWorkspaceState();
     }
 
     function openOfflineManageFromButton(button) {
@@ -768,6 +850,146 @@
         return names[monthIndex];
     }
 
+    function formatUpdatedAt(value) {
+        const raw = String(value || '').trim();
+        if (!raw) {
+            return 'Updated time unavailable';
+        }
+
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+            return 'Updated time unavailable';
+        }
+
+        return parsed.toLocaleString();
+    }
+
+    function formatExpenseAmount(amount) {
+        const number = Number(amount);
+        if (Number.isFinite(number)) {
+            return number.toLocaleString();
+        }
+        return String(amount || '0');
+    }
+
+    async function getPendingExpenses() {
+        let expenses = [];
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            expenses = await window.seepoOfflineDb.getPendingRecordsByModel('expense');
+        } else {
+            const expensesTable = window.seepoOfflineDb.tableForModel('expense');
+            expenses = await expensesTable.where('synced').equals(0).toArray();
+        }
+
+        expenses.sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+        return expenses;
+    }
+
+    function buildSnapshotItems(members, forms, expenses) {
+        const items = [];
+
+        members.forEach(function (member) {
+            items.push({
+                type: 'member',
+                model: 'member',
+                clientUuid: String(member.client_uuid || '').trim(),
+                title: 'Member: ' + (member.name || 'Unnamed Member'),
+                meta: 'Join date ' + formatJoinDate(member.join_date) + ' | Updated ' + formatUpdatedAt(member.client_updated_at),
+                updatedAt: member.client_updated_at || '',
+            });
+        });
+
+        forms.forEach(function (form) {
+            items.push({
+                type: 'monthly_form',
+                model: 'monthly_form',
+                clientUuid: String(form.client_uuid || '').trim(),
+                title: 'Form: ' + getMonthLabel(form.month) + ' ' + String(form.year || '?'),
+                meta: 'Pending monthly form for this group | Updated ' + formatUpdatedAt(form.client_updated_at),
+                updatedAt: form.client_updated_at || '',
+            });
+        });
+
+        expenses.forEach(function (expense) {
+            items.push({
+                type: 'expense',
+                model: 'expense',
+                clientUuid: String(expense.client_uuid || '').trim(),
+                title: 'Expense: ' + (expense.name || 'Pending Expense') + ' (' + formatExpenseAmount(expense.amount) + ')',
+                meta: 'Device-wide pending expense queue | Updated ' + formatUpdatedAt(expense.client_updated_at),
+                updatedAt: expense.client_updated_at || '',
+            });
+        });
+
+        items.sort(function (a, b) {
+            const aTime = new Date(a.updatedAt || 0).getTime();
+            const bTime = new Date(b.updatedAt || 0).getTime();
+            return bTime - aTime;
+        });
+
+        return items;
+    }
+
+    function renderWorkspaceSnapshot(members, forms, expenses) {
+        if (!snapshotPanel || !snapshotList || !snapshotEmpty) {
+            return;
+        }
+
+        const counts = {
+            members: members.length,
+            forms: forms.length,
+            expenses: expenses.length,
+        };
+        const total = counts.members + counts.forms + counts.expenses;
+
+        snapshotPanel.classList.remove('d-none');
+        if (snapshotMembersCount) {
+            snapshotMembersCount.textContent = String(counts.members);
+        }
+        if (snapshotFormsCount) {
+            snapshotFormsCount.textContent = String(counts.forms);
+        }
+        if (snapshotExpensesCount) {
+            snapshotExpensesCount.textContent = String(counts.expenses);
+        }
+        if (snapshotTotalCount) {
+            snapshotTotalCount.textContent = String(total);
+        }
+
+        if (!total) {
+            snapshotList.innerHTML = '';
+            snapshotEmpty.classList.remove('d-none');
+            return;
+        }
+
+        snapshotEmpty.classList.add('d-none');
+        const items = buildSnapshotItems(members, forms, expenses);
+
+        const listHtml = items.map(function (item) {
+            const removeButton = item.clientUuid
+                ? '<button type="button" class="btn btn-sm btn-outline-danger" data-snapshot-action="remove" data-model="' + htmlEscape(item.model) + '" data-client-uuid="' + htmlEscape(item.clientUuid) + '"><i class="fas fa-trash"></i></button>'
+                : '';
+
+            return (
+                '<div class="workspace-snapshot-item">' +
+                    '<div>' +
+                        '<div class="workspace-snapshot-item-title">' + htmlEscape(item.title) + '</div>' +
+                        '<div class="workspace-snapshot-item-meta">' + htmlEscape(item.meta) + '</div>' +
+                    '</div>' +
+                    '<div class="d-inline-flex gap-2 align-items-center">' +
+                        removeButton +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        snapshotList.innerHTML = listHtml;
+    }
+
     async function getPendingMonthlyForms() {
         let forms = [];
         if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
@@ -799,7 +1021,27 @@
         }
 
         showToast('Removed pending offline monthly form from this device.');
-        await renderPendingMonthlyForms();
+        await renderOfflineWorkspaceState();
+    }
+
+    async function removePendingExpense(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.deletePendingRecordByClientUuid !== 'function') {
+            showToast('Offline delete is unavailable on this page.');
+            return;
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('expense', clientUuid);
+        if (!deleted) {
+            showToast('This expense is already synced. Delete it from the expenses page while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline expense from this device.');
+        await renderOfflineWorkspaceState();
     }
 
     async function renderPendingMonthlyForms() {
@@ -870,9 +1112,41 @@
         }
     }
 
+    async function handleSnapshotAction(button) {
+        const action = button.getAttribute('data-snapshot-action');
+        if (action !== 'remove') {
+            return;
+        }
+
+        const model = String(button.getAttribute('data-model') || '').trim();
+        const clientUuid = String(button.getAttribute('data-client-uuid') || '').trim();
+        if (!model || !clientUuid) {
+            return;
+        }
+
+        if (model === 'member') {
+            await removePendingMember(clientUuid);
+            return;
+        }
+
+        if (model === 'monthly_form') {
+            await removePendingMonthlyForm(clientUuid);
+            return;
+        }
+
+        if (model === 'expense') {
+            await removePendingExpense(clientUuid);
+        }
+    }
+
     async function renderOfflineWorkspaceState() {
         await renderPendingMembers();
         await renderPendingMonthlyForms();
+
+        const members = await getPendingMembers();
+        const forms = await getPendingMonthlyForms();
+        const expenses = await getPendingExpenses();
+        renderWorkspaceSnapshot(members, forms, expenses);
     }
 
     tableBody.addEventListener('click', async function (event) {
@@ -906,6 +1180,17 @@
         });
     }
 
+    if (snapshotList) {
+        snapshotList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-snapshot-action]');
+            if (!button) {
+                return;
+            }
+
+            await handleSnapshotAction(button);
+        });
+    }
+
     if (saveOfflineMemberEditBtn) {
         saveOfflineMemberEditBtn.addEventListener('click', async function () {
             await savePendingMemberEdit();
@@ -915,6 +1200,12 @@
     if (addOfflineMemberBtn) {
         addOfflineMemberBtn.addEventListener('click', function () {
             openNewOfflineMemberModal();
+        });
+    }
+
+    if (snapshotSyncNowBtn) {
+        snapshotSyncNowBtn.addEventListener('click', async function () {
+            await syncNow();
         });
     }
 

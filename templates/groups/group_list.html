@@ -4,6 +4,10 @@
 
 {% block extra_css %}
 <style>
+    [data-offline-only="true"].d-none {
+        display: none !important;
+    }
+
     .groups-mobile-list {
         display: none;
     }
@@ -18,6 +22,49 @@
     .groups-mobile-meta {
         font-size: 0.8rem;
         color: var(--text-muted);
+    }
+
+    .offline-workspace-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .offline-workspace-item {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+        background: var(--card-bg);
+    }
+
+    .offline-workspace-item-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .offline-workspace-item-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    .offline-workspace-chip {
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        background: var(--card-bg);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .offline-workspace-chip strong {
+        color: var(--text-main);
     }
 
     @media (max-width: 767.98px) {
@@ -182,6 +229,103 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-workspace-modal" tabindex="-1" aria-labelledby="offline-workspace-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <div>
+                    <h5 class="modal-title" id="offline-workspace-modal-title">Offline Workspace</h5>
+                    <p id="offline-workspace-modal-subtitle" class="small text-muted mb-0">Pending group workspace</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="offline-workspace-chip"><i class="fas fa-user-friends text-primary"></i>Members <strong id="offline-workspace-members-count">0</strong></span>
+                    <span class="offline-workspace-chip"><i class="fas fa-file-invoice-dollar text-info"></i>Forms <strong id="offline-workspace-forms-count">0</strong></span>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2" style="color: var(--text-main);">Members</h6>
+                    <div id="offline-workspace-members-empty" class="alert alert-light border mb-2">No pending offline members yet.</div>
+                    <div id="offline-workspace-members-list" class="offline-workspace-list"></div>
+                </div>
+
+                <div>
+                    <h6 class="fw-bold mb-2" style="color: var(--text-main);">Monthly Forms</h6>
+                    <div id="offline-workspace-forms-empty" class="alert alert-light border mb-2">No pending offline monthly forms yet.</div>
+                    <div id="offline-workspace-forms-list" class="offline-workspace-list"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-main d-flex justify-content-between">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" id="offline-workspace-add-member-btn" data-offline-only="true" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-user-plus me-1"></i>Add Member Offline
+                    </button>
+                    <button type="button" id="offline-workspace-add-form-btn" data-offline-only="true" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-circle-plus me-1"></i>Create Form Offline
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" id="offline-workspace-sync-btn" class="btn btn-sm btn-outline-success"><i class="fas fa-rotate me-1"></i>Sync</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-monthly-form-modal" tabindex="-1" aria-labelledby="offline-monthly-form-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-monthly-form-modal-title">Create Offline Monthly Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="offline-monthly-form-group-name" class="small text-muted mb-3"></p>
+                <div class="mb-3">
+                    <label for="offline-monthly-form-month" class="form-label fw-bold">Month</label>
+                    <select id="offline-monthly-form-month" class="form-select">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-monthly-form-year" class="form-label fw-bold">Year</label>
+                    <input id="offline-monthly-form-year" class="form-control" type="number" min="2000" max="2100" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-monthly-form-status" class="form-label fw-bold">Status</label>
+                    <select id="offline-monthly-form-status" class="form-select">
+                        <option value="draft">Draft</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="approved">Approved</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-monthly-form-notes" class="form-label fw-bold">Notes (Optional)</label>
+                    <textarea id="offline-monthly-form-notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-monthly-form-btn" class="btn btn-primary">Save Form Offline</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -211,8 +355,31 @@
     const groupEditBankingInput = document.getElementById('offline-group-edit-banking');
     const saveOfflineGroupEditBtn = document.getElementById('save-offline-group-edit-btn');
 
+    const offlineWorkspaceModalEl = document.getElementById('offline-workspace-modal');
+    const offlineWorkspaceSubtitle = document.getElementById('offline-workspace-modal-subtitle');
+    const offlineWorkspaceMembersCount = document.getElementById('offline-workspace-members-count');
+    const offlineWorkspaceFormsCount = document.getElementById('offline-workspace-forms-count');
+    const offlineWorkspaceMembersList = document.getElementById('offline-workspace-members-list');
+    const offlineWorkspaceFormsList = document.getElementById('offline-workspace-forms-list');
+    const offlineWorkspaceMembersEmpty = document.getElementById('offline-workspace-members-empty');
+    const offlineWorkspaceFormsEmpty = document.getElementById('offline-workspace-forms-empty');
+    const offlineWorkspaceAddMemberBtn = document.getElementById('offline-workspace-add-member-btn');
+    const offlineWorkspaceAddFormBtn = document.getElementById('offline-workspace-add-form-btn');
+    const offlineWorkspaceSyncBtn = document.getElementById('offline-workspace-sync-btn');
+
+    const monthlyFormModalEl = document.getElementById('offline-monthly-form-modal');
+    const monthlyFormGroupName = document.getElementById('offline-monthly-form-group-name');
+    const monthlyFormMonthInput = document.getElementById('offline-monthly-form-month');
+    const monthlyFormYearInput = document.getElementById('offline-monthly-form-year');
+    const monthlyFormStatusInput = document.getElementById('offline-monthly-form-status');
+    const monthlyFormNotesInput = document.getElementById('offline-monthly-form-notes');
+    const saveOfflineMonthlyFormBtn = document.getElementById('save-offline-monthly-form-btn');
+
     let memberModal = null;
     let groupEditModal = null;
+    let workspaceModal = null;
+    let monthlyFormModal = null;
+    let activeWorkspaceGroup = null;
 
     if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
         return;
@@ -273,6 +440,41 @@
         return groupEditModal;
     }
 
+    function getWorkspaceModal() {
+        if (!offlineWorkspaceModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!workspaceModal) {
+            workspaceModal = window.bootstrap.Modal.getOrCreateInstance(offlineWorkspaceModalEl);
+        }
+
+        return workspaceModal;
+    }
+
+    function getMonthlyFormModal() {
+        if (!monthlyFormModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!monthlyFormModal) {
+            monthlyFormModal = window.bootstrap.Modal.getOrCreateInstance(monthlyFormModalEl);
+        }
+
+        return monthlyFormModal;
+    }
+
+    function refreshOfflineOnlyActions() {
+        const showOfflineActions = !navigator.onLine;
+        document.querySelectorAll('[data-offline-only="true"]').forEach(function (element) {
+            if (showOfflineActions) {
+                element.classList.remove('d-none');
+            } else {
+                element.classList.add('d-none');
+            }
+        });
+    }
+
     async function getPendingGroups() {
         const groupsTable = window.seepoOfflineDb.tableForModel('group');
         const pendingGroups = await groupsTable.where('synced').equals(0).toArray();
@@ -290,6 +492,119 @@
         return members.filter(function (record) {
             return Number(record.synced) === 0;
         }).length;
+    }
+
+    async function getPendingMembersForGroup(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const members = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return members.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    async function getPendingFormsForGroup(groupClientUuid) {
+        const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+        const forms = await formsTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return forms.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    function monthName(month) {
+        const names = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const idx = Number(month) - 1;
+        if (idx < 0 || idx >= names.length) {
+            return String(month || '?');
+        }
+        return names[idx];
+    }
+
+    async function renderWorkspaceContents() {
+        if (!activeWorkspaceGroup || !offlineWorkspaceMembersList || !offlineWorkspaceFormsList) {
+            return;
+        }
+
+        const members = await getPendingMembersForGroup(activeWorkspaceGroup.client_uuid);
+        const forms = await getPendingFormsForGroup(activeWorkspaceGroup.client_uuid);
+
+        if (offlineWorkspaceMembersCount) {
+            offlineWorkspaceMembersCount.textContent = String(members.length);
+        }
+        if (offlineWorkspaceFormsCount) {
+            offlineWorkspaceFormsCount.textContent = String(forms.length);
+        }
+
+        if (offlineWorkspaceMembersEmpty) {
+            offlineWorkspaceMembersEmpty.classList.toggle('d-none', members.length > 0);
+        }
+        if (offlineWorkspaceFormsEmpty) {
+            offlineWorkspaceFormsEmpty.classList.toggle('d-none', forms.length > 0);
+        }
+
+        offlineWorkspaceMembersList.innerHTML = members.map(function (member) {
+            const memberNumber = String(member.member_number || '').trim();
+            return (
+                '<div class="offline-workspace-item">' +
+                    '<div>' +
+                        '<div class="offline-workspace-item-title">' + htmlEscape(member.name || 'Member') + '</div>' +
+                        '<div class="offline-workspace-item-meta">' +
+                            (memberNumber ? ('#' + htmlEscape(memberNumber) + ' | ') : '') +
+                            htmlEscape(member.phone || '-') +
+                            ' | Joined ' + htmlEscape(formatDate(member.join_date)) +
+                        '</div>' +
+                    '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-workspace-action="remove-member" data-client-uuid="' + htmlEscape(member.client_uuid || '') + '">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>'
+            );
+        }).join('');
+
+        offlineWorkspaceFormsList.innerHTML = forms.map(function (form) {
+            return (
+                '<div class="offline-workspace-item">' +
+                    '<div>' +
+                        '<div class="offline-workspace-item-title">' + htmlEscape(monthName(form.month) + ' ' + String(form.year || '?')) + '</div>' +
+                        '<div class="offline-workspace-item-meta">Status: ' + htmlEscape(form.status || 'draft') + '</div>' +
+                    '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-workspace-action="remove-form" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>'
+            );
+        }).join('');
+    }
+
+    async function openOfflineWorkspace(groupClientUuid, groupName) {
+        if (!groupClientUuid) {
+            return;
+        }
+
+        activeWorkspaceGroup = {
+            client_uuid: String(groupClientUuid || '').trim(),
+            name: String(groupName || 'Pending Group').trim() || 'Pending Group',
+        };
+
+        if (offlineWorkspaceSubtitle) {
+            offlineWorkspaceSubtitle.textContent = activeWorkspaceGroup.name + ' (Offline Pending Group)';
+        }
+
+        await renderWorkspaceContents();
+        const modal = getWorkspaceModal();
+        if (modal) {
+            modal.show();
+        }
     }
 
     async function removePendingGroup(groupClientUuid) {
@@ -313,6 +628,13 @@
         }
 
         showToast('Removed pending offline group and its pending members.');
+        if (activeWorkspaceGroup && String(activeWorkspaceGroup.client_uuid) === String(groupClientUuid)) {
+            const modal = getWorkspaceModal();
+            if (modal) {
+                modal.hide();
+            }
+            activeWorkspaceGroup = null;
+        }
         await renderPendingGroups();
     }
 
@@ -434,6 +756,79 @@
 
         showToast('Member saved offline for this pending group.');
         await renderPendingGroups();
+        await renderWorkspaceContents();
+    }
+
+    function openOfflineMonthlyFormModal() {
+        if (!activeWorkspaceGroup || !monthlyFormYearInput || !monthlyFormMonthInput) {
+            return;
+        }
+
+        if (monthlyFormGroupName) {
+            monthlyFormGroupName.textContent = 'Group: ' + activeWorkspaceGroup.name;
+        }
+
+        const now = new Date();
+        monthlyFormMonthInput.value = String(now.getMonth() + 1);
+        monthlyFormYearInput.value = String(now.getFullYear());
+        if (monthlyFormStatusInput) {
+            monthlyFormStatusInput.value = 'draft';
+        }
+        if (monthlyFormNotesInput) {
+            monthlyFormNotesInput.value = '';
+        }
+
+        const modal = getMonthlyFormModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function saveOfflineMonthlyForm() {
+        if (!activeWorkspaceGroup || !window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
+            showToast('Offline monthly form creation is unavailable on this page.');
+            return;
+        }
+
+        const monthValue = Number(monthlyFormMonthInput ? monthlyFormMonthInput.value : 0);
+        const yearValue = Number(monthlyFormYearInput ? monthlyFormYearInput.value : 0);
+        const statusValue = String(monthlyFormStatusInput ? monthlyFormStatusInput.value : 'draft').trim() || 'draft';
+        const notesValue = String(monthlyFormNotesInput ? monthlyFormNotesInput.value : '').trim();
+
+        if (monthValue < 1 || monthValue > 12 || yearValue < 2000 || yearValue > 2100) {
+            showToast('Month and year are required and must be valid.');
+            return;
+        }
+
+        const existingForms = await getPendingFormsForGroup(activeWorkspaceGroup.client_uuid);
+        const duplicate = existingForms.find(function (item) {
+            return Number(item.month || 0) === monthValue && Number(item.year || 0) === yearValue;
+        });
+        if (duplicate) {
+            showToast('A pending offline form for this month already exists.');
+            return;
+        }
+
+        await window.seepoOfflineSync.saveOffline('monthly_form', {
+            group_client_uuid: activeWorkspaceGroup.client_uuid,
+            month: monthValue,
+            year: yearValue,
+            status: statusValue,
+            notes: notesValue,
+        });
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getMonthlyFormModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Monthly form saved offline for this group.');
+        await renderPendingGroups();
+        await renderWorkspaceContents();
     }
 
     async function syncNow() {
@@ -490,8 +885,9 @@
                     '</td>' +
                     '<td class="text-end pe-4">' +
                         '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit</button>' +
-                            '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Manage Offline</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync</button>' +
                             '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove</button>' +
                         '</div>' +
@@ -538,8 +934,9 @@
                         ' | Members: ' + String(memberCount) +
                     '</div>' +
                     '<div class="d-grid gap-2">' +
+                        '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
                         '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit Offline</button>' +
-                        '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
                         '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync Now</button>' +
                         '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove Offline</button>' +
                     '</div>' +
@@ -552,27 +949,68 @@
 
     async function handlePendingAction(button) {
         const action = button.getAttribute('data-action');
+        const groupClientUuid = button.getAttribute('data-client-uuid') || '';
+        const groupName = button.getAttribute('data-group-name') || 'Pending Group';
+
+        if (action === 'open-workspace') {
+            await openOfflineWorkspace(groupClientUuid, groupName);
+            return;
+        }
+
         if (action === 'edit-group') {
-            await openPendingGroupEditModal(button.getAttribute('data-client-uuid') || '');
+            await openPendingGroupEditModal(groupClientUuid);
             return;
         }
 
         if (action === 'add-member') {
-            openOfflineMemberModal(
-                button.getAttribute('data-client-uuid') || '',
-                button.getAttribute('data-group-name') || 'Pending Group'
-            );
+            openOfflineMemberModal(groupClientUuid, groupName);
             return;
         }
 
         if (action === 'remove-group') {
-            const groupClientUuid = button.getAttribute('data-client-uuid') || '';
             await removePendingGroup(groupClientUuid);
             return;
         }
 
         if (action === 'sync-now') {
             await syncNow();
+        }
+    }
+
+    async function handleWorkspaceAction(button) {
+        const action = button.getAttribute('data-workspace-action');
+        const clientUuid = button.getAttribute('data-client-uuid') || '';
+        if (!action || !clientUuid) {
+            return;
+        }
+
+        if (action === 'remove-member') {
+            const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('member', clientUuid);
+            if (!deleted) {
+                showToast('This member is already synced.');
+                return;
+            }
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+                await window.seepoOfflineSync.refreshStatus();
+            }
+            showToast('Removed pending offline member.');
+            await renderPendingGroups();
+            await renderWorkspaceContents();
+            return;
+        }
+
+        if (action === 'remove-form') {
+            const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', clientUuid);
+            if (!deleted) {
+                showToast('This monthly form is already synced.');
+                return;
+            }
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+                await window.seepoOfflineSync.refreshStatus();
+            }
+            showToast('Removed pending offline monthly form.');
+            await renderPendingGroups();
+            await renderWorkspaceContents();
         }
     }
 
@@ -585,6 +1023,7 @@
             pendingCount.textContent = '0';
             renderPendingGroupsInTable([]);
             renderPendingGroupsInMobile([]);
+            refreshOfflineOnlyActions();
             return;
         }
 
@@ -610,7 +1049,8 @@
                         '<span class="badge" style="background-color:#FFF3CD;color:#7C5400;">Pending Sync</span>' +
                     '</div>' +
                     '<div class="d-flex flex-wrap gap-2 mt-3">' +
-                        '<button type="button" class="btn btn-sm btn-outline-primary" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '">' +
+                        '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '">' +
                             '<i class="fas fa-user-plus me-1"></i>Add Member Offline' +
                         '</button>' +
                         '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now">' +
@@ -627,6 +1067,10 @@
         pendingList.innerHTML = fragments.join('');
         renderPendingGroupsInTable(groupsForTable);
         renderPendingGroupsInMobile(groupsForTable);
+        if (activeWorkspaceGroup) {
+            await renderWorkspaceContents();
+        }
+        refreshOfflineOnlyActions();
     }
 
     pendingList.addEventListener('click', async function (event) {
@@ -660,9 +1104,58 @@
         });
     }
 
+    if (offlineWorkspaceMembersList) {
+        offlineWorkspaceMembersList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-workspace-action]');
+            if (!button) {
+                return;
+            }
+
+            await handleWorkspaceAction(button);
+        });
+    }
+
+    if (offlineWorkspaceFormsList) {
+        offlineWorkspaceFormsList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-workspace-action]');
+            if (!button) {
+                return;
+            }
+
+            await handleWorkspaceAction(button);
+        });
+    }
+
     if (saveOfflineMemberBtn) {
         saveOfflineMemberBtn.addEventListener('click', async function () {
             await saveOfflineMember();
+        });
+    }
+
+    if (offlineWorkspaceAddMemberBtn) {
+        offlineWorkspaceAddMemberBtn.addEventListener('click', function () {
+            if (!activeWorkspaceGroup) {
+                return;
+            }
+            openOfflineMemberModal(activeWorkspaceGroup.client_uuid, activeWorkspaceGroup.name);
+        });
+    }
+
+    if (offlineWorkspaceAddFormBtn) {
+        offlineWorkspaceAddFormBtn.addEventListener('click', function () {
+            openOfflineMonthlyFormModal();
+        });
+    }
+
+    if (saveOfflineMonthlyFormBtn) {
+        saveOfflineMonthlyFormBtn.addEventListener('click', async function () {
+            await saveOfflineMonthlyForm();
+        });
+    }
+
+    if (offlineWorkspaceSyncBtn) {
+        offlineWorkspaceSyncBtn.addEventListener('click', async function () {
+            await syncNow();
         });
     }
 
@@ -674,6 +1167,11 @@
 
     window.addEventListener('online', function () {
         renderPendingGroups();
+        refreshOfflineOnlyActions();
+    });
+
+    window.addEventListener('offline', function () {
+        refreshOfflineOnlyActions();
     });
 
     window.addEventListener('seepo:queue-status', function () {
@@ -681,6 +1179,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
+        refreshOfflineOnlyActions();
         renderPendingGroups();
     });
 })();

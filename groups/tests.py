@@ -58,3 +58,24 @@ class GroupWorkspaceOfflineUiTests(TestCase):
 		self.assertContains(response, 'id="offline-pending-forms-note"')
 		self.assertContains(response, 'id="group-monthly-forms-row"')
 		self.assertContains(response, 'renderPendingMonthlyForms')
+
+	def test_group_detail_contains_workspace_snapshot_panel_hooks(self):
+		response = self.client.get(reverse('group_detail', args=[self.group.pk]))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'id="offline-workspace-snapshot"')
+		self.assertContains(response, 'id="workspace-snapshot-list"')
+		self.assertContains(response, 'id="workspace-snapshot-sync-now-btn"')
+		self.assertContains(response, 'getPendingExpenses')
+		self.assertContains(response, 'renderWorkspaceSnapshot')
+
+	def test_group_list_contains_offline_workspace_modal_hooks(self):
+		response = self.client.get(reverse('group_list'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'id="offline-workspace-modal"')
+		self.assertContains(response, 'id="offline-monthly-form-modal"')
+		self.assertContains(response, 'data-action="open-workspace"')
+		self.assertContains(response, 'data-offline-only="true"')
+		self.assertContains(response, 'refreshOfflineOnlyActions')
+		self.assertContains(response, 'openOfflineWorkspace')
