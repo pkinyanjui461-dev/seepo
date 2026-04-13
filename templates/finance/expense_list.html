@@ -17,6 +17,34 @@
     [data-theme="dark"] .office-expense-table tbody .expense-name-cell {
         color: #edf2ff !important;
     }
+
+    .expenses-mobile-list {
+        display: none;
+    }
+
+    .expense-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .expense-mobile-meta {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .expenses-table-wrap {
+            display: none;
+        }
+
+        .expenses-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -147,8 +175,14 @@
                 <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-1"></i> Expenses List</h6>
                 </div>
+
+                <div id="offline-pending-expenses-note" class="alert alert-warning mx-3 mt-3 mb-0 d-none">
+                    <i class="fas fa-wifi-slash me-2"></i>
+                    <span id="offline-pending-expenses-note-text">Pending offline expenses are shown below.</span>
+                </div>
+
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <div class="table-responsive expenses-table-wrap">
                         <table class="table table-hover table-striped mb-0 align-middle office-expense-table">
                             <thead class="table-light">
                                 <tr>
@@ -159,7 +193,7 @@
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="expense-table-body">
                                 {% for exp in expenses %}
                                 <tr id="expense-row-{{ exp.pk }}">
                                     <td>{{ exp.date|date:"M d, Y" }}</td>
@@ -185,7 +219,7 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr>
+                                <tr id="expenses-empty-row">
                                     <td colspan="5" class="text-center py-4 text-muted">
                                         <i class="fas fa-info-circle mb-2 fa-2x"></i>
                                         <p class="mb-0">No expenses recorded for this month.</p>
@@ -195,9 +229,410 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div id="expenses-mobile-list" class="expenses-mobile-list">
+                        {% for exp in expenses %}
+                        <div class="expense-mobile-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div class="fw-bold" style="color: var(--text-main);">{{ exp.name }}</div>
+                                <span class="badge bg-danger bg-opacity-10 text-danger">{{ exp.amount|intcomma }}</span>
+                            </div>
+                            <div class="expense-mobile-meta mb-3">
+                                {{ exp.date|date:"M d, Y" }} | {{ exp.notes|default:"-" }}
+                            </div>
+                            <div class="d-grid gap-2">
+                                <form method="POST"
+                                      action="{% url 'expense_delete' exp.pk %}"
+                                      data-online-required-message="Expense deletion requires internet unless this expense is still pending local sync."
+                                      data-offline-delete-model="expense"
+                                      data-offline-delete-client-uuid="{{ exp.client_uuid }}"
+                                      data-offline-delete-row-selector="#expense-row-{{ exp.pk }}"
+                                      data-offline-delete-success-message="Removed pending offline expense from this device."
+                                      data-offline-delete-denied-message="This expense is already synced. Delete it while online."
+                                      onsubmit="return confirm('Are you sure you want to delete this expense?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="fas fa-trash me-2"></i>Delete Expense</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div id="expenses-mobile-empty" class="text-center text-muted py-4">No expenses recorded for this month.</div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-expense-edit-modal" tabindex="-1" aria-labelledby="offline-expense-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-expense-edit-modal-title">Edit Pending Offline Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-expense-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-expense-edit-date" class="form-label fw-bold">Date</label>
+                    <input id="offline-expense-edit-date" class="form-control" type="date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-expense-edit-name" class="form-label fw-bold">Category / Name</label>
+                    <input id="offline-expense-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-expense-edit-amount" class="form-label fw-bold">Amount</label>
+                    <input id="offline-expense-edit-amount" class="form-control" type="number" step="0.01" min="0" required>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-expense-edit-notes" class="form-label fw-bold">Notes</label>
+                    <textarea id="offline-expense-edit-notes" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-expense-edit-btn" class="btn btn-primary">Save Offline Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tableBody = document.getElementById('expense-table-body');
+    const mobileList = document.getElementById('expenses-mobile-list');
+    const noteWrap = document.getElementById('offline-pending-expenses-note');
+    const noteText = document.getElementById('offline-pending-expenses-note-text');
+
+    const expenseEditModalEl = document.getElementById('offline-expense-edit-modal');
+    const expenseEditClientUuidInput = document.getElementById('offline-expense-edit-client-uuid');
+    const expenseEditDateInput = document.getElementById('offline-expense-edit-date');
+    const expenseEditNameInput = document.getElementById('offline-expense-edit-name');
+    const expenseEditAmountInput = document.getElementById('offline-expense-edit-amount');
+    const expenseEditNotesInput = document.getElementById('offline-expense-edit-notes');
+    const saveOfflineExpenseEditBtn = document.getElementById('save-offline-expense-edit-btn');
+
+    let expenseEditModal = null;
+
+    if (!tableBody || !window.seepoOfflineDb) {
+        return;
+    }
+
+    function showToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getExpenseEditModal() {
+        if (!expenseEditModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!expenseEditModal) {
+            expenseEditModal = window.bootstrap.Modal.getOrCreateInstance(expenseEditModalEl);
+        }
+
+        return expenseEditModal;
+    }
+
+    function formatDate(value) {
+        const text = String(value || '').trim();
+        if (!text) {
+            return '-';
+        }
+
+        const parsed = new Date(text);
+        if (Number.isNaN(parsed.getTime())) {
+            return text;
+        }
+        return parsed.toLocaleDateString();
+    }
+
+    function formatAmount(value) {
+        const num = Number(value || 0);
+        if (Number.isNaN(num)) {
+            return String(value || '0');
+        }
+        return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    async function getPendingExpenses() {
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            return window.seepoOfflineDb.getPendingRecordsByModel('expense');
+        }
+
+        const expensesTable = window.seepoOfflineDb.tableForModel('expense');
+        return expensesTable.where('synced').equals(0).toArray();
+    }
+
+    function renderPendingExpensesInTable(expenses) {
+        tableBody.querySelectorAll('tr[data-offline-pending-row="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('expenses-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = expenses.length ? 'none' : '';
+        }
+
+        if (!expenses.length) {
+            return;
+        }
+
+        const rows = expenses.map(function (expense) {
+            return (
+                '<tr data-offline-pending-row="true" style="background:#fff7e6;">' +
+                    '<td>' + htmlEscape(formatDate(expense.date)) + '</td>' +
+                    '<td class="font-weight-bold expense-name-cell">' +
+                        htmlEscape(expense.name || 'Expense') +
+                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</td>' +
+                    '<td class="text-danger font-weight-bold">' + htmlEscape(formatAmount(expense.amount)) + '</td>' +
+                    '<td class="text-muted small">' + htmlEscape(expense.notes || '-') + '</td>' +
+                    '<td class="text-end">' +
+                        '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-offline-expense-action="edit" data-client-uuid="' + htmlEscape(expense.client_uuid) + '"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-success" data-offline-expense-action="sync"><i class="fas fa-rotate"></i></button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-expense-action="remove" data-client-uuid="' + htmlEscape(expense.client_uuid) + '"><i class="fas fa-trash"></i></button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        tableBody.insertAdjacentHTML('afterbegin', rows);
+    }
+
+    function renderPendingExpensesInMobile(expenses) {
+        if (!mobileList) {
+            return;
+        }
+
+        mobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('expenses-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = expenses.length ? 'none' : '';
+        }
+
+        if (!expenses.length) {
+            return;
+        }
+
+        const cards = expenses.map(function (expense) {
+            return (
+                '<div class="expense-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(expense.name || 'Expense') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="expense-mobile-meta mb-2">' + htmlEscape(formatDate(expense.date)) + ' | ' + htmlEscape(formatAmount(expense.amount)) + '</div>' +
+                    '<div class="expense-mobile-meta mb-3">' + htmlEscape(expense.notes || '-') + '</div>' +
+                    '<div class="d-grid gap-2">' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-offline-expense-action="edit" data-client-uuid="' + htmlEscape(expense.client_uuid) + '"><i class="fas fa-pen me-2"></i>Edit Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-offline-expense-action="sync"><i class="fas fa-rotate me-2"></i>Sync Now</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-expense-action="remove" data-client-uuid="' + htmlEscape(expense.client_uuid) + '"><i class="fas fa-trash me-2"></i>Remove Offline</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        mobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function syncNow() {
+        if (!navigator.onLine) {
+            showToast('You are offline. Connect to internet to sync.');
+            return;
+        }
+
+        if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+            showToast('Sync tools are unavailable on this page.');
+            return;
+        }
+
+        await window.seepoOfflineSync.syncNow();
+        await renderPendingExpenses();
+        window.location.reload();
+    }
+
+    async function removePendingExpense(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.deletePendingRecordByClientUuid !== 'function') {
+            showToast('Offline delete is unavailable on this page.');
+            return;
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('expense', clientUuid);
+        if (!deleted) {
+            showToast('This expense is already synced. Delete it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline expense from this device.');
+        await renderPendingExpenses();
+    }
+
+    async function openPendingExpenseEditModal(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.getPendingRecordByClientUuid !== 'function') {
+            showToast('Offline expense editing is unavailable on this page.');
+            return;
+        }
+
+        const expense = await window.seepoOfflineDb.getPendingRecordByClientUuid('expense', clientUuid);
+        if (!expense) {
+            showToast('This expense is already synced. Edit while online.');
+            return;
+        }
+
+        expenseEditClientUuidInput.value = expense.client_uuid || '';
+        expenseEditDateInput.value = expense.date || '';
+        expenseEditNameInput.value = expense.name || '';
+        expenseEditAmountInput.value = expense.amount || '';
+        expenseEditNotesInput.value = expense.notes || '';
+
+        const modal = getExpenseEditModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function savePendingExpenseEdit() {
+        const clientUuid = String(expenseEditClientUuidInput.value || '').trim();
+        if (!clientUuid) {
+            showToast('Pending expense identifier is missing.');
+            return;
+        }
+
+        const payload = {
+            date: String(expenseEditDateInput.value || '').trim(),
+            name: String(expenseEditNameInput.value || '').trim(),
+            amount: String(expenseEditAmountInput.value || '').trim(),
+            notes: String(expenseEditNotesInput.value || '').trim(),
+        };
+
+        if (!payload.date || !payload.name || !payload.amount) {
+            showToast('Date, category/name, and amount are required.');
+            return;
+        }
+
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
+            showToast('Offline expense editing is unavailable on this page.');
+            return;
+        }
+
+        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('expense', clientUuid, payload);
+        if (!updated) {
+            showToast('This expense is already synced. Edit while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getExpenseEditModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Offline expense updated locally.');
+        await renderPendingExpenses();
+    }
+
+    async function handlePendingExpenseAction(button) {
+        const action = button.getAttribute('data-offline-expense-action');
+        if (action === 'edit') {
+            await openPendingExpenseEditModal(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
+        if (action === 'remove') {
+            await removePendingExpense(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
+        if (action === 'sync') {
+            await syncNow();
+        }
+    }
+
+    async function renderPendingExpenses() {
+        const expenses = await getPendingExpenses();
+        renderPendingExpensesInTable(expenses);
+        renderPendingExpensesInMobile(expenses);
+
+        if (!noteWrap || !noteText) {
+            return;
+        }
+
+        if (!expenses.length) {
+            noteWrap.classList.add('d-none');
+            return;
+        }
+
+        noteWrap.classList.remove('d-none');
+        noteText.textContent = expenses.length + ' pending offline expense' + (expenses.length === 1 ? '' : 's') + ' shown in this list.';
+    }
+
+    tableBody.addEventListener('click', async function (event) {
+        const button = event.target.closest('button[data-offline-expense-action]');
+        if (!button) {
+            return;
+        }
+
+        await handlePendingExpenseAction(button);
+    });
+
+    if (mobileList) {
+        mobileList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-offline-expense-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingExpenseAction(button);
+        });
+    }
+
+    if (saveOfflineExpenseEditBtn) {
+        saveOfflineExpenseEditBtn.addEventListener('click', async function () {
+            await savePendingExpenseEdit();
+        });
+    }
+
+    window.addEventListener('online', function () {
+        renderPendingExpenses();
+    });
+
+    window.addEventListener('seepo:queue-status', function () {
+        renderPendingExpenses();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderPendingExpenses();
+    });
+})();
+</script>
 {% endblock %}

@@ -15,6 +15,34 @@
     [data-theme="dark"] .report-table-surface td {
         color: var(--muted-text-strong) !important;
     }
+
+    .report-mobile-list {
+        display: none;
+    }
+
+    .report-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .report-mobile-meta {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .report-table-wrap {
+            display: none;
+        }
+
+        .report-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -62,8 +90,13 @@
 </div>
 
 <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div id="offline-pending-report-groups-note" class="alert alert-warning mx-3 mt-3 mb-0 d-none">
+        <i class="fas fa-wifi-slash me-2"></i>
+        <span id="offline-pending-report-groups-note-text">Pending offline groups are visible in this report.</span>
+    </div>
+
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive report-table-wrap">
             <table class="table table-hover align-middle mb-0">
                 <thead class="report-table-surface" style="background-color: #F8F9FA; border-bottom: 2px solid var(--border-color);">
                     <tr>
@@ -73,7 +106,7 @@
                         <th class="py-3 text-muted fw-bold border-0 text-end pe-5">OFFICE DEBT</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="reports-overview-table-body">
                     {% for row in report_data %}
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td class="ps-4 fw-bold" style="color: var(--text-main);">{{ row.group_name }}</td>
@@ -82,7 +115,7 @@
                         <td class="text-end pe-5 fw-bold" style="color: #dc3545;">{{ row.office_debt|floatformat:0 }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fs-3 d-block opacity-25 mb-3"></i>No groups found.</td></tr>
+                    <tr id="reports-overview-empty-row"><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fs-3 d-block opacity-25 mb-3"></i>No groups found.</td></tr>
                     {% endfor %}
                 </tbody>
                 <tfoot class="report-table-surface" style="background-color: #F8F9FA; border-top: 2px solid var(--border-color);">
@@ -95,6 +128,148 @@
                 </tfoot>
             </table>
         </div>
+
+        <div id="reports-overview-mobile-list" class="report-mobile-list">
+            {% for row in report_data %}
+            <div class="report-mobile-card">
+                <div class="fw-bold mb-2" style="color: var(--text-main);">{{ row.group_name }}</div>
+                <div class="report-mobile-meta d-flex justify-content-between"><span>Office Account</span><span class="fw-bold text-success">{{ row.office_account|floatformat:0 }}</span></div>
+                <div class="report-mobile-meta d-flex justify-content-between"><span>Group Account</span><span class="fw-bold text-info">{{ row.group_account|floatformat:0 }}</span></div>
+                <div class="report-mobile-meta d-flex justify-content-between"><span>Office Debt</span><span class="fw-bold text-danger">{{ row.office_debt|floatformat:0 }}</span></div>
+            </div>
+            {% empty %}
+            <div id="reports-overview-mobile-empty" class="text-center text-muted py-4">No groups found.</div>
+            {% endfor %}
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tableBody = document.getElementById('reports-overview-table-body');
+    const mobileList = document.getElementById('reports-overview-mobile-list');
+    const noteWrap = document.getElementById('offline-pending-report-groups-note');
+    const noteText = document.getElementById('offline-pending-report-groups-note-text');
+
+    if (!tableBody || !window.seepoOfflineDb) {
+        return;
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    async function getPendingOfflineGroups() {
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            return window.seepoOfflineDb.getPendingRecordsByModel('group');
+        }
+
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        return groupsTable.where('synced').equals(0).toArray();
+    }
+
+    function renderPendingRows(groups) {
+        tableBody.querySelectorAll('tr[data-offline-pending-group="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('reports-overview-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const rows = groups.map(function (group) {
+            return (
+                '<tr data-offline-pending-group="true" style="background:#fff7e6;border-bottom:1px solid var(--border-color);">' +
+                    '<td class="ps-4 fw-bold" style="color: var(--text-main);">' +
+                        htmlEscape(group.name || 'Unnamed Group') +
+                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</td>' +
+                    '<td class="text-end pe-5 fw-bold" style="color:#28a745;">0</td>' +
+                    '<td class="text-end pe-5 fw-bold" style="color:#0dcaf0;">0</td>' +
+                    '<td class="text-end pe-5 fw-bold" style="color:#dc3545;">0</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        tableBody.insertAdjacentHTML('afterbegin', rows);
+    }
+
+    function renderPendingCards(groups) {
+        if (!mobileList) {
+            return;
+        }
+
+        mobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('reports-overview-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const cards = groups.map(function (group) {
+            return (
+                '<div class="report-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="report-mobile-meta d-flex justify-content-between"><span>Office Account</span><span class="fw-bold text-success">0</span></div>' +
+                    '<div class="report-mobile-meta d-flex justify-content-between"><span>Group Account</span><span class="fw-bold text-info">0</span></div>' +
+                    '<div class="report-mobile-meta d-flex justify-content-between"><span>Office Debt</span><span class="fw-bold text-danger">0</span></div>' +
+                '</div>'
+            );
+        }).join('');
+
+        mobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function renderPendingGroups() {
+        const groups = await getPendingOfflineGroups();
+        renderPendingRows(groups);
+        renderPendingCards(groups);
+
+        if (!noteWrap || !noteText) {
+            return;
+        }
+
+        if (!groups.length) {
+            noteWrap.classList.add('d-none');
+            return;
+        }
+
+        noteWrap.classList.remove('d-none');
+        noteText.textContent = groups.length + ' pending offline group' + (groups.length === 1 ? '' : 's') + ' shown in this report.';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderPendingGroups();
+    });
+
+    window.addEventListener('seepo:queue-status', function () {
+        renderPendingGroups();
+    });
+
+    window.addEventListener('online', function () {
+        renderPendingGroups();
+    });
+})();
+</script>
 {% endblock %}

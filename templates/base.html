@@ -446,6 +446,8 @@
                     <i data-lucide="shield-check" class="sidebar-icon"></i>
                     <span class="sidebar-text">Users</span>
                 </a>
+                {% endif %}
+                {% if user.role == 'admin' or user.is_superuser %}
                 <a href="{% url 'data_admin_console' %}" class="sidebar-link {% if request.resolver_match.url_name == 'data_admin_console' %}active{% endif %}">
                     <i data-lucide="table-2" class="sidebar-icon"></i>
                     <span class="sidebar-text">Data Admin</span>
