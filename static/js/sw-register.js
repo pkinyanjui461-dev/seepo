@@ -1,5 +1,5 @@
 (function () {
-  const SW_ASSET_VERSION = '21';
+  const SW_ASSET_VERSION = '23';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const hasServiceWorkerSupport = 'serviceWorker' in navigator;
   const localHostPattern = /^(localhost|127\.0\.0\.1)(:\d+)?$/i;
@@ -9,6 +9,26 @@
   let installButton = null;
   let hostReadyBadge = null;
   let hostReadyTimer = null;
+
+  function showInstallMessage(message) {
+    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+      window.seepoOfflineSync.showToast(message);
+      return;
+    }
+
+    window.alert(message);
+  }
+
+  function getManualInstallHint() {
+    const ua = (window.navigator.userAgent || '').toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+
+    if (isIOS) {
+      return 'To install on iPhone/iPad, tap Share and choose Add to Home Screen.';
+    }
+
+    return 'If the install prompt does not appear, use your browser menu and choose Install App.';
+  }
 
   function canUseServiceWorkersOnThisHost() {
     return window.isSecureContext || localHostPattern.test(window.location.host);
@@ -150,6 +170,7 @@
 
     installButton.addEventListener('click', async function () {
       if (!deferredInstallPrompt) {
+        showInstallMessage(getManualInstallHint());
         return;
       }
 
@@ -191,7 +212,7 @@
   window.addEventListener('DOMContentLoaded', function () {
     getHostReadyBadge();
     getInstallButton();
-    setInstallButtonVisible(false);
+    setInstallButtonVisible(true);
     updateOfflineHostReadyStatus();
 
     if (!hostReadyTimer) {

@@ -1,9 +1,10 @@
 {% load static %}
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v23';
 const CSS_ASSET_VERSION = '10';
-const OFFLINE_SYNC_ASSET_VERSION = '2';
-const OFFLINE_DB_ASSET_VERSION = '3';
-const SW_REGISTER_ASSET_VERSION = '21';
+const OFFLINE_SYNC_ASSET_VERSION = '4';
+const OFFLINE_DB_ASSET_VERSION = '4';
+const SW_REGISTER_ASSET_VERSION = '23';
+const DEXIE_ASSET_VERSION = '1';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -41,6 +42,8 @@ const APP_SHELL_URLS = [
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
   '{% static "js/dev-log-tools.js" %}',
+  '{% static "js/vendor/dexie.min.js" %}?v=' + DEXIE_ASSET_VERSION,
+  '{% static "js/vendor/dexie.min.js" %}',
   '{% static "js/offline-db.js" %}?v=' + OFFLINE_DB_ASSET_VERSION,
   '{% static "js/offline-db.js" %}',
   '{% static "js/offline-sync.js" %}?v=' + OFFLINE_SYNC_ASSET_VERSION,
