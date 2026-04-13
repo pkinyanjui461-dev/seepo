@@ -1,6 +1,9 @@
 (function () {
-  const SW_ASSET_VERSION = '24';
+  const SW_ASSET_VERSION = '26';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
+  const SW_FORCE_UPDATE_INTERVAL_MS = 90 * 1000;
+  const SW_REFRESH_TOAST_FLAG_KEY = 'seepoSwRefreshedToastV1';
+  const SW_REFRESH_TOAST_MAX_AGE_MS = 2 * 60 * 1000;
   const hasServiceWorkerSupport = 'serviceWorker' in navigator;
   const localHostPattern = /^(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
@@ -9,6 +12,7 @@
   let installButton = null;
   let hostReadyBadge = null;
   let hostReadyTimer = null;
+  let swForceUpdateTimer = null;
 
   function showInstallMessage(message) {
     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
@@ -17,6 +21,83 @@
     }
 
     window.alert(message);
+  }
+
+  function showInAppToast(message) {
+    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+      window.seepoOfflineSync.showToast(message);
+      return;
+    }
+
+    if (!document.body) {
+      return;
+    }
+
+    const existing = document.getElementById('sw-refresh-toast');
+    if (existing) {
+      existing.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.id = 'sw-refresh-toast';
+    toast.textContent = message;
+    toast.style.position = 'fixed';
+    toast.style.left = '50%';
+    toast.style.bottom = '80px';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'rgba(17, 24, 39, 0.95)';
+    toast.style.color = '#ffffff';
+    toast.style.padding = '10px 14px';
+    toast.style.borderRadius = '10px';
+    toast.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.28)';
+    toast.style.fontSize = '13px';
+    toast.style.fontWeight = '600';
+    toast.style.zIndex = '1200';
+    toast.style.maxWidth = '80vw';
+    toast.style.textAlign = 'center';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.18s ease';
+    document.body.appendChild(toast);
+
+    window.requestAnimationFrame(function () {
+      toast.style.opacity = '1';
+    });
+
+    window.setTimeout(function () {
+      toast.style.opacity = '0';
+      window.setTimeout(function () {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 220);
+    }, 3200);
+  }
+
+  function markSwRefreshToastPending() {
+    try {
+      window.sessionStorage.setItem(SW_REFRESH_TOAST_FLAG_KEY, String(Date.now()));
+    } catch (error) {
+      // Ignore storage failures silently.
+    }
+  }
+
+  function consumeSwRefreshToastPending() {
+    try {
+      const raw = window.sessionStorage.getItem(SW_REFRESH_TOAST_FLAG_KEY);
+      if (!raw) {
+        return false;
+      }
+
+      window.sessionStorage.removeItem(SW_REFRESH_TOAST_FLAG_KEY);
+      const timestamp = Number(raw);
+      if (!Number.isFinite(timestamp)) {
+        return true;
+      }
+
+      return Date.now() - timestamp <= SW_REFRESH_TOAST_MAX_AGE_MS;
+    } catch (error) {
+      return false;
+    }
   }
 
   function getManualInstallHint() {
@@ -198,6 +279,31 @@
     button.hidden = !shouldShow;
   }
 
+  async function forceServiceWorkerUpdate(registration) {
+    if (!registration) {
+      return;
+    }
+
+    try {
+      await registration.update();
+      if (registration.waiting) {
+        registration.waiting.postMessage('SKIP_WAITING');
+      }
+    } catch (error) {
+      console.warn('Service worker update check failed.', error);
+    }
+  }
+
+  function startForceUpdateCycle(registration) {
+    if (swForceUpdateTimer) {
+      clearInterval(swForceUpdateTimer);
+    }
+
+    swForceUpdateTimer = setInterval(function () {
+      forceServiceWorkerUpdate(registration);
+    }, SW_FORCE_UPDATE_INTERVAL_MS);
+  }
+
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault();
     deferredInstallPrompt = event;
@@ -214,6 +320,11 @@
     getHostReadyBadge();
     getInstallButton();
     setInstallButtonVisible(false);
+
+    if (consumeSwRefreshToastPending()) {
+      showInAppToast('Offline engine refreshed successfully.');
+    }
+
     updateOfflineHostReadyStatus();
 
     if (!hostReadyTimer) {
@@ -226,7 +337,16 @@
   window.addEventListener('visibilitychange', function () {
     if (!document.hidden) {
       updateOfflineHostReadyStatus();
+      navigator.serviceWorker.getRegistration('/').then(forceServiceWorkerUpdate).catch(function () {});
     }
+  });
+
+  window.addEventListener('focus', function () {
+    navigator.serviceWorker.getRegistration('/').then(forceServiceWorkerUpdate).catch(function () {});
+  });
+
+  window.addEventListener('online', function () {
+    navigator.serviceWorker.getRegistration('/').then(forceServiceWorkerUpdate).catch(function () {});
   });
 
   if (!hasServiceWorkerSupport) {
@@ -235,7 +355,13 @@
 
   window.addEventListener('load', async function () {
     try {
-      const registration = await navigator.serviceWorker.register(SW_SCRIPT_URL, { scope: '/' });
+      const registration = await navigator.serviceWorker.register(SW_SCRIPT_URL, {
+        scope: '/',
+        updateViaCache: 'none',
+      });
+
+      await forceServiceWorkerUpdate(registration);
+      startForceUpdateCycle(registration);
 
       if (registration.waiting) {
         registration.waiting.postMessage('SKIP_WAITING');
@@ -260,6 +386,7 @@
         }
 
         hasRefreshed = true;
+        markSwRefreshToastPending();
         window.location.reload();
       });
 
