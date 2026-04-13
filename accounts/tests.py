@@ -9,4 +9,4 @@ class LoginPwaInstallUiTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'id="pwa-install-btn"')
 		self.assertContains(response, 'id="offline-host-ready-badge"')
-		self.assertContains(response, 'sw-register.js?v=30')
+		self.assertContains(response, 'sw-register.js?v=31')

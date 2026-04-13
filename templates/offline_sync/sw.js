@@ -1,9 +1,9 @@
 {% load static %}
-const CACHE_VERSION = 'v30';
+const CACHE_VERSION = 'v31';
 const CSS_ASSET_VERSION = '11';
 const OFFLINE_SYNC_ASSET_VERSION = '4';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '30';
+const SW_REGISTER_ASSET_VERSION = '31';
 const DEXIE_ASSET_VERSION = '1';
 const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
 const OFFLINE_GLOBAL_STATE_VERSION = '1';
@@ -39,7 +39,6 @@ const APP_SHELL_URLS = [
   '/groups/diary/',
   '/members/create/',
   '/finance/expenses/',
-  '/finance/monthly-forms/',
   '/reports/',
   '/reports/entities/',
   '/manifest.webmanifest',

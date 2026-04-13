@@ -38,8 +38,24 @@
     }
   }
 
+  function emitQueueChanged() {
+    const pending = getQueue().length;
+    window.dispatchEvent(
+      new CustomEvent('seepo:diary-queue-updated', {
+        detail: {
+          pending: pending,
+        },
+      })
+    );
+
+    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+      window.seepoOfflineSync.refreshStatus();
+    }
+  }
+
   function setQueue(queue) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+    emitQueueChanged();
   }
 
   function normalizeUpdate(update) {

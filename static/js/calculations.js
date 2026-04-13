@@ -51,8 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function notifyRowQueueChanged() {
+        const pending = getRowQueue().length;
+        window.dispatchEvent(new CustomEvent('seepo:member-record-queue-updated', {
+            detail: { pending: pending }
+        }));
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            window.seepoOfflineSync.refreshStatus();
+        }
+    }
+
     function setRowQueue(queue) {
         localStorage.setItem(OFFLINE_ROW_QUEUE_KEY, JSON.stringify(queue));
+        notifyRowQueueChanged();
     }
 
     function queueRowPayload(recordId, url, data) {
@@ -89,6 +101,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const stillPendingForRecord = filtered.some((item) => String(item.recordId) === String(recordId));
         markRowPending(recordId, stillPendingForRecord);
+    }
+
+    function selectionKey(item) {
+        return String(item && item.id ? item.id : (String(item && item.recordId ? item.recordId : '') + '|' + String(item && item.url ? item.url : '')));
+    }
+
+    function getSelectionItems() {
+        return getRowQueue().map((item) => {
+            return {
+                key: selectionKey(item),
+                label: 'Monthly Row #' + String(item.recordId || '?'),
+                updatedAt: item.updatedAt || ''
+            };
+        });
+    }
+
+    function deleteSelectionItems(keys) {
+        const keySet = new Set(Array.isArray(keys) ? keys.map(String) : []);
+        if (!keySet.size) {
+            return 0;
+        }
+
+        const queue = getRowQueue();
+        const remaining = queue.filter((item) => !keySet.has(selectionKey(item)));
+        const deleted = queue.length - remaining.length;
+
+        if (deleted > 0) {
+            setRowQueue(remaining);
+
+            const recordIds = new Set(queue.map((item) => String(item.recordId || '')));
+            recordIds.forEach((recordId) => {
+                const stillPending = remaining.some((item) => String(item.recordId || '') === recordId);
+                markRowPending(recordId, stillPending);
+            });
+        }
+
+        return deleted;
     }
 
     function markRowPending(recordId, isPending) {
@@ -463,6 +512,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Update footer totals
     calculateTotals();
+
+    window.seepoOfflineMemberRecordQueue = {
+        getQueue: getRowQueue,
+        getSelectionItems: getSelectionItems,
+        deleteSelectionItems: deleteSelectionItems,
+        pendingCount: function () {
+            return getRowQueue().length;
+        },
+        syncNow: syncQueuedRows,
+        clear: function () {
+            setRowQueue([]);
+            document.querySelectorAll('.record-row.row-pending-sync').forEach((row) => {
+                row.classList.remove('row-pending-sync');
+            });
+        }
+    };
+    notifyRowQueueChanged();
 
     if (navigator.onLine) {
         syncQueuedRows();

@@ -736,7 +736,7 @@
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=30"></script>
+<script src="{% static 'js/sw-register.js' %}?v=31"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
@@ -790,6 +790,7 @@
                 model: 'Model Queue',
                 diary: 'Diary Queue',
                 draft: 'Draft Queue',
+                member_record: 'Monthly Row Queue',
             };
 
             return map[sourceName] || 'Queue';
@@ -956,7 +957,21 @@
                       })
                     : [];
 
-            renderPendingRows([].concat(decoratedModelItems, diaryItems, draftItems));
+            const memberRecordItems =
+                window.seepoOfflineMemberRecordQueue && typeof window.seepoOfflineMemberRecordQueue.getSelectionItems === 'function'
+                    ? window.seepoOfflineMemberRecordQueue.getSelectionItems().map(function (item) {
+                          return {
+                              source: 'member_record',
+                              model: 'member_record',
+                              localId: -1,
+                              key: item.key,
+                              label: item.label,
+                              updatedAt: item.updatedAt,
+                          };
+                      })
+                    : [];
+
+            renderPendingRows([].concat(decoratedModelItems, diaryItems, draftItems, memberRecordItems));
         }
 
         function getDeletePendingModal() {
@@ -1153,6 +1168,14 @@
                             return item.key;
                         });
 
+                    const memberRecordKeys = selectedRows
+                        .filter(function (item) {
+                            return item.source === 'member_record';
+                        })
+                        .map(function (item) {
+                            return item.key;
+                        });
+
                     const modelDeleted = await window.seepoOfflineDb.deletePendingRecords(modelRows);
                     const diaryDeleted =
                         window.seepoOfflineDiary && typeof window.seepoOfflineDiary.deleteSelectionItems === 'function'
@@ -1162,8 +1185,12 @@
                         window.seepoOfflineDraftQueue && typeof window.seepoOfflineDraftQueue.deleteSelectionItems === 'function'
                             ? window.seepoOfflineDraftQueue.deleteSelectionItems(draftKeys)
                             : 0;
+                    const memberRecordDeleted =
+                        window.seepoOfflineMemberRecordQueue && typeof window.seepoOfflineMemberRecordQueue.deleteSelectionItems === 'function'
+                            ? window.seepoOfflineMemberRecordQueue.deleteSelectionItems(memberRecordKeys)
+                            : 0;
 
-                    const deletedCount = modelDeleted + diaryDeleted + draftDeleted;
+                    const deletedCount = modelDeleted + diaryDeleted + draftDeleted + memberRecordDeleted;
                     await loadPendingRows();
 
                     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {

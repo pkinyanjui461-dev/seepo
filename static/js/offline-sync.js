@@ -51,6 +51,7 @@
         group: 'Groups',
         member: 'Members',
         monthly_form: 'Monthly Forms',
+        member_record: 'Monthly Rows',
         expense: 'Expenses',
         user: 'Users',
         diary: 'Diary',
@@ -90,6 +91,13 @@
         }
       }
 
+      if (window.seepoOfflineMemberRecordQueue && typeof window.seepoOfflineMemberRecordQueue.pendingCount === 'function') {
+        const rowPending = Number(window.seepoOfflineMemberRecordQueue.pendingCount()) || 0;
+        if (rowPending > 0) {
+          breakdown.member_record = rowPending;
+        }
+      }
+
       const total = Object.values(breakdown).reduce((sum, count) => sum + (Number(count) || 0), 0);
       this.updateQueueChip(total, breakdown);
 
@@ -116,6 +124,10 @@
         syncTasks.push(window.seepoOfflineDraftQueue.syncNow());
       }
 
+      if (window.seepoOfflineMemberRecordQueue && typeof window.seepoOfflineMemberRecordQueue.syncNow === 'function') {
+        syncTasks.push(window.seepoOfflineMemberRecordQueue.syncNow());
+      }
+
       if (!syncTasks.length) {
         return;
       }
@@ -139,6 +151,10 @@
       });
 
       window.addEventListener('seepo:draft-queue-updated', async () => {
+        await this.refreshStatus();
+      });
+
+      window.addEventListener('seepo:member-record-queue-updated', async () => {
         await this.refreshStatus();
       });
 

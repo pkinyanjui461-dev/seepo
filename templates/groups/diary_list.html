@@ -557,6 +557,33 @@
         });
     }
 
+    function applyQueuedDiaryUpdatesToUi() {
+        document.querySelectorAll('.editable.pending-offline-cell').forEach((td) => {
+            td.classList.remove('pending-offline-cell');
+        });
+
+        document.querySelectorAll('.mobile-editable.pending-offline-cell').forEach((fieldEl) => {
+            fieldEl.classList.remove('pending-offline-cell');
+        });
+
+        if (!window.seepoOfflineDiary || typeof window.seepoOfflineDiary.getQueue !== 'function') {
+            return;
+        }
+
+        const queue = window.seepoOfflineDiary.getQueue();
+        queue.forEach((item) => {
+            const diaryId = String(item && item.diaryId ? item.diaryId : '').trim();
+            const field = String(item && item.field ? item.field : '').trim().toLowerCase();
+            const value = item && Object.prototype.hasOwnProperty.call(item, 'value') ? item.value : '';
+            if (!diaryId || !field) {
+                return;
+            }
+
+            updateDesktopFieldMirror(diaryId, field, value, true);
+            updateMobileFieldMirror(diaryId, field, value, true);
+        });
+    }
+
     async function persistDiaryChange(td, diaryId, field, originalValue, newValue) {
         td.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
 
@@ -799,6 +826,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         applyToggleButtonStyle();
         refreshMobileEditability();
+        applyQueuedDiaryUpdatesToUi();
         if (window.seepoOfflineDiary && navigator.onLine) {
             window.seepoOfflineDiary.syncNow();
         }
@@ -812,6 +840,10 @@
 
     window.addEventListener('online', () => {
         renderPendingGroupsInDiary();
+    });
+
+    window.addEventListener('seepo:diary-queue-updated', () => {
+        applyQueuedDiaryUpdatesToUi();
     });
 
     window.addEventListener('resize', () => {
