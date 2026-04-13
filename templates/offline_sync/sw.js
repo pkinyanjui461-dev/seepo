@@ -1,9 +1,9 @@
 {% load static %}
-const CACHE_VERSION = 'v26';
+const CACHE_VERSION = 'v27';
 const CSS_ASSET_VERSION = '10';
 const OFFLINE_SYNC_ASSET_VERSION = '4';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '26';
+const SW_REGISTER_ASSET_VERSION = '27';
 const DEXIE_ASSET_VERSION = '1';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
@@ -11,6 +11,7 @@ const OFFLINE_FALLBACK_URL = '/offline/';
 const NAVIGATION_ROUTE_FALLBACKS = [
   { prefix: '/accounts/notifications/', fallback: '/accounts/notifications/' },
   { prefix: '/accounts/', fallback: '{% url "dashboard" %}' },
+  { prefix: '/groups/offline/workspace/', fallback: '/groups/offline/workspace/' },
   { prefix: '/groups/', fallback: '/groups/' },
   { prefix: '/members/', fallback: '/groups/' },
   { prefix: '/finance/', fallback: '/finance/expenses/' },
@@ -31,6 +32,7 @@ const APP_SHELL_URLS = [
   '/accounts/users/create/',
   '/accounts/notifications/',
   '/groups/',
+  '/groups/offline/workspace/',
   '/groups/create/',
   '/groups/diary/',
   '/finance/expenses/',

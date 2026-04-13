@@ -47,10 +47,6 @@ def offline_workspace(request):
     group_client_uuid = (request.GET.get('group_client_uuid') or '').strip()
     group_name = (request.GET.get('group_name') or '').strip() or 'Offline Pending Group'
 
-    if not group_client_uuid:
-        messages.warning(request, 'Offline workspace link is missing a group identifier.')
-        return redirect('group_list')
-
     return render(
         request,
         'groups/offline_workspace.html',

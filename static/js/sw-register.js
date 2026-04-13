@@ -1,5 +1,5 @@
 (function () {
-  const SW_ASSET_VERSION = '26';
+  const SW_ASSET_VERSION = '27';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const SW_FORCE_UPDATE_INTERVAL_MS = 90 * 1000;
   const SW_REFRESH_TOAST_FLAG_KEY = 'seepoSwRefreshedToastV1';

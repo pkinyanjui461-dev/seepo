@@ -349,8 +349,13 @@
 {% block extra_js %}
 <script>
 (function () {
-    const groupClientUuid = '{{ group_client_uuid|escapejs }}';
-    const initialGroupName = '{{ group_name|escapejs }}';
+    const params = new URLSearchParams(window.location.search || '');
+    const serverGroupClientUuid = String('{{ group_client_uuid|escapejs }}' || '').trim();
+    const serverGroupName = String('{{ group_name|escapejs }}' || '').trim();
+    const queryGroupClientUuid = String(params.get('group_client_uuid') || '').trim();
+    const queryGroupName = String(params.get('group_name') || '').trim();
+    const groupClientUuid = queryGroupClientUuid || serverGroupClientUuid;
+    const initialGroupName = queryGroupName || serverGroupName || 'Offline Pending Group';
     const groupListUrl = "{% url 'group_list' %}";
     const offlineDraftStorageKey = 'seepoPendingMonthlyFormSheetDraftsV1';
 
