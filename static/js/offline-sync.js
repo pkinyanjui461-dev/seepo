@@ -491,7 +491,12 @@
       const records = Array.isArray(result.records) ? result.records : [];
 
       for (const serverRecord of records) {
-        const local = await table.where('client_uuid').equals(serverRecord.client_uuid).first();
+        let local = await table.where('client_uuid').equals(serverRecord.client_uuid).first();
+        if (!local && serverRecord.server_id !== undefined && serverRecord.server_id !== null) {
+          local = await table
+            .filter((item) => Number(item.server_id || 0) === Number(serverRecord.server_id))
+            .first();
+        }
         if (!local) {
           await table.add({ ...serverRecord, synced: 1 });
           continue;

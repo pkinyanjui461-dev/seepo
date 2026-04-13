@@ -43,6 +43,15 @@ def _normalize_sync_push_error(model_name, exc):
     ):
         return 'member_number already exists in this group. Use a different member number.'
 
+    if (
+        model_name == 'monthly_form'
+        and 'duplicate key value violates unique constraint' in lowered
+        and 'group_id' in lowered
+        and 'month' in lowered
+        and 'year' in lowered
+    ):
+        return 'A monthly form for this group and month already exists. Existing form was reused.'
+
     return message or 'Unknown server error.'
 
 
@@ -54,6 +63,20 @@ def debug_only(view_func):
         return view_func(request, *args, **kwargs)
 
     return _wrapped
+
+
+def _find_existing_by_natural_key(model_name, spec, defaults):
+    if model_name != 'monthly_form':
+        return None
+
+    group = defaults.get('group')
+    month = defaults.get('month')
+    year = defaults.get('year')
+
+    if not group or month is None or year is None:
+        return None
+
+    return spec.model.objects.filter(group=group, month=month, year=year).first()
 
 
 @login_required
@@ -128,6 +151,8 @@ def sync_push(request):
             raw_password = defaults.pop('password', None)
 
             existing = spec.model.objects.filter(client_uuid=client_uuid).first()
+            if not existing:
+                existing = _find_existing_by_natural_key(model_name, spec, defaults)
             if existing:
                 existing_client_updated_at = getattr(existing, 'client_updated_at', None)
                 if (

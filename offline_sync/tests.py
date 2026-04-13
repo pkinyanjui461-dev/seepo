@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from finance.models import Expense
+from finance.models import Expense, MonthlyForm
 from groups.models import Group
 from offline_sync.models import SyncLog
 
@@ -72,6 +72,27 @@ class OfflineSyncApiTests(TestCase):
             "notes": "mock",
         }
 
+    def _monthly_form_payload(
+        self,
+        *,
+        group_client_uuid,
+        month,
+        year,
+        status='draft',
+        notes='',
+        client_uuid=None,
+        client_updated_at=None,
+    ):
+        return {
+            'client_uuid': client_uuid or str(uuid.uuid4()),
+            'client_updated_at': (client_updated_at or timezone.now()).isoformat(),
+            'group_client_uuid': group_client_uuid,
+            'month': month,
+            'year': year,
+            'status': status,
+            'notes': notes,
+        }
+
     def test_basic_online_create_and_debug_visibility(self):
         payload = self._group_payload(name="Alpha Group")
 
@@ -105,6 +126,41 @@ class OfflineSyncApiTests(TestCase):
         self.assertEqual(second.status_code, 200)
         self.assertEqual(Expense.objects.filter(client_uuid=client_uuid).count(), 1)
         self.assertEqual(SyncLog.objects.filter(direction="push", model_name="expense").count(), 2)
+
+    def test_monthly_form_push_merges_existing_by_group_month_year(self):
+        existing = MonthlyForm.objects.create(
+            group=self.workspace_group,
+            month=4,
+            year=2026,
+            status='draft',
+            notes='server-original',
+            created_by=self.user,
+        )
+
+        payload = self._monthly_form_payload(
+            group_client_uuid=str(self.workspace_group.client_uuid),
+            month=4,
+            year=2026,
+            status='submitted',
+            notes='offline-updated',
+            client_uuid=str(uuid.uuid4()),
+        )
+
+        response = self._push('monthly_form', [payload])
+        self.assertEqual(response.status_code, 200)
+
+        body = response.json()
+        self.assertEqual(body['synced'], 1)
+        self.assertEqual(body['errors'], [])
+        self.assertEqual(body['conflicts'], 0)
+
+        self.assertEqual(MonthlyForm.objects.filter(group=self.workspace_group, month=4, year=2026).count(), 1)
+        existing.refresh_from_db()
+        self.assertEqual(existing.status, 'submitted')
+        self.assertEqual(existing.notes, 'offline-updated')
+
+        self.assertEqual(body['records_saved'][0]['client_uuid'], payload['client_uuid'])
+        self.assertEqual(body['records_saved'][0]['server_id'], existing.pk)
 
     def test_conflict_resolution_rejects_older_accepts_newer(self):
         client_uuid = str(uuid.uuid4())
