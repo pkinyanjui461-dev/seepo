@@ -80,7 +80,10 @@
     <div class="tab-pane fade {% if active_tab == 'members' %}show active{% endif %}" id="members" role="tabpanel">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0" style="color: var(--text-main);">Active Members</h5>
-            <a href="{% url 'member_create' group.pk %}" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>Add Member</a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'member_create' group.pk %}" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-user-plus me-2"></i>Add Member</a>
+                <button id="add-offline-member-btn" type="button" class="btn btn-outline-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-wifi-slash me-2"></i>Add Member Offline</button>
+            </div>
         </div>
 
         <div id="offline-pending-members-note" class="alert alert-warning d-none">
@@ -103,7 +106,7 @@
                         </thead>
                         <tbody id="member-table-body">
                             {% for member in members %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
+                            <tr data-member-client-uuid="{{ member.client_uuid }}" style="border-bottom: 1px solid var(--border-color);">
                                 <td class="ps-4">
                                     {% if member.member_number %}
                                     <span class="badge" style="background-color: rgba(108,93,211,0.1); color: var(--primary-color); font-size: 0.8rem; padding: 5px 8px; border-radius: 6px; font-weight: 700;">
@@ -122,9 +125,19 @@
                                 <td class="text-muted">{{ member.phone|default:"-" }}</td>
                                 <td class="text-muted">{{ member.join_date|date:"d M Y" }}</td>
                                 <td class="text-end pe-4">
-                                    <div class="btn-group">
-                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); border-radius: 6px 0 0 6px;" title="Edit Member"><i class="fas fa-edit" style="color: var(--primary-color);"></i></a>
-                                        <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger" style="border-radius: 0 6px 6px 0;" title="Remove Member"><i class="fas fa-trash-alt"></i></a>
+                                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); border-radius: 6px;" title="Edit Member"><i class="fas fa-edit" style="color: var(--primary-color);"></i></a>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Manage Offline"
+                                                data-offline-member-action="manage"
+                                                data-client-uuid="{{ member.client_uuid }}"
+                                                data-member-number="{{ member.member_number|default_if_none:'' }}"
+                                                data-member-name="{{ member.name }}"
+                                                data-member-phone="{{ member.phone|default:'' }}"
+                                                data-member-join-date="{{ member.join_date|date:'Y-m-d' }}"
+                                                data-member-active="{% if member.is_active %}1{% else %}0{% endif %}">
+                                            <i class="fas fa-wifi"></i>
+                                        </button>
+                                        <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger" style="border-radius: 6px;" title="Remove Member"><i class="fas fa-trash-alt"></i></a>
                                     </div>
                                 </td>
                             </tr>
@@ -137,7 +150,7 @@
 
                 <div id="members-mobile-list" class="members-mobile-list">
                     {% for member in members %}
-                    <div class="member-mobile-card">
+                    <div class="member-mobile-card" data-member-client-uuid="{{ member.client_uuid }}">
                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                             <div class="fw-bold" style="color: var(--text-main);">{{ member.name }}</div>
                             {% if member.member_number %}
@@ -149,6 +162,16 @@
                         </div>
                         <div class="d-grid gap-2">
                             <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-2"></i>Edit Member</a>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-offline-member-action="manage"
+                                    data-client-uuid="{{ member.client_uuid }}"
+                                    data-member-number="{{ member.member_number|default_if_none:'' }}"
+                                    data-member-name="{{ member.name }}"
+                                    data-member-phone="{{ member.phone|default:'' }}"
+                                    data-member-join-date="{{ member.join_date|date:'Y-m-d' }}"
+                                    data-member-active="{% if member.is_active %}1{% else %}0{% endif %}">
+                                <i class="fas fa-wifi me-2"></i>Manage Offline
+                            </button>
                             <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt me-2"></i>Remove Member</a>
                         </div>
                     </div>
@@ -166,7 +189,11 @@
             <h5 class="fw-bold mb-0" style="color: var(--text-main);">Financial Forms</h5>
             <a href="{% url 'monthly_form_create' group.pk %}" class="btn btn-primary px-3 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-plus me-2"></i>New Form</a>
         </div>
-        <div class="row g-4">
+        <div id="offline-pending-forms-note" class="alert alert-warning d-none">
+            <i class="fas fa-wifi-slash me-2"></i>
+            <span id="offline-pending-forms-note-text">Pending offline monthly forms available.</span>
+        </div>
+        <div id="group-monthly-forms-row" class="row g-4">
             {% for mform in monthly_forms %}
             <div class="col-md-6 col-lg-4" id="monthly-form-card-{{ mform.pk }}">
                 <div class="card shadow-sm h-100 border-0" style="border-radius: var(--border-radius-lg); position: relative; overflow: hidden;">
@@ -223,7 +250,7 @@
                 </div>
             </div>
             {% empty %}
-            <div class="col-12">
+            <div class="col-12" id="group-monthly-forms-empty">
                 <div class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="background-color: var(--muted-surface); border-radius: var(--border-radius-lg); border: 1px dashed var(--border-color);">
                     <i class="fas fa-folder-open fs-1 mb-3 opacity-25" style="color: var(--primary-color);"></i>
                     <h5 class="fw-bold" style="color: var(--text-main);">No forms yet</h5>
@@ -283,8 +310,15 @@
     const mobileList = document.getElementById('members-mobile-list');
     const noteWrap = document.getElementById('offline-pending-members-note');
     const noteText = document.getElementById('offline-pending-members-note-text');
+    const addOfflineMemberBtn = document.getElementById('add-offline-member-btn');
+
+    const formsRow = document.getElementById('group-monthly-forms-row');
+    const formsEmpty = document.getElementById('group-monthly-forms-empty');
+    const formsNoteWrap = document.getElementById('offline-pending-forms-note');
+    const formsNoteText = document.getElementById('offline-pending-forms-note-text');
 
     const memberEditModalEl = document.getElementById('offline-member-edit-modal');
+    const memberEditModalTitle = document.getElementById('offline-member-edit-modal-title');
     const memberEditClientUuidInput = document.getElementById('offline-member-edit-client-uuid');
     const memberEditNumberInput = document.getElementById('offline-member-edit-number');
     const memberEditNameInput = document.getElementById('offline-member-edit-name');
@@ -294,6 +328,7 @@
     const saveOfflineMemberEditBtn = document.getElementById('save-offline-member-edit-btn');
 
     let memberEditModal = null;
+    let memberEditMode = 'edit';
 
     if (!tableBody || !window.seepoOfflineDb || !groupClientUuid) {
         return;
@@ -328,6 +363,91 @@
         return memberEditModal;
     }
 
+    function parseBool(value) {
+        const lowered = String(value || '').trim().toLowerCase();
+        return lowered === '1' || lowered === 'true' || lowered === 'yes' || lowered === 'on';
+    }
+
+    function setMemberEditMode(mode) {
+        memberEditMode = mode === 'create' ? 'create' : 'edit';
+        if (!memberEditModalTitle) {
+            return;
+        }
+
+        memberEditModalTitle.textContent = memberEditMode === 'create'
+            ? 'Add Offline Member'
+            : 'Manage Offline Member';
+    }
+
+    function openMemberModal(payload, options) {
+        const normalized = payload || {};
+        const mode = options && options.mode ? options.mode : 'edit';
+        const clientUuid = options && options.clientUuid ? options.clientUuid : '';
+
+        setMemberEditMode(mode);
+
+        memberEditClientUuidInput.value = clientUuid || normalized.client_uuid || '';
+        memberEditNumberInput.value = normalized.member_number || '';
+        memberEditNameInput.value = normalized.name || '';
+        memberEditPhoneInput.value = normalized.phone || '';
+        memberEditJoinDateInput.value = normalized.join_date || new Date().toISOString().slice(0, 10);
+        memberEditActiveInput.checked = normalized.is_active !== false;
+
+        const modal = getMemberEditModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    function resetBaseMemberVisibility() {
+        tableBody.querySelectorAll('tr[data-member-client-uuid]').forEach(function (row) {
+            row.classList.remove('d-none');
+        });
+
+        if (mobileList) {
+            mobileList.querySelectorAll('.member-mobile-card[data-member-client-uuid]').forEach(function (card) {
+                card.classList.remove('d-none');
+            });
+        }
+    }
+
+    function hideBaseMemberByClientUuid(clientUuid) {
+        const target = String(clientUuid || '').trim();
+        if (!target) {
+            return;
+        }
+
+        tableBody.querySelectorAll('tr[data-member-client-uuid]').forEach(function (row) {
+            if (String(row.getAttribute('data-member-client-uuid') || '').trim() === target) {
+                row.classList.add('d-none');
+            }
+        });
+
+        if (mobileList) {
+            mobileList.querySelectorAll('.member-mobile-card[data-member-client-uuid]').forEach(function (card) {
+                if (String(card.getAttribute('data-member-client-uuid') || '').trim() === target) {
+                    card.classList.add('d-none');
+                }
+            });
+        }
+    }
+
+    function getVisibleServerMemberCount() {
+        return Array.from(tableBody.querySelectorAll('tr[data-member-client-uuid]')).filter(function (row) {
+            return !row.classList.contains('d-none');
+        }).length;
+    }
+
+    function getVisibleServerMobileMemberCount() {
+        if (!mobileList) {
+            return 0;
+        }
+
+        return Array.from(mobileList.querySelectorAll('.member-mobile-card[data-member-client-uuid]')).filter(function (card) {
+            return !card.classList.contains('d-none');
+        }).length;
+    }
+
     async function getPendingMembers() {
         let members = [];
         if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
@@ -359,9 +479,14 @@
             row.remove();
         });
 
+        resetBaseMemberVisibility();
+        members.forEach(function (member) {
+            hideBaseMemberByClientUuid(member.client_uuid);
+        });
+
         const emptyRow = document.getElementById('members-empty-row');
         if (emptyRow) {
-            emptyRow.style.display = members.length ? 'none' : '';
+            emptyRow.style.display = (members.length || getVisibleServerMemberCount()) ? 'none' : '';
         }
 
         if (!members.length) {
@@ -411,7 +536,7 @@
 
         const emptyMobile = document.getElementById('members-mobile-empty');
         if (emptyMobile) {
-            emptyMobile.style.display = members.length ? 'none' : '';
+            emptyMobile.style.display = (members.length || getVisibleServerMobileMemberCount()) ? 'none' : '';
         }
 
         if (!members.length) {
@@ -490,22 +615,15 @@
             return;
         }
 
-        memberEditClientUuidInput.value = member.client_uuid || '';
-        memberEditNumberInput.value = member.member_number || '';
-        memberEditNameInput.value = member.name || '';
-        memberEditPhoneInput.value = member.phone || '';
-        memberEditJoinDateInput.value = member.join_date || '';
-        memberEditActiveInput.checked = member.is_active === true || String(member.is_active).toLowerCase() === 'true' || String(member.is_active) === '1';
-
-        const modal = getMemberEditModal();
-        if (modal) {
-            modal.show();
-        }
+        openMemberModal(member, {
+            mode: 'edit',
+            clientUuid: member.client_uuid || '',
+        });
     }
 
     async function savePendingMemberEdit() {
         const clientUuid = (memberEditClientUuidInput.value || '').trim();
-        if (!clientUuid) {
+        if (memberEditMode !== 'create' && !clientUuid) {
             showToast('Pending member identifier is missing.');
             return;
         }
@@ -517,6 +635,7 @@
             phone: String(memberEditPhoneInput.value || '').trim(),
             join_date: String(memberEditJoinDateInput.value || '').trim(),
             is_active: !!memberEditActiveInput.checked,
+            group_client_uuid: groupClientUuid,
         };
 
         if (!payload.name || !payload.join_date) {
@@ -524,15 +643,31 @@
             return;
         }
 
-        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
-            showToast('Offline member editing is unavailable on this page.');
-            return;
-        }
+        if (memberEditMode === 'create') {
+            if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
+                showToast('Offline member creation is unavailable on this page.');
+                return;
+            }
 
-        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('member', clientUuid, payload);
-        if (!updated) {
-            showToast('This member is already synced. Edit while online.');
-            return;
+            await window.seepoOfflineSync.saveOffline('member', payload);
+        } else {
+            if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
+                showToast('Offline member editing is unavailable on this page.');
+                return;
+            }
+
+            const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('member', clientUuid, payload);
+            if (!updated) {
+                if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
+                    showToast('Offline member editing is unavailable on this page.');
+                    return;
+                }
+
+                await window.seepoOfflineSync.saveOffline('member', {
+                    ...payload,
+                    client_uuid: clientUuid,
+                });
+            }
         }
 
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
@@ -544,14 +679,52 @@
             modal.hide();
         }
 
-        showToast('Offline member updated locally.');
+        showToast(memberEditMode === 'create' ? 'Offline member saved locally.' : 'Offline member update queued locally.');
         await renderPendingMembers();
+    }
+
+    function openOfflineManageFromButton(button) {
+        const joinDate = String(button.getAttribute('data-member-join-date') || '').trim() || new Date().toISOString().slice(0, 10);
+        openMemberModal(
+            {
+                member_number: String(button.getAttribute('data-member-number') || '').trim(),
+                name: String(button.getAttribute('data-member-name') || '').trim(),
+                phone: String(button.getAttribute('data-member-phone') || '').trim(),
+                join_date: joinDate,
+                is_active: parseBool(button.getAttribute('data-member-active')),
+            },
+            {
+                mode: 'edit',
+                clientUuid: String(button.getAttribute('data-client-uuid') || '').trim(),
+            }
+        );
+    }
+
+    function openNewOfflineMemberModal() {
+        openMemberModal(
+            {
+                member_number: '',
+                name: '',
+                phone: '',
+                join_date: new Date().toISOString().slice(0, 10),
+                is_active: true,
+            },
+            {
+                mode: 'create',
+                clientUuid: '',
+            }
+        );
     }
 
     async function handlePendingMemberAction(button) {
         const action = button.getAttribute('data-offline-member-action');
         if (action === 'edit') {
             await openPendingMemberEditModal(button.getAttribute('data-client-uuid') || '');
+            return;
+        }
+
+        if (action === 'manage') {
+            openOfflineManageFromButton(button);
             return;
         }
 
@@ -580,7 +753,126 @@
         }
 
         noteWrap.classList.remove('d-none');
-        noteText.textContent = members.length + ' pending offline member' + (members.length === 1 ? '' : 's') + ' shown in this list.';
+        noteText.textContent = members.length + ' pending offline member record' + (members.length === 1 ? '' : 's') + ' shown in this list.';
+    }
+
+    function getMonthLabel(monthNumber) {
+        const names = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthIndex = Number(monthNumber) - 1;
+        if (monthIndex < 0 || monthIndex >= names.length) {
+            return String(monthNumber || '?');
+        }
+        return names[monthIndex];
+    }
+
+    async function getPendingMonthlyForms() {
+        let forms = [];
+        if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
+            forms = await window.seepoOfflineDb.getPendingRecordsByModel('monthly_form');
+        } else {
+            const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+            forms = await formsTable.where('synced').equals(0).toArray();
+        }
+
+        return forms.filter(function (form) {
+            return String(form.group_client_uuid || '').trim() === String(groupClientUuid).trim();
+        });
+    }
+
+    async function removePendingMonthlyForm(clientUuid) {
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.deletePendingRecordByClientUuid !== 'function') {
+            showToast('Offline delete is unavailable on this page.');
+            return;
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', clientUuid);
+        if (!deleted) {
+            showToast('This monthly form is already synced. Delete it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline monthly form from this device.');
+        await renderPendingMonthlyForms();
+    }
+
+    async function renderPendingMonthlyForms() {
+        if (!formsRow) {
+            return;
+        }
+
+        formsRow.querySelectorAll('[data-offline-pending-form-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const forms = await getPendingMonthlyForms();
+        if (formsEmpty) {
+            formsEmpty.style.display = forms.length ? 'none' : '';
+        }
+
+        if (!forms.length) {
+            if (formsNoteWrap) {
+                formsNoteWrap.classList.add('d-none');
+            }
+            return;
+        }
+
+        if (formsNoteWrap && formsNoteText) {
+            formsNoteWrap.classList.remove('d-none');
+            formsNoteText.textContent = forms.length + ' pending offline monthly form' + (forms.length === 1 ? '' : 's') + ' shown in this workspace.';
+        }
+
+        const cards = forms.map(function (form) {
+            const monthLabel = getMonthLabel(form.month);
+            const yearLabel = String(form.year || '?');
+
+            return (
+                '<div class="col-md-6 col-lg-4" data-offline-pending-form-card="true">' +
+                    '<div class="card shadow-sm h-100 border-0" style="border-radius: var(--border-radius-lg); position: relative; overflow: hidden; background:#fff7e6;">' +
+                        '<div style="height: 4px; width: 100%; background-color: #f59e0b; position: absolute; top: 0; left: 0;"></div>' +
+                        '<div class="card-body p-4">' +
+                            '<div class="d-flex justify-content-between align-items-start mb-3">' +
+                                '<div>' +
+                                    '<h5 class="fw-bold mb-1" style="color: var(--text-main);">' + htmlEscape(monthLabel + ' ' + yearLabel) + '</h5>' +
+                                    '<p class="text-muted small mb-0"><i class="far fa-clock me-1"></i>Awaiting sync</p>' +
+                                '</div>' +
+                                '<span class="badge" style="background-color:#f59e0b;color:#1f2937;font-weight:600;padding:6px 10px;border-radius:6px;">Offline Pending</span>' +
+                            '</div>' +
+                            '<p class="small text-muted mb-3">Sync this form to open accounting sheet and performance pages.</p>' +
+                            '<div class="d-grid gap-2 mt-4">' +
+                                '<button type="button" class="btn btn-sm btn-outline-success" data-offline-form-action="sync"><i class="fas fa-rotate me-2"></i>Sync Now</button>' +
+                                '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-form-action="remove" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '"><i class="fas fa-trash-alt me-2"></i>Remove Offline</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        formsRow.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function handlePendingFormAction(button) {
+        const action = button.getAttribute('data-offline-form-action');
+        if (action === 'sync') {
+            await syncNow();
+            return;
+        }
+
+        if (action === 'remove') {
+            await removePendingMonthlyForm(button.getAttribute('data-client-uuid') || '');
+        }
+    }
+
+    async function renderOfflineWorkspaceState() {
+        await renderPendingMembers();
+        await renderPendingMonthlyForms();
     }
 
     tableBody.addEventListener('click', async function (event) {
@@ -603,22 +895,39 @@
         });
     }
 
+    if (formsRow) {
+        formsRow.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-offline-form-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingFormAction(button);
+        });
+    }
+
     if (saveOfflineMemberEditBtn) {
         saveOfflineMemberEditBtn.addEventListener('click', async function () {
             await savePendingMemberEdit();
         });
     }
 
+    if (addOfflineMemberBtn) {
+        addOfflineMemberBtn.addEventListener('click', function () {
+            openNewOfflineMemberModal();
+        });
+    }
+
     window.addEventListener('online', function () {
-        renderPendingMembers();
+        renderOfflineWorkspaceState();
     });
 
     window.addEventListener('seepo:queue-status', function () {
-        renderPendingMembers();
+        renderOfflineWorkspaceState();
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        renderPendingMembers();
+        renderOfflineWorkspaceState();
     });
 })();
 </script>

@@ -166,35 +166,128 @@
             .replace(/'/g, '&#39;');
     }
 
-    async function getPendingOfflineGroups() {
+    async function getPendingByModel(modelName) {
         if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
-            return window.seepoOfflineDb.getPendingRecordsByModel('group');
+            return window.seepoOfflineDb.getPendingRecordsByModel(modelName);
         }
 
-        const groupsTable = window.seepoOfflineDb.tableForModel('group');
-        return groupsTable.where('synced').equals(0).toArray();
+        const table = window.seepoOfflineDb.tableForModel(modelName);
+        return table.where('synced').equals(0).toArray();
     }
 
-    function renderPendingRows(groups) {
+    async function getGroupNameLookup() {
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        const groups = await groupsTable.toArray();
+        const lookup = {};
+
+        groups.forEach(function (group) {
+            const key = String(group.client_uuid || '').trim();
+            if (!key) {
+                return;
+            }
+            lookup[key] = group.name || 'Unnamed Group';
+        });
+
+        return lookup;
+    }
+
+    function getSelectedMonthYear() {
+        const monthInput = document.getElementById('month');
+        const yearInput = document.getElementById('year');
+
+        return {
+            month: Number(monthInput ? monthInput.value : 0),
+            year: Number(yearInput ? yearInput.value : 0),
+        };
+    }
+
+    async function getPendingProjection() {
+        const pendingGroups = await getPendingByModel('group');
+        const pendingMembers = await getPendingByModel('member');
+        const pendingFormsAll = await getPendingByModel('monthly_form');
+        const groupNames = await getGroupNameLookup();
+        const selected = getSelectedMonthYear();
+
+        const pendingForms = pendingFormsAll.filter(function (form) {
+            return Number(form.month || 0) === selected.month && Number(form.year || 0) === selected.year;
+        });
+
+        const grouped = {};
+
+        function ensureItem(groupClientUuid, fallbackName) {
+            const key = String(groupClientUuid || '').trim() || ('unknown:' + String(fallbackName || 'group'));
+            if (!grouped[key]) {
+                grouped[key] = {
+                    key: key,
+                    groupName: groupNames[key] || fallbackName || 'Unnamed Group',
+                    pendingGroup: false,
+                    pendingMemberCount: 0,
+                    pendingFormCount: 0,
+                };
+            }
+            return grouped[key];
+        }
+
+        pendingGroups.forEach(function (group) {
+            const item = ensureItem(group.client_uuid, group.name || 'Unnamed Group');
+            item.groupName = group.name || item.groupName;
+            item.pendingGroup = true;
+        });
+
+        pendingMembers.forEach(function (member) {
+            const item = ensureItem(member.group_client_uuid, groupNames[String(member.group_client_uuid || '').trim()] || 'Group (Pending Member)');
+            item.pendingMemberCount += 1;
+        });
+
+        pendingForms.forEach(function (form) {
+            const item = ensureItem(form.group_client_uuid, groupNames[String(form.group_client_uuid || '').trim()] || 'Group (Pending Form)');
+            item.pendingFormCount += 1;
+        });
+
+        return {
+            items: Object.values(grouped),
+            summary: {
+                groups: pendingGroups.length,
+                members: pendingMembers.length,
+                forms: pendingForms.length,
+            },
+        };
+    }
+
+    function renderBadges(item) {
+        const badges = [];
+        if (item.pendingGroup) {
+            badges.push('<span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Group</span>');
+        }
+        if (item.pendingFormCount > 0) {
+            badges.push('<span class="badge ms-2" style="background-color:#0d6efd;color:#fff;">' + item.pendingFormCount + ' Pending Form' + (item.pendingFormCount === 1 ? '' : 's') + '</span>');
+        }
+        if (item.pendingMemberCount > 0) {
+            badges.push('<span class="badge ms-2" style="background-color:#6f42c1;color:#fff;">' + item.pendingMemberCount + ' Pending Member' + (item.pendingMemberCount === 1 ? '' : 's') + '</span>');
+        }
+        return badges.join('');
+    }
+
+    function renderPendingRows(items) {
         tableBody.querySelectorAll('tr[data-offline-pending-group="true"]').forEach(function (row) {
             row.remove();
         });
 
         const emptyRow = document.getElementById('reports-overview-empty-row');
         if (emptyRow) {
-            emptyRow.style.display = groups.length ? 'none' : '';
+            emptyRow.style.display = items.length ? 'none' : '';
         }
 
-        if (!groups.length) {
+        if (!items.length) {
             return;
         }
 
-        const rows = groups.map(function (group) {
+        const rows = items.map(function (item) {
             return (
                 '<tr data-offline-pending-group="true" style="background:#fff7e6;border-bottom:1px solid var(--border-color);">' +
                     '<td class="ps-4 fw-bold" style="color: var(--text-main);">' +
-                        htmlEscape(group.name || 'Unnamed Group') +
-                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                        htmlEscape(item.groupName || 'Unnamed Group') +
+                        renderBadges(item) +
                     '</td>' +
                     '<td class="text-end pe-5 fw-bold" style="color:#28a745;">0</td>' +
                     '<td class="text-end pe-5 fw-bold" style="color:#0dcaf0;">0</td>' +
@@ -206,7 +299,7 @@
         tableBody.insertAdjacentHTML('afterbegin', rows);
     }
 
-    function renderPendingCards(groups) {
+    function renderPendingCards(items) {
         if (!mobileList) {
             return;
         }
@@ -217,20 +310,21 @@
 
         const emptyMobile = document.getElementById('reports-overview-mobile-empty');
         if (emptyMobile) {
-            emptyMobile.style.display = groups.length ? 'none' : '';
+            emptyMobile.style.display = items.length ? 'none' : '';
         }
 
-        if (!groups.length) {
+        if (!items.length) {
             return;
         }
 
-        const cards = groups.map(function (group) {
+        const cards = items.map(function (item) {
             return (
                 '<div class="report-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
                     '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
-                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(item.groupName || 'Unnamed Group') + '</div>' +
                         '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
                     '</div>' +
+                    '<div class="report-mobile-meta mb-2">' + renderBadges(item) + '</div>' +
                     '<div class="report-mobile-meta d-flex justify-content-between"><span>Office Account</span><span class="fw-bold text-success">0</span></div>' +
                     '<div class="report-mobile-meta d-flex justify-content-between"><span>Group Account</span><span class="fw-bold text-info">0</span></div>' +
                     '<div class="report-mobile-meta d-flex justify-content-between"><span>Office Debt</span><span class="fw-bold text-danger">0</span></div>' +
@@ -242,21 +336,21 @@
     }
 
     async function renderPendingGroups() {
-        const groups = await getPendingOfflineGroups();
-        renderPendingRows(groups);
-        renderPendingCards(groups);
+        const projection = await getPendingProjection();
+        renderPendingRows(projection.items);
+        renderPendingCards(projection.items);
 
         if (!noteWrap || !noteText) {
             return;
         }
 
-        if (!groups.length) {
+        if (!projection.items.length) {
             noteWrap.classList.add('d-none');
             return;
         }
 
         noteWrap.classList.remove('d-none');
-        noteText.textContent = groups.length + ' pending offline group' + (groups.length === 1 ? '' : 's') + ' shown in this report.';
+        noteText.textContent = projection.summary.groups + ' pending group(s), ' + projection.summary.members + ' pending member record(s), and ' + projection.summary.forms + ' pending monthly form(s) for selected month shown in this report.';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
