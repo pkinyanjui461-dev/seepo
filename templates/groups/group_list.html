@@ -629,26 +629,8 @@
         const targetUuid = String(groupClientUuid || '').trim();
         const targetName = String(groupName || 'Pending Group').trim() || 'Pending Group';
 
-        // When offline, use local modal workspace immediately so navigation is not required.
-        if (!navigator.onLine) {
-            const group = await window.seepoOfflineDb.getPendingRecordByClientUuid('group', targetUuid);
-            if (group) {
-                activeWorkspaceGroup = group;
-                if (offlineWorkspaceSubtitle) {
-                    offlineWorkspaceSubtitle.textContent =
-                        'Pending Group: ' + (group.name || targetName);
-                }
-
-                await renderWorkspaceContents();
-
-                const modal = getWorkspaceModal();
-                if (modal) {
-                    modal.show();
-                    return;
-                }
-            }
-        }
-
+        // Always navigate to the offline workspace page so it opens as a full page
+        // (not a modal), providing a consistent page-based experience like all other operations.
         const targetUrl =
             offlineWorkspaceRoute +
             '?group_client_uuid=' + encodeURIComponent(targetUuid) +
