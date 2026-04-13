@@ -90,6 +90,29 @@
         background-color: #3f3519 !important;
     }
 
+    .mobile-editable.pending-offline-cell {
+        background-color: #fff7df !important;
+    }
+
+    .mobile-editable {
+        cursor: default;
+    }
+
+    .mobile-editable.mobile-edit-enabled {
+        border: 1px dashed #6C5DD3;
+        background-color: #f4f2ff;
+        cursor: pointer;
+    }
+
+    [data-theme="dark"] .mobile-editable.pending-offline-cell {
+        background-color: #3f3519 !important;
+    }
+
+    [data-theme="dark"] .mobile-editable.mobile-edit-enabled {
+        background-color: #312851;
+        border-color: #8B5CF6;
+    }
+
     .diary-mobile-list {
         display: none;
     }
@@ -241,25 +264,32 @@
 
                 <div id="diary-mobile-list" class="diary-mobile-list">
                     {% for d in diaries %}
-                    <div class="diary-mobile-card">
+                    <div class="diary-mobile-card" data-diary-id="{{ d.pk }}">
                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                             <div class="fw-bold" style="color: var(--text-main);">{{ d.group.name }}</div>
                             <span class="badge bg-primary bg-opacity-10 text-primary">Live</span>
                         </div>
-                        <div class="diary-mobile-meta mb-3">Venue: {{ d.venue|default:"-" }} | Time: {{ d.time|default:"-" }}</div>
+                        <div class="diary-mobile-meta mb-2 mobile-editable" data-field="venue" data-value="{{ d.venue|default:'' }}">
+                            <span class="mobile-edit-label">Venue:</span>
+                            <span class="mobile-edit-value">{{ d.venue|default:"-" }}</span>
+                        </div>
+                        <div class="diary-mobile-meta mb-3 mobile-editable" data-field="time" data-value="{{ d.time|default:'' }}">
+                            <span class="mobile-edit-label">Time:</span>
+                            <span class="mobile-edit-value">{{ d.time|default:"-" }}</span>
+                        </div>
                         <div class="diary-mobile-months">
-                            <div class="diary-month-chip">Jan: {{ d.january|default:"-" }}</div>
-                            <div class="diary-month-chip">Feb: {{ d.february|default:"-" }}</div>
-                            <div class="diary-month-chip">Mar: {{ d.march|default:"-" }}</div>
-                            <div class="diary-month-chip">Apr: {{ d.april|default:"-" }}</div>
-                            <div class="diary-month-chip">May: {{ d.may|default:"-" }}</div>
-                            <div class="diary-month-chip">Jun: {{ d.june|default:"-" }}</div>
-                            <div class="diary-month-chip">Jul: {{ d.july|default:"-" }}</div>
-                            <div class="diary-month-chip">Aug: {{ d.august|default:"-" }}</div>
-                            <div class="diary-month-chip">Sep: {{ d.september|default:"-" }}</div>
-                            <div class="diary-month-chip">Oct: {{ d.october|default:"-" }}</div>
-                            <div class="diary-month-chip">Nov: {{ d.november|default:"-" }}</div>
-                            <div class="diary-month-chip">Dec: {{ d.december|default:"-" }}</div>
+                            <div class="diary-month-chip mobile-editable" data-field="january" data-value="{{ d.january|default:'' }}">Jan: <span class="mobile-edit-value">{{ d.january|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="february" data-value="{{ d.february|default:'' }}">Feb: <span class="mobile-edit-value">{{ d.february|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="march" data-value="{{ d.march|default:'' }}">Mar: <span class="mobile-edit-value">{{ d.march|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="april" data-value="{{ d.april|default:'' }}">Apr: <span class="mobile-edit-value">{{ d.april|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="may" data-value="{{ d.may|default:'' }}">May: <span class="mobile-edit-value">{{ d.may|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="june" data-value="{{ d.june|default:'' }}">Jun: <span class="mobile-edit-value">{{ d.june|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="july" data-value="{{ d.july|default:'' }}">Jul: <span class="mobile-edit-value">{{ d.july|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="august" data-value="{{ d.august|default:'' }}">Aug: <span class="mobile-edit-value">{{ d.august|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="september" data-value="{{ d.september|default:'' }}">Sep: <span class="mobile-edit-value">{{ d.september|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="october" data-value="{{ d.october|default:'' }}">Oct: <span class="mobile-edit-value">{{ d.october|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="november" data-value="{{ d.november|default:'' }}">Nov: <span class="mobile-edit-value">{{ d.november|default:"-" }}</span></div>
+                            <div class="diary-month-chip mobile-editable" data-field="december" data-value="{{ d.december|default:'' }}">Dec: <span class="mobile-edit-value">{{ d.december|default:"-" }}</span></div>
                         </div>
                     </div>
                     {% empty %}
@@ -429,6 +459,13 @@
         toggleBtn.style.borderColor = '#6C5DD3';
     }
 
+    function refreshMobileEditability() {
+        const enabled = isEditMode;
+        document.querySelectorAll('.mobile-editable').forEach(fieldEl => {
+            fieldEl.classList.toggle('mobile-edit-enabled', enabled);
+        });
+    }
+
     function showDiaryToast(message) {
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
             window.seepoOfflineSync.showToast(message);
@@ -440,6 +477,49 @@
     function renderDisplayValue(value) {
         const cleaned = String(value || '').trim();
         return cleaned || '-';
+    }
+
+    function getDiaryIdFromMobileField(fieldElement) {
+        const card = fieldElement ? fieldElement.closest('.diary-mobile-card[data-diary-id]') : null;
+        return card ? String(card.getAttribute('data-diary-id') || '').trim() : '';
+    }
+
+    function updateMobileFieldMirror(diaryId, field, rawValue, isPending) {
+        const card = document.querySelector('.diary-mobile-card[data-diary-id="' + diaryId + '"]');
+        if (!card) {
+            return;
+        }
+
+        const fieldElement = card.querySelector('.mobile-editable[data-field="' + field + '"]');
+        if (!fieldElement) {
+            return;
+        }
+
+        const valueElement = fieldElement.querySelector('.mobile-edit-value');
+        if (!valueElement) {
+            return;
+        }
+
+        const normalizedValue = rawValue === null || rawValue === undefined ? '' : String(rawValue).trim();
+        fieldElement.dataset.value = normalizedValue;
+        valueElement.textContent = renderDisplayValue(normalizedValue);
+        fieldElement.classList.toggle('pending-offline-cell', !!isPending);
+    }
+
+    function updateDesktopFieldMirror(diaryId, field, rawValue, isPending) {
+        const row = document.querySelector('#diary-table-body tr[data-id="' + diaryId + '"]');
+        if (!row) {
+            return;
+        }
+
+        const td = row.querySelector('.editable[data-field="' + field + '"]');
+        if (!td) {
+            return;
+        }
+
+        const normalizedValue = rawValue === null || rawValue === undefined ? '' : String(rawValue).trim();
+        td.innerText = renderDisplayValue(normalizedValue);
+        td.classList.toggle('pending-offline-cell', !!isPending);
     }
 
     async function saveDiaryUpdateOnline(diaryId, field, value) {
@@ -486,9 +566,11 @@
             if (queued) {
                 td.innerText = displayValue;
                 td.classList.add('pending-offline-cell');
+                updateMobileFieldMirror(diaryId, field, newValue, true);
                 showDiaryToast('Saved offline. Diary change queued for sync.');
             } else {
                 td.innerText = renderDisplayValue(originalValue);
+                updateMobileFieldMirror(diaryId, field, originalValue, false);
                 showDiaryToast('Offline queue unavailable. Change was not saved.');
             }
             return;
@@ -498,17 +580,130 @@
             await saveDiaryUpdateOnline(diaryId, field, newValue);
             td.innerText = displayValue;
             td.classList.remove('pending-offline-cell');
+            updateMobileFieldMirror(diaryId, field, newValue, false);
         } catch (error) {
             const queued = queueDiaryUpdate(diaryId, field, newValue);
             if (queued) {
                 td.innerText = displayValue;
                 td.classList.add('pending-offline-cell');
+                updateMobileFieldMirror(diaryId, field, newValue, true);
                 showDiaryToast('Network unavailable. Diary change queued offline.');
             } else {
                 td.innerText = renderDisplayValue(originalValue);
+                updateMobileFieldMirror(diaryId, field, originalValue, false);
                 showDiaryToast('Error saving change: ' + error.message);
             }
         }
+    }
+
+    async function persistDiaryMobileChange(fieldElement, diaryId, field, originalValue, newValue, valueElement, inputElement) {
+        const displayValue = renderDisplayValue(newValue);
+
+        try {
+            if (!navigator.onLine) {
+                const queuedOffline = queueDiaryUpdate(diaryId, field, newValue);
+                if (queuedOffline) {
+                    valueElement.textContent = displayValue;
+                    fieldElement.dataset.value = newValue;
+                    fieldElement.classList.add('pending-offline-cell');
+                    updateDesktopFieldMirror(diaryId, field, newValue, true);
+                    showDiaryToast('Saved offline. Diary change queued for sync.');
+                } else {
+                    valueElement.textContent = renderDisplayValue(originalValue);
+                    fieldElement.dataset.value = originalValue;
+                    showDiaryToast('Offline queue unavailable. Change was not saved.');
+                }
+                return;
+            }
+
+            await saveDiaryUpdateOnline(diaryId, field, newValue);
+            valueElement.textContent = displayValue;
+            fieldElement.dataset.value = newValue;
+            fieldElement.classList.remove('pending-offline-cell');
+            updateDesktopFieldMirror(diaryId, field, newValue, false);
+        } catch (error) {
+            const queuedFallback = queueDiaryUpdate(diaryId, field, newValue);
+            if (queuedFallback) {
+                valueElement.textContent = displayValue;
+                fieldElement.dataset.value = newValue;
+                fieldElement.classList.add('pending-offline-cell');
+                updateDesktopFieldMirror(diaryId, field, newValue, true);
+                showDiaryToast('Network unavailable. Diary change queued offline.');
+            } else {
+                valueElement.textContent = renderDisplayValue(originalValue);
+                fieldElement.dataset.value = originalValue;
+                fieldElement.classList.remove('pending-offline-cell');
+                updateDesktopFieldMirror(diaryId, field, originalValue, false);
+                showDiaryToast('Error saving change: ' + error.message);
+            }
+        } finally {
+            if (inputElement && inputElement.parentNode) {
+                inputElement.parentNode.removeChild(inputElement);
+            }
+            valueElement.style.display = '';
+        }
+    }
+
+    function enterMobileEdit(fieldElement) {
+        if (!fieldElement || fieldElement.querySelector('input')) {
+            return;
+        }
+
+        const field = fieldElement.dataset.field;
+        const diaryId = getDiaryIdFromMobileField(fieldElement);
+        const valueElement = fieldElement.querySelector('.mobile-edit-value');
+        const originalValue = String(fieldElement.dataset.value || '').trim();
+
+        if (!field || !diaryId || !valueElement) {
+            return;
+        }
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalValue;
+        input.className = 'form-control form-control-sm mt-2';
+
+        valueElement.style.display = 'none';
+        fieldElement.appendChild(input);
+        input.focus();
+
+        let saveRequested = false;
+
+        const save = async () => {
+            if (saveRequested) {
+                return;
+            }
+            saveRequested = true;
+
+            const newValue = input.value.trim();
+            if (newValue === originalValue) {
+                valueElement.textContent = renderDisplayValue(originalValue);
+                valueElement.style.display = '';
+                input.remove();
+                return;
+            }
+
+            await persistDiaryMobileChange(fieldElement, diaryId, field, originalValue, newValue, valueElement, input);
+        };
+
+        input.onblur = () => {
+            void save();
+        };
+
+        input.onkeydown = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                input.blur();
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                saveRequested = true;
+                valueElement.textContent = renderDisplayValue(originalValue);
+                valueElement.style.display = '';
+                input.remove();
+            }
+        };
     }
 
     toggleBtn.addEventListener('click', () => {
@@ -524,6 +719,7 @@
                 td.style.backgroundColor = darkTheme ? '#312851' : '#f4f2ff';
                 td.onclick = function() { enterEdit(this); };
             });
+            refreshMobileEditability();
         } else {
             editText.innerText = 'Enable Edit Mode';
             document.querySelectorAll('.editable').forEach(td => {
@@ -531,9 +727,25 @@
                 td.style.backgroundColor = '';
                 td.onclick = null;
             });
+            refreshMobileEditability();
             applyToggleButtonStyle();
         }
     });
+
+    if (diaryMobileList) {
+        diaryMobileList.addEventListener('click', (event) => {
+            const fieldElement = event.target.closest('.mobile-editable');
+            if (!fieldElement) {
+                return;
+            }
+
+            if (!isEditMode) {
+                return;
+            }
+
+            enterMobileEdit(fieldElement);
+        });
+    }
 
     function enterEdit(td) {
         if (td.querySelector('input')) return;
@@ -586,6 +798,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         applyToggleButtonStyle();
+        refreshMobileEditability();
         if (window.seepoOfflineDiary && navigator.onLine) {
             window.seepoOfflineDiary.syncNow();
         }
@@ -599,6 +812,10 @@
 
     window.addEventListener('online', () => {
         renderPendingGroupsInDiary();
+    });
+
+    window.addEventListener('resize', () => {
+        refreshMobileEditability();
     });
 </script>
 {% endblock %}
