@@ -443,18 +443,28 @@
     const membersTable = window.seepoOfflineDb.tableForModel('member');
     const allMembers = await membersTable.toArray();
 
-    let filtered = allMembers;
+    const formGroupUuid = normalizeText(state.form && state.form.group_client_uuid);
+    const targetGroupUuid = normalizeText(state.groupClientUuid || formGroupUuid);
+    const targetServerGroupId = Math.max(
+      Number((state.group && state.group.server_id) || 0),
+      Number((state.form && state.form.group_id) || 0)
+    );
 
-    if (state.groupClientUuid) {
-      filtered = filtered.filter(function (item) {
-        return normalizeText(item.group_client_uuid) === state.groupClientUuid;
+    let filtered = [];
+
+    if (targetGroupUuid) {
+      filtered = allMembers.filter(function (item) {
+        return normalizeText(item.group_client_uuid) === targetGroupUuid;
       });
+
+      if (!state.groupClientUuid) {
+        state.groupClientUuid = targetGroupUuid;
+      }
     }
 
-    if (!filtered.length && state.group && Number(state.group.server_id || 0) > 0) {
-      const serverId = Number(state.group.server_id || 0);
+    if (!filtered.length && targetServerGroupId > 0) {
       filtered = allMembers.filter(function (item) {
-        return Number(item.group_id || 0) === serverId;
+        return Number(item.group_id || 0) === targetServerGroupId;
       });
     }
 
