@@ -1,6 +1,6 @@
 import json
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Case, When, Value, IntegerField
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -16,6 +16,26 @@ from finance.forms import MonthlyFormForm
 from finance.utils import generate_pdf_response
 from django.conf import settings
 import calendar
+
+
+def _ordered_active_group_members(group):
+    return group.member_set.filter(is_active=True).annotate(
+        member_number_missing=Case(
+            When(member_number__isnull=True, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by('member_number_missing', 'member_number', 'name', 'pk')
+
+
+def _ordered_member_records_queryset(mform):
+    return mform.member_records.select_related('member').annotate(
+        member_number_missing=Case(
+            When(member__member_number__isnull=True, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by('member_number_missing', 'member__member_number', 'member__name', 'pk')
 
 
 @login_required
@@ -60,7 +80,7 @@ def monthly_form_create(request, group_pk):
             prev_records = {r.member_id: r for r in previous_form.member_records.all()}
 
         # Auto-create MemberRecord rows for all active members
-        members = group.member_set.filter(is_active=True)
+        members = _ordered_active_group_members(group)
         for i, member in enumerate(members):
             savings_bf = Decimal('0')
             loan_bf = Decimal('0')
@@ -103,11 +123,11 @@ def monthly_form_create(request, group_pk):
 def monthly_form_detail(request, pk):
     mform = get_object_or_404(MonthlyForm, pk=pk)
     group = mform.group
-    records = mform.member_records.select_related('member').order_by('order', 'member__name')
+    records = _ordered_member_records_queryset(mform)
 
     # Ensure all active members have a record
     existing_member_ids = records.values_list('member_id', flat=True)
-    new_members = group.member_set.filter(is_active=True).exclude(id__in=existing_member_ids)
+    new_members = _ordered_active_group_members(group).exclude(id__in=existing_member_ids)
 
     # Correctly find the previous month's form
     previous_form = group.monthly_forms.filter(
@@ -141,7 +161,7 @@ def monthly_form_detail(request, pk):
         record.calculate()
         record.save()
 
-    records = mform.member_records.select_related('member').order_by('order', 'member__name')
+    records = _ordered_member_records_queryset(mform)
     # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates.
     # New: Also dynamically synchronize carry-forward values if the previous month was updated.
     for r in records:
@@ -358,7 +378,7 @@ def performance_form_view(request, mform_pk):
     initial_debt_bf = debt_bf
 
     # Get active members for this group/month to display in Section A
-    members = mform.member_records.select_related('member').order_by('order', 'member__name')
+    members = _ordered_member_records_queryset(mform)
     # Self-healing: Ensure all records are recalculated
     for r in members:
         r.calculate()
@@ -593,7 +613,7 @@ def api_dashboard_stats(request):
     })
 def _get_monthly_form_data(mform):
     """Helper to get common records and totals for PDF contexts."""
-    records = mform.member_records.select_related('member').order_by('order', 'member__name')
+    records = _ordered_member_records_queryset(mform)
     def total(field):
         return sum(getattr(r, field) for r in records) or 0
     totals = {

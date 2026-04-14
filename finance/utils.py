@@ -9,6 +9,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 import pypdf
 from decimal import Decimal
+from django.db.models import Case, When, Value, IntegerField
 
 def ensure_performance_form_initialized(perf_form):
     """
@@ -54,7 +55,13 @@ def ensure_performance_form_initialized(perf_form):
     # 2. Initialize A & B if empty
     has_a_b = perf_form.entries.filter(section__in=['A', 'B']).exists()
     if not has_a_b:
-        members_recs = mform.member_records.select_related('member').order_by('order', 'member__name')
+        members_recs = mform.member_records.select_related('member').annotate(
+            member_number_missing=Case(
+                When(member__member_number__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('member_number_missing', 'member__member_number', 'member__name', 'pk')
         for i, mrec in enumerate(members_recs):
             # NEW: Use member number as the primary identifier in description for A and B
             member_num = str(mrec.member.member_number)
