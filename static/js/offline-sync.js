@@ -399,12 +399,20 @@
       for (const modelName of this.modelOrder) {
         try {
           await this.pushModel(modelName);
+        } catch (error) {
+          const normalized = this.normalizeError(error, modelName);
+          this.lastSyncError = normalized;
+          this.lastSyncErrors.push(normalized);
+          console.error('Push failed for model', modelName, error);
+        }
+
+        try {
           await this.pullModel(modelName);
         } catch (error) {
           const normalized = this.normalizeError(error, modelName);
           this.lastSyncError = normalized;
           this.lastSyncErrors.push(normalized);
-          console.error('Sync failed for model', modelName, error);
+          console.error('Pull failed for model', modelName, error);
         }
       }
 
