@@ -76,7 +76,7 @@ class GroupWorkspaceOfflineUiTests(TestCase):
 
 		self.assertEqual(response.status_code, 200)
 		self.assertNotContains(response, 'id="offline-workspace-modal"')
-		self.assertContains(response, 'id="offline-monthly-form-modal"')
+		self.assertNotContains(response, 'id="offline-monthly-form-modal"')
 		self.assertContains(response, 'data-action="open-workspace"')
 		self.assertContains(response, 'data-offline-only="true"')
 		self.assertContains(response, 'refreshOfflineOnlyActions')
