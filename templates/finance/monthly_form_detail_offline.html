@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Offline Accounting Sheet{% endblock %}
+{% block page_title %}<span class="text-muted" id="offline-sheet-page-group">Offline Group / </span><span id="offline-sheet-page-period">Accounting Sheet</span>{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-container { padding-bottom: 50px; overflow-x: auto; }
+
+    .row-pending-sync {
+        background-color: #fff7df !important;
+    }
+
+    .offline-sheet-context {
+        font-size: 0.84rem;
+        color: var(--text-muted);
+    }
+
+    .offline-sheet-context strong {
+        color: var(--text-main);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <a id="offline-sheet-back-link" href="{% url 'group_list' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i> Back</a>
+        <span id="offline-sheet-status-badge" class="badge bg-warning text-dark fs-6">Offline Draft</span>
+    </div>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        <button id="offlineManualSaveBtn" class="btn btn-sm btn-success"><i class="fas fa-save me-1"></i> Save Changes</button>
+        <button id="offlineSyncNowBtn" class="btn btn-sm btn-outline-primary"><i class="fas fa-rotate me-1"></i> Sync Now</button>
+        <a id="offlinePerformanceBtn" href="#" class="btn btn-sm btn-primary"><i class="fas fa-tasks me-1"></i> Group Performance Form</a>
+    </div>
+</div>
+
+<div class="alert alert-info py-2 small shadow-sm">
+    <i class="fas fa-info-circle me-1"></i>
+    <strong>Offline Mock Sheet:</strong>
+    Uses the same monthly form calculations as online. Your edits are saved locally and synced to server records when online.
+</div>
+
+<div class="offline-sheet-context mb-3" id="offline-sheet-context-line"></div>
+
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-body p-0 table-container">
+        <table class="table table-sm finance-table mb-0" id="offlineFinanceTable">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">M No.</th>
+                    <th style="min-width: 140px; left: 0; z-index: 10;">MEMBERS NAMES & DETAILS</th>
+                    <th>SAVINGS & SHARE B/F</th>
+                    <th>LOAN BALANCE B/F</th>
+                    <th>TOTAL REPAID</th>
+                    <th>PRINCIPAL</th>
+                    <th>LOAN INTEREST</th>
+                    <th>SHARES THIS MONTH</th>
+                    <th>WITHDRAWALS</th>
+                    <th>FINE & CHARGES</th>
+                    <th>SAVINGS & SHARE C/F</th>
+                    <th>LOAN BAL C/F</th>
+                </tr>
+            </thead>
+            <tbody id="offline-finance-table-body">
+                <tr id="offline-finance-empty-row">
+                    <td colspan="12" class="text-center text-muted py-5">
+                        <i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>
+                        No cached members found for this group on this device.
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="table-totals" id="offlineTotalsRow">
+                    <td style="background: #e9ecef;"></td>
+                    <td style="position: sticky; left: 0; background: #e9ecef; z-index: 5; border-right: 2px solid #ccc; padding-left: 10px;">TOTALS</td>
+                    <td id="tot-savings-bf" class="text-end pe-2"></td>
+                    <td id="tot-loan-bf" class="text-end pe-2 tooltip-custom"></td>
+                    <td id="tot-repaid" class="text-end pe-2"></td>
+                    <td id="tot-principal" class="text-end pe-2"></td>
+                    <td id="tot-interest" class="text-end pe-2 text-primary"></td>
+                    <td id="tot-shares" class="text-end pe-2"></td>
+                    <td id="tot-withdrawals" class="text-end pe-2 text-danger"></td>
+                    <td id="tot-fines" class="text-end pe-2"></td>
+                    <td id="tot-savings-cf" class="text-end pe-2 text-success tooltip-custom"></td>
+                    <td id="tot-loan-cf" class="text-end pe-2 text-warning"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div id="offlineSaveStatus" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050; display: none;">
+    <div class="toast show text-white bg-success shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-check-circle me-2"></i> Saved</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.seepoOfflineMonthlyFormContext = {
+    formClientUuid: '{{ form_client_uuid|escapejs }}',
+    groupClientUuid: '{{ group_client_uuid|escapejs }}',
+    groupName: '{{ group_name|escapejs }}',
+    month: '{{ month|escapejs }}',
+    year: '{{ year|escapejs }}',
+    status: '{{ status|escapejs }}',
+    source: '{{ source|escapejs }}',
+    urls: {
+        offlineWorkspace: '{% url "offline_workspace" %}',
+        groupList: '{% url "group_list" %}',
+        syncSheet: '{% url "sync_offline_monthly_form_sheet" %}'
+    }
+};
+</script>
+<script src="{% static 'js/offline-monthly-form-detail.js' %}?v=1"></script>
+{% endblock %}

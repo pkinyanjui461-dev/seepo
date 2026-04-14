@@ -59,6 +59,7 @@ class GroupWorkspaceOfflineUiTests(TestCase):
 		self.assertContains(response, 'id="offline-pending-forms-note"')
 		self.assertContains(response, 'id="group-monthly-forms-row"')
 		self.assertContains(response, 'renderPendingMonthlyForms')
+		self.assertContains(response, '/finance/forms/offline/')
 
 	def test_group_detail_contains_workspace_snapshot_panel_hooks(self):
 		response = self.client.get(reverse('group_detail', args=[self.group.pk]))

@@ -346,7 +346,16 @@
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
-                            <a href="{% url 'monthly_form_detail' mform.pk %}" class="btn btn-sm" style="background-color: #ECEBFA; color: var(--primary-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"><i class="fas fa-table me-2"></i>Accounting Sheet</a>
+                                     <a href="{% url 'monthly_form_detail' mform.pk %}"
+                                         class="btn btn-sm"
+                                         style="background-color: #ECEBFA; color: var(--primary-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"
+                                         data-online-form-detail-link="true"
+                                         data-form-client-uuid="{{ mform.client_uuid }}"
+                                         data-group-client-uuid="{{ group.client_uuid }}"
+                                         data-group-name="{{ group.name }}"
+                                         data-month="{{ mform.month }}"
+                                         data-year="{{ mform.year }}"
+                                         data-status="{{ mform.status }}"><i class="fas fa-table me-2"></i>Accounting Sheet</a>
                             <a href="{% url 'performance_form' mform.pk %}" class="btn btn-sm" style="background-color: #F8F9FA; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 500; text-align: left; padding: 10px 15px;"><i class="fas fa-chart-line me-2 text-muted"></i>Group Performance</a>
 
                                 <form method="POST"
@@ -438,6 +447,8 @@
 <script>
 (function () {
     const groupClientUuid = '{{ group.client_uuid }}';
+    const groupName = '{{ group.name|escapejs }}';
+    const offlineFormDetailUrl = "{% url 'monthly_form_detail_offline' %}";
     const tableBody = document.getElementById('member-table-body');
     const mobileList = document.getElementById('members-mobile-list');
     const noteWrap = document.getElementById('offline-pending-members-note');
@@ -925,6 +936,19 @@
         return names[monthIndex];
     }
 
+    function buildOfflineFormDetailUrl(formClientUuid, month, year, status) {
+        return (
+            offlineFormDetailUrl +
+            '?form_client_uuid=' + encodeURIComponent(String(formClientUuid || '').trim()) +
+            '&group_client_uuid=' + encodeURIComponent(String(groupClientUuid || '').trim()) +
+            '&group_name=' + encodeURIComponent(String(groupName || '').trim()) +
+            '&month=' + encodeURIComponent(String(month || '').trim()) +
+            '&year=' + encodeURIComponent(String(year || '').trim()) +
+            '&status=' + encodeURIComponent(String(status || 'draft').trim()) +
+            '&source=' + encodeURIComponent('group_detail')
+        );
+    }
+
     function formatUpdatedAt(value) {
         const raw = String(value || '').trim();
         if (!raw) {
@@ -1156,6 +1180,7 @@
         const cards = forms.map(function (form) {
             const monthLabel = getMonthLabel(form.month);
             const yearLabel = String(form.year || '?');
+            const statusLabel = String(form.status || 'draft');
 
             return (
                 '<div class="col-md-6 col-lg-4" data-offline-pending-form-card="true">' +
@@ -1169,8 +1194,9 @@
                                 '</div>' +
                                 '<span class="badge" style="background-color:#f59e0b;color:#1f2937;font-weight:600;padding:6px 10px;border-radius:6px;">Offline Pending</span>' +
                             '</div>' +
-                            '<p class="small text-muted mb-3">Sync this form to open accounting sheet and performance pages.</p>' +
+                            '<p class="small text-muted mb-3">Open full accounting-sheet UI offline and continue with the same calculations flow.</p>' +
                             '<div class="d-grid gap-2 mt-4">' +
+                                '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-form-action="open-detail" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '" data-month="' + htmlEscape(form.month || '') + '" data-year="' + htmlEscape(yearLabel) + '" data-status="' + htmlEscape(statusLabel) + '"><i class="fas fa-table me-2"></i>Open Accounting Sheet</button>' +
                                 '<button type="button" class="btn btn-sm btn-outline-success" data-offline-form-action="sync"><i class="fas fa-rotate me-2"></i>Sync Now</button>' +
                                 '<button type="button" class="btn btn-sm btn-outline-danger" data-offline-form-action="remove" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '"><i class="fas fa-trash-alt me-2"></i>Remove Offline</button>' +
                             '</div>' +
@@ -1185,6 +1211,16 @@
 
     async function handlePendingFormAction(button) {
         const action = button.getAttribute('data-offline-form-action');
+        if (action === 'open-detail') {
+            window.location.href = buildOfflineFormDetailUrl(
+                button.getAttribute('data-client-uuid') || '',
+                button.getAttribute('data-month') || '',
+                button.getAttribute('data-year') || '',
+                button.getAttribute('data-status') || 'draft'
+            );
+            return;
+        }
+
         if (action === 'sync') {
             await syncNow();
             return;
@@ -1254,6 +1290,18 @@
 
     if (formsRow) {
         formsRow.addEventListener('click', async function (event) {
+            const detailLink = event.target.closest('a[data-online-form-detail-link="true"]');
+            if (detailLink && !navigator.onLine) {
+                event.preventDefault();
+                window.location.href = buildOfflineFormDetailUrl(
+                    detailLink.getAttribute('data-form-client-uuid') || '',
+                    detailLink.getAttribute('data-month') || '',
+                    detailLink.getAttribute('data-year') || '',
+                    detailLink.getAttribute('data-status') || 'draft'
+                );
+                return;
+            }
+
             const button = event.target.closest('button[data-offline-form-action]');
             if (!button) {
                 return;

@@ -202,6 +202,127 @@ def monthly_form_detail(request, pk):
 
 
 @login_required
+def monthly_form_detail_offline(request):
+    """Render a full-page offline accounting sheet shell backed by IndexedDB."""
+    form_client_uuid = str(request.GET.get('form_client_uuid', '')).strip()
+    group_client_uuid = str(request.GET.get('group_client_uuid', '')).strip()
+    group_name = str(request.GET.get('group_name', '')).strip()
+    month = str(request.GET.get('month', '')).strip()
+    year = str(request.GET.get('year', '')).strip()
+    status = str(request.GET.get('status', '')).strip() or 'draft'
+    source = str(request.GET.get('source', '')).strip()
+
+    context = {
+        'form_client_uuid': form_client_uuid,
+        'group_client_uuid': group_client_uuid,
+        'group_name': group_name,
+        'month': month,
+        'year': year,
+        'status': status,
+        'source': source,
+    }
+    return render(request, 'finance/monthly_form_detail_offline.html', context)
+
+
+def _coerce_sheet_decimal(value):
+    try:
+        return Decimal(str(value if value not in (None, '') else '0'))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal('0')
+
+
+@login_required
+@require_POST
+def sync_offline_monthly_form_sheet(request):
+    """Apply queued offline accounting-sheet rows to server-side MemberRecord rows."""
+    try:
+        payload = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON payload.'}, status=400)
+
+    form_client_uuid = str(payload.get('form_client_uuid', '')).strip()
+    rows = payload.get('rows')
+
+    if not form_client_uuid:
+        return JsonResponse({'success': False, 'error': 'form_client_uuid is required.'}, status=400)
+
+    if not isinstance(rows, list):
+        return JsonResponse({'success': False, 'error': 'rows must be an array.'}, status=400)
+
+    mform = MonthlyForm.objects.filter(client_uuid=form_client_uuid).select_related('group').first()
+    if not mform:
+        return JsonResponse({
+            'success': True,
+            'pending': True,
+            'applied': 0,
+            'reason': 'form_not_synced',
+        })
+
+    members = Member.objects.filter(group=mform.group)
+    members_by_uuid = {str(member.client_uuid): member for member in members}
+    members_by_number = {
+        str(member.member_number): member
+        for member in members
+        if member.member_number is not None
+    }
+
+    editable_fields = [
+        'savings_share_bf',
+        'loan_balance_bf',
+        'total_repaid',
+        'principal',
+        'withdrawals',
+        'fines_charges',
+    ]
+
+    applied = 0
+    skipped = []
+
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            skipped.append({'index': index, 'reason': 'invalid_row'})
+            continue
+
+        member_client_uuid = str(row.get('member_client_uuid', '')).strip()
+        member_number_raw = row.get('member_number')
+        member = None
+
+        if member_client_uuid:
+            member = members_by_uuid.get(member_client_uuid)
+
+        if member is None and member_number_raw not in (None, ''):
+            member = members_by_number.get(str(member_number_raw))
+
+        if member is None:
+            skipped.append({'index': index, 'reason': 'member_not_found'})
+            continue
+
+        defaults = {
+            'order': mform.member_records.count() + index,
+        }
+        record, _created = MemberRecord.objects.get_or_create(
+            monthly_form=mform,
+            member=member,
+            defaults=defaults,
+        )
+
+        for field_name in editable_fields:
+            if field_name in row:
+                setattr(record, field_name, _coerce_sheet_decimal(row.get(field_name)))
+
+        record.calculate()
+        record.save()
+        applied += 1
+
+    return JsonResponse({
+        'success': True,
+        'pending': False,
+        'applied': applied,
+        'skipped': skipped,
+    })
+
+
+@login_required
 @require_POST
 def save_member_record(request, record_pk):
     """AJAX endpoint: save a single member record row."""

@@ -1,9 +1,9 @@
 {% load static %}
-const CACHE_VERSION = 'v31';
+const CACHE_VERSION = 'v32';
 const CSS_ASSET_VERSION = '11';
 const OFFLINE_SYNC_ASSET_VERSION = '4';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '31';
+const SW_REGISTER_ASSET_VERSION = '32';
 const DEXIE_ASSET_VERSION = '1';
 const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
 const OFFLINE_GLOBAL_STATE_VERSION = '1';
@@ -14,6 +14,7 @@ const NAVIGATION_ROUTE_FALLBACKS = [
   { prefix: '/accounts/notifications/', fallback: '/accounts/notifications/' },
   { prefix: '/accounts/', fallback: '{% url "dashboard" %}' },
   { prefix: '/groups/offline/workspace/', fallback: '/groups/offline/workspace/' },
+  { prefix: '/finance/forms/offline/', fallback: '{% url "monthly_form_detail_offline" %}' },
   { prefix: '/groups/', fallback: '/groups/' },
   { prefix: '/members/', fallback: '/groups/' },
   { prefix: '/finance/', fallback: '/finance/expenses/' },
@@ -39,6 +40,7 @@ const APP_SHELL_URLS = [
   '/groups/diary/',
   '/members/create/',
   '/finance/expenses/',
+  '{% url "monthly_form_detail_offline" %}',
   '/reports/',
   '/reports/entities/',
   '/manifest.webmanifest',
@@ -60,6 +62,8 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-form-auto-persist.js" %}',
   '{% static "js/offline-global-state.js" %}?v=' + OFFLINE_GLOBAL_STATE_VERSION,
   '{% static "js/offline-global-state.js" %}',
+  '{% static "js/offline-monthly-form-detail.js" %}?v=1',
+  '{% static "js/offline-monthly-form-detail.js" %}',
   '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',
   '{% static "img/logo.png" %}',

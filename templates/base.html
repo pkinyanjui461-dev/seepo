@@ -736,7 +736,7 @@
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}"></script>
-<script src="{% static 'js/sw-register.js' %}?v=31"></script>
+<script src="{% static 'js/sw-register.js' %}?v=32"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
@@ -776,6 +776,7 @@
                 group: 'Group',
                 member: 'Member',
                 monthly_form: 'Monthly Form',
+                monthly_sheet: 'Monthly Sheet',
                 expense: 'Expense',
                 user: 'User',
                 diary: 'Diary',
@@ -791,6 +792,7 @@
                 diary: 'Diary Queue',
                 draft: 'Draft Queue',
                 member_record: 'Monthly Row Queue',
+                monthly_sheet: 'Monthly Sheet Queue',
             };
 
             return map[sourceName] || 'Queue';
@@ -971,7 +973,21 @@
                       })
                     : [];
 
-            renderPendingRows([].concat(decoratedModelItems, diaryItems, draftItems, memberRecordItems));
+            const monthlySheetItems =
+                window.seepoOfflineMonthlyFormSheet && typeof window.seepoOfflineMonthlyFormSheet.getSelectionItems === 'function'
+                    ? window.seepoOfflineMonthlyFormSheet.getSelectionItems().map(function (item) {
+                          return {
+                              source: 'monthly_sheet',
+                              model: 'monthly_sheet',
+                              localId: -1,
+                              key: item.key,
+                              label: item.label,
+                              updatedAt: item.updatedAt,
+                          };
+                      })
+                    : [];
+
+            renderPendingRows([].concat(decoratedModelItems, diaryItems, draftItems, memberRecordItems, monthlySheetItems));
         }
 
         function getDeletePendingModal() {
@@ -1176,6 +1192,14 @@
                             return item.key;
                         });
 
+                    const monthlySheetKeys = selectedRows
+                        .filter(function (item) {
+                            return item.source === 'monthly_sheet';
+                        })
+                        .map(function (item) {
+                            return item.key;
+                        });
+
                     const modelDeleted = await window.seepoOfflineDb.deletePendingRecords(modelRows);
                     const diaryDeleted =
                         window.seepoOfflineDiary && typeof window.seepoOfflineDiary.deleteSelectionItems === 'function'
@@ -1190,7 +1214,12 @@
                             ? window.seepoOfflineMemberRecordQueue.deleteSelectionItems(memberRecordKeys)
                             : 0;
 
-                    const deletedCount = modelDeleted + diaryDeleted + draftDeleted + memberRecordDeleted;
+                    const monthlySheetDeleted =
+                        window.seepoOfflineMonthlyFormSheet && typeof window.seepoOfflineMonthlyFormSheet.deleteSelectionItems === 'function'
+                            ? window.seepoOfflineMonthlyFormSheet.deleteSelectionItems(monthlySheetKeys)
+                            : 0;
+
+                    const deletedCount = modelDeleted + diaryDeleted + draftDeleted + memberRecordDeleted + monthlySheetDeleted;
                     await loadPendingRows();
 
                     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {

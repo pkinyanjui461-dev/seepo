@@ -1,5 +1,5 @@
 (function () {
-  const SW_ASSET_VERSION = '31';
+  const SW_ASSET_VERSION = '32';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const SW_FORCE_UPDATE_INTERVAL_MS = 90 * 1000;
   const SW_UPDATE_WARN_THROTTLE_MS = 120 * 1000;

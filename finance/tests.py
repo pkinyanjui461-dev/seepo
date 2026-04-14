@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.test import TestCase
 from django.urls import reverse
@@ -42,3 +43,22 @@ class MonthlyFormListOfflineUiTests(TestCase):
 		self.assertContains(response, 'id="monthly-form-list-row"')
 		self.assertContains(response, 'renderPendingMonthlyForms')
 		self.assertContains(response, 'data-offline-form-action')
+		self.assertContains(response, '/finance/forms/offline/')
+
+	def test_offline_monthly_form_detail_shell_route_renders(self):
+		response = self.client.get(
+			reverse('monthly_form_detail_offline'),
+			{
+				'form_client_uuid': str(uuid.uuid4()),
+				'group_client_uuid': str(self.group.client_uuid),
+				'group_name': self.group.name,
+				'month': '4',
+				'year': '2026',
+				'status': 'draft',
+				'source': 'monthly_form_list',
+			},
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'id="offlineFinanceTable"')
+		self.assertContains(response, 'offline-monthly-form-detail.js')
