@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.request
+from datetime import date
 from typing import Any, Dict
 
 from playwright.sync_api import sync_playwright
@@ -10,9 +11,6 @@ from playwright.sync_api import sync_playwright
 BASE_URL = "http://127.0.0.1:8000"
 USERNAME = "0700000999"
 PASSWORD = "ui-smoke-pass"
-GROUP_DETAIL_PATH = "/groups/10/"
-GROUP_LIST_PATH = "/groups/"
-MONTHLY_FORM_LIST_PATH = "/finance/group/10/forms/"
 
 
 def wait_for_server(timeout_seconds: int = 30) -> None:
@@ -28,11 +26,6 @@ def wait_for_server(timeout_seconds: int = 30) -> None:
     raise RuntimeError("Server did not become reachable in time")
 
 
-def class_has(locator, class_name: str) -> bool:
-    value = locator.get_attribute("class") or ""
-    return class_name in value.split()
-
-
 def run() -> Dict[str, Any]:
     wait_for_server()
     results: Dict[str, Any] = {
@@ -45,8 +38,14 @@ def run() -> Dict[str, Any]:
         context = browser.new_context()
         page = context.new_page()
 
-        def record(name: str, status: str, detail: str) -> None:
-            results["checks"].append({"name": name, "status": status, "detail": detail})
+        def record(name: str, passed: bool, detail: str) -> None:
+            results["checks"].append(
+                {
+                    "name": name,
+                    "status": "pass" if passed else "fail",
+                    "detail": detail,
+                }
+            )
 
         try:
             page.goto(BASE_URL + "/accounts/login/", wait_until="domcontentloaded")
@@ -55,175 +54,115 @@ def run() -> Dict[str, Any]:
             page.click("button[type='submit']")
             page.wait_for_load_state("domcontentloaded")
 
-            if "/accounts/login/" in page.url:
-                record("login", "fail", "Still on login page after submit")
-            else:
-                record("login", "pass", "Login succeeded")
+            logged_in = "/accounts/login/" not in page.url
+            record("login", logged_in, page.url)
+            if not logged_in:
+                raise RuntimeError("Login failed")
 
-            # Online state: offline-only member button should be hidden
-            page.goto(BASE_URL + GROUP_DETAIL_PATH, wait_until="domcontentloaded")
-            online_hidden = class_has(page.locator("#add-offline-member-btn"), "d-none")
-            record(
-                "group_detail_online_offline_button_hidden",
-                "pass" if online_hidden else "fail",
-                f"d-none={online_hidden}",
-            )
+            page.goto(BASE_URL + "/groups/", wait_until="domcontentloaded")
 
-            # Offline state: button visible and opens modal
-            context.set_offline(True)
-            page.evaluate("window.dispatchEvent(new Event('offline'))")
-            page.wait_for_timeout(600)
-            offline_hidden = class_has(page.locator("#add-offline-member-btn"), "d-none")
-            record(
-                "group_detail_offline_offline_button_visible",
-                "pass" if not offline_hidden else "fail",
-                f"d-none={offline_hidden}",
-            )
-
-            page.click("#add-offline-member-btn")
-            page.wait_for_selector("#offline-member-edit-modal.show", timeout=4000)
-            record("group_detail_member_modal_open", "pass", "Offline member modal opened")
-            page.click("#offline-member-edit-modal [data-bs-dismiss='modal']")
-            page.wait_for_selector("#offline-member-edit-modal.show", state="detached", timeout=4000)
-
-            # Snapshot FAB + modal in offline state
-            fab_hidden = class_has(page.locator("#workspace-snapshot-fab"), "d-none")
-            record(
-                "group_detail_snapshot_fab_visible_offline",
-                "pass" if not fab_hidden else "fail",
-                f"d-none={fab_hidden}",
-            )
-            page.click("#workspace-snapshot-fab")
-            page.wait_for_selector("#offline-workspace-snapshot-modal.show", timeout=4000)
-            record("group_detail_snapshot_modal_open", "pass", "Snapshot modal opened")
+            seed_name = "UI Offline Flow " + str(int(time.time()))
+            seed_date = date.today().isoformat()
             page.evaluate(
                 """
-                () => {
-                    const modalEl = document.getElementById('offline-workspace-snapshot-modal');
-                    if (!modalEl || !window.bootstrap || !window.bootstrap.Modal) {
-                        return;
-                    }
-                    const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-                    instance.hide();
-                }
-                """
-            )
-            page.wait_for_selector("#offline-workspace-snapshot-modal.show", state="detached", timeout=4000)
-
-            # Create pending offline group to test workspace modal stacking
-            context.set_offline(False)
-            page.evaluate("window.dispatchEvent(new Event('online'))")
-            page.goto(BASE_URL + GROUP_LIST_PATH, wait_until="domcontentloaded")
-            page.evaluate(
-                """
-                async () => {
+                async (payload) => {
                     if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
                         throw new Error('seepoOfflineSync unavailable');
                     }
-                    await window.seepoOfflineSync.saveOffline('group', {
-                        name: 'UI Pending Browser Group',
+
+                    const group = await window.seepoOfflineSync.saveOffline('group', {
+                        name: payload.name,
                         location: 'Nairobi',
-                        date_created: '2026-04-13',
-                        officer_name: 'UI Browser Officer',
+                        date_created: payload.date,
+                        officer_name: 'Browser Smoke Officer',
                         banking_type: 'office'
                     });
-                    if (typeof window.seepoOfflineSync.refreshStatus === 'function') {
-                        await window.seepoOfflineSync.refreshStatus();
-                    }
-                    window.dispatchEvent(new Event('seepo:queue-status'));
-                }
-                """
-            )
 
-            context.set_offline(True)
-            page.evaluate("window.dispatchEvent(new Event('offline'))")
-            page.evaluate("window.dispatchEvent(new Event('seepo:queue-status'))")
-            page.wait_for_selector("button[data-action='open-workspace']", timeout=7000)
-            page.evaluate(
-                """
-                () => {
-                    const buttons = Array.from(document.querySelectorAll("button[data-action='open-workspace']"));
-                    const target = buttons.find((button) =>
-                        String(button.getAttribute('data-group-name') || '').includes('UI Pending Browser Group')
-                    ) || buttons[0];
-                    if (!target) {
-                        throw new Error('No open-workspace button found');
-                    }
-                    target.click();
-                }
-                """
-            )
-            page.wait_for_selector("#offline-workspace-modal.show", timeout=4000)
-            record("group_list_workspace_modal_open", "pass", "Workspace modal opened for pending group")
+                    await window.seepoOfflineSync.saveOffline('member', {
+                        group_client_uuid: group.client_uuid,
+                        member_number: 1,
+                        name: 'Browser Smoke Member',
+                        phone: '0700000123',
+                        join_date: payload.date,
+                        is_active: true
+                    });
 
-            page.click("#offline-workspace-add-member-btn")
-            page.wait_for_selector("#offline-member-modal.show", timeout=4000)
-            workspace_still_visible = page.locator("#offline-workspace-modal.show").count() > 0
-            record(
-                "group_list_modal_stacking_member",
-                "pass" if not workspace_still_visible else "fail",
-                f"workspace_visible_while_child_open={workspace_still_visible}",
-            )
-            page.click("#offline-member-modal [data-bs-dismiss='modal']")
-            page.wait_for_selector("#offline-workspace-modal.show", timeout=4000)
-            record("group_list_workspace_restored_after_member", "pass", "Workspace modal restored")
-
-            page.click("#offline-workspace-add-form-btn")
-            page.wait_for_selector("#offline-monthly-form-modal.show", timeout=4000)
-            workspace_still_visible_form = page.locator("#offline-workspace-modal.show").count() > 0
-            record(
-                "group_list_modal_stacking_form",
-                "pass" if not workspace_still_visible_form else "fail",
-                f"workspace_visible_while_form_open={workspace_still_visible_form}",
-            )
-            page.click("#offline-monthly-form-modal [data-bs-dismiss='modal']")
-            page.wait_for_selector("#offline-workspace-modal.show", timeout=4000)
-            page.click("#offline-workspace-modal [data-bs-dismiss='modal']")
-
-            # Monthly form list offline mock sheet open/save
-            context.set_offline(False)
-            page.evaluate("window.dispatchEvent(new Event('online'))")
-            page.goto(BASE_URL + MONTHLY_FORM_LIST_PATH, wait_until="domcontentloaded")
-            page.evaluate(
-                """
-                async () => {
-                    const html = document.documentElement.innerHTML;
-                    const match = html.match(/const groupClientUuid = '([^']+)'/);
-                    const groupClientUuid = match ? match[1] : null;
-                    if (!groupClientUuid) {
-                        throw new Error('groupClientUuid not found');
-                    }
-                    if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
-                        throw new Error('seepoOfflineSync unavailable');
-                    }
                     await window.seepoOfflineSync.saveOffline('monthly_form', {
-                        group_client_uuid: groupClientUuid,
+                        group_client_uuid: group.client_uuid,
                         month: 4,
                         year: 2026,
                         status: 'draft',
-                        notes: 'UI browser pending form'
+                        notes: 'Browser smoke pending form'
                     });
+
                     if (typeof window.seepoOfflineSync.refreshStatus === 'function') {
                         await window.seepoOfflineSync.refreshStatus();
                     }
+
                     window.dispatchEvent(new Event('seepo:queue-status'));
                 }
-                """
+                """,
+                {"name": seed_name, "date": seed_date},
             )
+
             context.set_offline(True)
             page.evaluate("window.dispatchEvent(new Event('offline'))")
             page.evaluate("window.dispatchEvent(new Event('seepo:queue-status'))")
-            page.wait_for_selector("button[data-offline-form-action='open-sheet']", timeout=7000)
-            page.click("button[data-offline-form-action='open-sheet']")
-            page.wait_for_selector("#offline-pending-form-sheet-modal.show", timeout=4000)
-            page.fill("#offline-sheet-deposits", "1000")
-            page.fill("#offline-sheet-fines", "200")
-            page.fill("#offline-sheet-expenses", "150")
-            page.fill("#offline-sheet-members-expected", "15")
-            page.fill("#offline-sheet-members-paid", "12")
-            page.click("#offline-sheet-save-btn")
-            page.wait_for_selector("#offline-pending-form-sheet-modal.show", state="detached", timeout=4000)
-            record("monthly_form_offline_sheet_open_save", "pass", "Mock sheet opened and saved")
+            page.wait_for_timeout(700)
+
+            page.evaluate(
+                """
+                (targetName) => {
+                    const buttons = Array.from(document.querySelectorAll("button[data-action='open-workspace']"));
+                    const target = buttons.find((button) =>
+                        String(button.getAttribute('data-group-name') || '').includes(targetName)
+                    );
+
+                    if (!target) {
+                        throw new Error('Pending group workspace button not found');
+                    }
+
+                    target.click();
+                }
+                """,
+                seed_name,
+            )
+
+            page.wait_for_url("**/groups/offline/workspace/**", timeout=10000)
+            workspace_url = page.url
+            record("offline_workspace_full_page_navigation", "/groups/offline/workspace/" in workspace_url, workspace_url)
+
+            page.wait_for_timeout(700)
+            members_count = page.locator("#offline-members-count").inner_text().strip()
+            forms_count = page.locator("#offline-forms-count").inner_text().strip()
+            has_cached_data = members_count != "0" and forms_count != "0"
+            record("offline_workspace_cached_data_visible", has_cached_data, f"members={members_count}, forms={forms_count}")
+
+            page.wait_for_selector("button[data-form-action='open-detail']", timeout=8000)
+            page.click("button[data-form-action='open-detail']")
+            page.wait_for_url("**/finance/forms/offline/**", timeout=10000)
+            form_url = page.url
+            record("offline_form_detail_full_page_navigation", "/finance/forms/offline/" in form_url, form_url)
+
+            page.wait_for_selector("#offlineFinanceTable", timeout=8000)
+            rows_count = page.locator("#offline-finance-table-body tr.record-row").count()
+            record("offline_form_detail_rows_rendered", rows_count > 0, f"rows={rows_count}")
+
+            if rows_count > 0:
+                first_row = page.locator("#offline-finance-table-body tr.record-row").first
+                first_row.locator("input[data-field='savings_share_bf']").fill("1000")
+                first_row.locator("input[data-field='loan_balance_bf']").fill("500")
+                first_row.locator("input[data-field='total_repaid']").fill("400")
+                first_row.locator("input[data-field='principal']").fill("200")
+                page.click("#offlineManualSaveBtn")
+                page.wait_for_timeout(700)
+
+                pending_class = first_row.get_attribute("class") or ""
+                record(
+                    "offline_form_save_marks_row_pending",
+                    "row-pending-sync" in pending_class,
+                    pending_class,
+                )
 
         except Exception as exc:
             results["errors"].append(str(exc))
@@ -235,5 +174,4 @@ def run() -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
-    out = run()
-    print(json.dumps(out, indent=2))
+    print(json.dumps(run(), indent=2))

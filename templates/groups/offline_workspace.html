@@ -40,12 +40,6 @@
         font-weight: 700;
     }
 
-    .offline-sheet-summary {
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        padding: 10px 12px;
-        background: var(--card-bg);
-    }
 </style>
 {% endblock %}
 
@@ -142,6 +136,51 @@
             </div>
         </div>
 
+        <div id="offline-inline-form-create-panel" class="card shadow-sm border-0 mb-3 d-none" style="border-radius: 12px;">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3" style="color: var(--text-main);">Create Offline Monthly Form</h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="offline-inline-form-month" class="form-label fw-bold">Month</label>
+                        <select id="offline-inline-form-month" class="form-select">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="offline-inline-form-year" class="form-label fw-bold">Year</label>
+                        <input id="offline-inline-form-year" class="form-control" type="number" min="2000" max="2100" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="offline-inline-form-status" class="form-label fw-bold">Status</label>
+                        <select id="offline-inline-form-status" class="form-select">
+                            <option value="draft">Draft</option>
+                            <option value="submitted">Submitted</option>
+                            <option value="approved">Approved</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="offline-inline-form-notes" class="form-label fw-bold">Notes (Optional)</label>
+                        <input id="offline-inline-form-notes" class="form-control" type="text" placeholder="Optional notes">
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-end mt-3">
+                    <button type="button" id="cancel-offline-inline-form-btn" class="btn btn-outline-secondary">Cancel</button>
+                    <button type="button" id="save-offline-inline-form-btn" class="btn btn-primary">Save Form Offline</button>
+                </div>
+            </div>
+        </div>
+
         <div id="offline-forms-row" class="row g-4"></div>
         <div id="offline-forms-empty-wrap" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="background-color: var(--muted-surface); border-radius: var(--border-radius-lg); border: 1px dashed var(--border-color);">
             <i class="fas fa-folder-open fs-1 mb-3 opacity-25" style="color: var(--primary-color);"></i>
@@ -231,119 +270,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="offline-monthly-form-modal" tabindex="-1" aria-labelledby="offline-monthly-form-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border-main">
-            <div class="modal-header border-main">
-                <h5 class="modal-title" id="offline-monthly-form-modal-title">Create Offline Monthly Form</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="offline-monthly-form-month" class="form-label fw-bold">Month</label>
-                    <select id="offline-monthly-form-month" class="form-select">
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="offline-monthly-form-year" class="form-label fw-bold">Year</label>
-                    <input id="offline-monthly-form-year" class="form-control" type="number" min="2000" max="2100" required>
-                </div>
-                <div class="mb-3">
-                    <label for="offline-monthly-form-status" class="form-label fw-bold">Status</label>
-                    <select id="offline-monthly-form-status" class="form-select">
-                        <option value="draft">Draft</option>
-                        <option value="submitted">Submitted</option>
-                        <option value="approved">Approved</option>
-                    </select>
-                </div>
-                <div class="mb-0">
-                    <label for="offline-monthly-form-notes" class="form-label fw-bold">Notes (Optional)</label>
-                    <textarea id="offline-monthly-form-notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer border-main">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="save-offline-monthly-form-btn" class="btn btn-primary">Save Form Offline</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="offline-pending-form-sheet-modal" tabindex="-1" aria-labelledby="offline-pending-form-sheet-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content bg-card border-main">
-            <div class="modal-header border-main">
-                <div>
-                    <h5 class="modal-title" id="offline-pending-form-sheet-modal-title">Offline Accounting Mock Sheet</h5>
-                    <p id="offline-pending-form-sheet-modal-subtitle" class="small text-muted mb-0">Pending monthly form</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="offline-pending-form-sheet-client-uuid" value="">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="offline-sheet-deposits" class="form-label fw-bold">Deposits</label>
-                        <input id="offline-sheet-deposits" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-fines" class="form-label fw-bold">Fines</label>
-                        <input id="offline-sheet-fines" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-loan-repayment" class="form-label fw-bold">Loan Repayment</label>
-                        <input id="offline-sheet-loan-repayment" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-loans" class="form-label fw-bold">Loans Disbursed</label>
-                        <input id="offline-sheet-loans" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-withdrawals" class="form-label fw-bold">Withdrawals</label>
-                        <input id="offline-sheet-withdrawals" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-expenses" class="form-label fw-bold">Expenses</label>
-                        <input id="offline-sheet-expenses" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="offline-sheet-members-expected" class="form-label fw-bold">Members Expected</label>
-                        <input id="offline-sheet-members-expected" type="number" step="1" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="offline-sheet-members-paid" class="form-label fw-bold">Members Paid</label>
-                        <input id="offline-sheet-members-paid" type="number" step="1" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-12">
-                        <label for="offline-sheet-notes" class="form-label fw-bold">Diary/Notes</label>
-                        <textarea id="offline-sheet-notes" class="form-control" rows="3" placeholder="Capture offline notes for this pending form"></textarea>
-                    </div>
-                </div>
-
-                <div class="offline-sheet-summary mt-3 mb-0">
-                    <div><strong>Computed Balance:</strong> <span id="offline-sheet-balance-preview">0</span></div>
-                    <div><strong>Arrears Members:</strong> <span id="offline-sheet-arrears-preview">0</span></div>
-                </div>
-            </div>
-            <div class="modal-footer border-main">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" id="offline-sheet-save-btn" class="btn btn-primary">Save Offline Draft</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -358,7 +284,6 @@
     const initialGroupName = queryGroupName || serverGroupName || 'Offline Pending Group';
     const groupListUrl = "{% url 'group_list' %}";
     const offlineFormDetailUrl = "{% url 'monthly_form_detail_offline' %}";
-    const offlineDraftStorageKey = 'seepoPendingMonthlyFormSheetDraftsV1';
 
     const groupNameEl = document.getElementById('offline-group-name');
     const groupLocationEl = document.getElementById('offline-group-location');
@@ -373,6 +298,13 @@
 
     const formsRow = document.getElementById('offline-forms-row');
     const formsEmptyWrap = document.getElementById('offline-forms-empty-wrap');
+    const inlineFormPanel = document.getElementById('offline-inline-form-create-panel');
+    const inlineFormMonthInput = document.getElementById('offline-inline-form-month');
+    const inlineFormYearInput = document.getElementById('offline-inline-form-year');
+    const inlineFormStatusInput = document.getElementById('offline-inline-form-status');
+    const inlineFormNotesInput = document.getElementById('offline-inline-form-notes');
+    const inlineFormSaveBtn = document.getElementById('save-offline-inline-form-btn');
+    const inlineFormCancelBtn = document.getElementById('cancel-offline-inline-form-btn');
 
     const addOfflineMemberBtn = document.getElementById('add-offline-member-page-btn');
     const createOfflineFormBtn = document.getElementById('create-offline-form-btn');
@@ -404,33 +336,8 @@
     const memberEditActiveInput = document.getElementById('offline-member-edit-active');
     const saveOfflineMemberEditBtn = document.getElementById('save-offline-member-edit-btn');
 
-    const monthlyFormModalEl = document.getElementById('offline-monthly-form-modal');
-    const monthlyFormMonthInput = document.getElementById('offline-monthly-form-month');
-    const monthlyFormYearInput = document.getElementById('offline-monthly-form-year');
-    const monthlyFormStatusInput = document.getElementById('offline-monthly-form-status');
-    const monthlyFormNotesInput = document.getElementById('offline-monthly-form-notes');
-    const saveOfflineMonthlyFormBtn = document.getElementById('save-offline-monthly-form-btn');
-
-    const sheetModalEl = document.getElementById('offline-pending-form-sheet-modal');
-    const sheetModalSubtitle = document.getElementById('offline-pending-form-sheet-modal-subtitle');
-    const sheetClientUuidInput = document.getElementById('offline-pending-form-sheet-client-uuid');
-    const sheetDeposits = document.getElementById('offline-sheet-deposits');
-    const sheetFines = document.getElementById('offline-sheet-fines');
-    const sheetLoanRepayment = document.getElementById('offline-sheet-loan-repayment');
-    const sheetLoans = document.getElementById('offline-sheet-loans');
-    const sheetWithdrawals = document.getElementById('offline-sheet-withdrawals');
-    const sheetExpenses = document.getElementById('offline-sheet-expenses');
-    const sheetMembersExpected = document.getElementById('offline-sheet-members-expected');
-    const sheetMembersPaid = document.getElementById('offline-sheet-members-paid');
-    const sheetNotes = document.getElementById('offline-sheet-notes');
-    const sheetBalancePreview = document.getElementById('offline-sheet-balance-preview');
-    const sheetArrearsPreview = document.getElementById('offline-sheet-arrears-preview');
-    const sheetSaveBtn = document.getElementById('offline-sheet-save-btn');
-
     let groupEditModal = null;
     let memberEditModal = null;
-    let monthlyFormModal = null;
-    let sheetModal = null;
     let memberEditMode = 'create';
 
     if (!window.seepoOfflineDb || !groupClientUuid) {
@@ -672,80 +579,6 @@
         return forms;
     }
 
-    function loadDraftsMap() {
-        try {
-            const raw = window.localStorage.getItem(offlineDraftStorageKey);
-            if (!raw) {
-                return {};
-            }
-            const parsed = JSON.parse(raw);
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (error) {
-            return {};
-        }
-    }
-
-    function saveDraftsMap(map) {
-        try {
-            window.localStorage.setItem(offlineDraftStorageKey, JSON.stringify(map || {}));
-        } catch (error) {
-            showToast('Unable to save offline sheet draft.');
-        }
-    }
-
-    function getDraft(clientUuid) {
-        const map = loadDraftsMap();
-        return map[String(clientUuid || '').trim()] || null;
-    }
-
-    function setDraft(clientUuid, payload) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return;
-        }
-        const map = loadDraftsMap();
-        map[key] = payload;
-        saveDraftsMap(map);
-    }
-
-    function deleteDraft(clientUuid) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return;
-        }
-        const map = loadDraftsMap();
-        if (Object.prototype.hasOwnProperty.call(map, key)) {
-            delete map[key];
-            saveDraftsMap(map);
-        }
-    }
-
-    function safeNumber(value) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-    function refreshSheetSummary() {
-        const deposits = safeNumber(sheetDeposits ? sheetDeposits.value : 0);
-        const fines = safeNumber(sheetFines ? sheetFines.value : 0);
-        const loanRepayment = safeNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0);
-        const loans = safeNumber(sheetLoans ? sheetLoans.value : 0);
-        const withdrawals = safeNumber(sheetWithdrawals ? sheetWithdrawals.value : 0);
-        const expenses = safeNumber(sheetExpenses ? sheetExpenses.value : 0);
-        const expected = safeNumber(sheetMembersExpected ? sheetMembersExpected.value : 0);
-        const paid = safeNumber(sheetMembersPaid ? sheetMembersPaid.value : 0);
-
-        const balance = (deposits + fines + loanRepayment) - (loans + withdrawals + expenses);
-        const arrears = Math.max(0, expected - paid);
-
-        if (sheetBalancePreview) {
-            sheetBalancePreview.textContent = balance.toLocaleString();
-        }
-        if (sheetArrearsPreview) {
-            sheetArrearsPreview.textContent = String(arrears);
-        }
-    }
-
     function renderGroupHeader(group) {
         const payload = group || {};
         if (groupNameEl) {
@@ -862,7 +695,6 @@
         const cardsHtml = forms.map(function (form) {
             const month = monthLabel(form.month);
             const year = String(form.year || '?');
-            const draft = getDraft(form.client_uuid || '');
             const isPending = isPendingRecord(form);
             const syncMeta = isPending ? 'Awaiting sync' : 'Cached locally';
 
@@ -883,7 +715,6 @@
                                 '<div class="d-grid gap-1 text-end">' +
                                     statusBadge(form.status) +
                                     (isPending ? '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' : '<span class="badge" style="background-color:#E2E8F0;color:#0F172A;">Cached</span>') +
-                                    (draft ? '<span class="badge" style="background-color:#d1fae5;color:#065f46;">Draft Saved</span>' : '') +
                                 '</div>' +
                             '</div>' +
                             '<div class="d-grid gap-2 mt-4">' +
@@ -985,33 +816,39 @@
         await refreshWorkspace();
     }
 
-    function openFormModal() {
-        const now = new Date();
-        if (monthlyFormMonthInput) {
-            monthlyFormMonthInput.value = String(now.getMonth() + 1);
-        }
-        if (monthlyFormYearInput) {
-            monthlyFormYearInput.value = String(now.getFullYear());
-        }
-        if (monthlyFormStatusInput) {
-            monthlyFormStatusInput.value = 'draft';
-        }
-        if (monthlyFormNotesInput) {
-            monthlyFormNotesInput.value = '';
+    function openInlineFormPanel() {
+        if (!inlineFormPanel) {
+            return;
         }
 
-        const modal = getModal(monthlyFormModalEl, { value: monthlyFormModal });
-        if (modal) {
-            monthlyFormModal = modal;
-            monthlyFormModal.show();
+        const now = new Date();
+        if (inlineFormMonthInput) {
+            inlineFormMonthInput.value = String(now.getMonth() + 1);
+        }
+        if (inlineFormYearInput) {
+            inlineFormYearInput.value = String(now.getFullYear());
+        }
+        if (inlineFormStatusInput) {
+            inlineFormStatusInput.value = 'draft';
+        }
+        if (inlineFormNotesInput) {
+            inlineFormNotesInput.value = '';
+        }
+
+        inlineFormPanel.classList.remove('d-none');
+    }
+
+    function closeInlineFormPanel() {
+        if (inlineFormPanel) {
+            inlineFormPanel.classList.add('d-none');
         }
     }
 
     async function saveForm() {
-        const month = Number(monthlyFormMonthInput ? monthlyFormMonthInput.value : 0);
-        const year = Number(monthlyFormYearInput ? monthlyFormYearInput.value : 0);
-        const status = String(monthlyFormStatusInput ? monthlyFormStatusInput.value : 'draft').trim() || 'draft';
-        const notes = String(monthlyFormNotesInput ? monthlyFormNotesInput.value : '').trim();
+        const month = Number(inlineFormMonthInput ? inlineFormMonthInput.value : 0);
+        const year = Number(inlineFormYearInput ? inlineFormYearInput.value : 0);
+        const status = String(inlineFormStatusInput ? inlineFormStatusInput.value : 'draft').trim() || 'draft';
+        const notes = String(inlineFormNotesInput ? inlineFormNotesInput.value : '').trim();
 
         if (month < 1 || month > 12 || year < 2000 || year > 2100) {
             showToast('Month and year are required and must be valid.');
@@ -1040,90 +877,18 @@
             await window.seepoOfflineSync.refreshStatus();
         }
 
-        if (monthlyFormModal) {
-            monthlyFormModal.hide();
-        }
-
+        closeInlineFormPanel();
         showToast('Offline monthly form created.');
         await refreshWorkspace();
-    }
 
-    function openSheet(clientUuid, month, year) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return;
-        }
-
-        const draft = getDraft(key) || {};
-        if (sheetClientUuidInput) {
-            sheetClientUuidInput.value = key;
-        }
-        if (sheetModalSubtitle) {
-            sheetModalSubtitle.textContent = month + ' ' + year + ' (Offline Pending)';
-        }
-
-        if (sheetDeposits) {
-            sheetDeposits.value = String(safeNumber(draft.deposits));
-        }
-        if (sheetFines) {
-            sheetFines.value = String(safeNumber(draft.fines));
-        }
-        if (sheetLoanRepayment) {
-            sheetLoanRepayment.value = String(safeNumber(draft.loan_repayment));
-        }
-        if (sheetLoans) {
-            sheetLoans.value = String(safeNumber(draft.loans));
-        }
-        if (sheetWithdrawals) {
-            sheetWithdrawals.value = String(safeNumber(draft.withdrawals));
-        }
-        if (sheetExpenses) {
-            sheetExpenses.value = String(safeNumber(draft.expenses));
-        }
-        if (sheetMembersExpected) {
-            sheetMembersExpected.value = String(safeNumber(draft.members_expected));
-        }
-        if (sheetMembersPaid) {
-            sheetMembersPaid.value = String(safeNumber(draft.members_paid));
-        }
-        if (sheetNotes) {
-            sheetNotes.value = String(draft.notes || '');
-        }
-
-        refreshSheetSummary();
-
-        const modal = getModal(sheetModalEl, { value: sheetModal });
-        if (modal) {
-            sheetModal = modal;
-            sheetModal.show();
-        }
-    }
-
-    function saveSheetDraft() {
-        const clientUuid = String(sheetClientUuidInput ? sheetClientUuidInput.value : '').trim();
-        if (!clientUuid) {
-            showToast('Missing pending form identifier.');
-            return;
-        }
-
-        setDraft(clientUuid, {
-            deposits: safeNumber(sheetDeposits ? sheetDeposits.value : 0),
-            fines: safeNumber(sheetFines ? sheetFines.value : 0),
-            loan_repayment: safeNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0),
-            loans: safeNumber(sheetLoans ? sheetLoans.value : 0),
-            withdrawals: safeNumber(sheetWithdrawals ? sheetWithdrawals.value : 0),
-            expenses: safeNumber(sheetExpenses ? sheetExpenses.value : 0),
-            members_expected: safeNumber(sheetMembersExpected ? sheetMembersExpected.value : 0),
-            members_paid: safeNumber(sheetMembersPaid ? sheetMembersPaid.value : 0),
-            notes: String(sheetNotes ? sheetNotes.value : '').trim(),
-            updated_at: new Date().toISOString(),
+        const refreshedForms = await getFormsForGroup(currentGroupRecord);
+        const createdForm = refreshedForms.find(function (item) {
+            return Number(item.month || 0) === month && Number(item.year || 0) === year;
         });
 
-        if (sheetModal) {
-            sheetModal.hide();
+        if (createdForm) {
+            window.location.href = buildOfflineFormDetailUrl(createdForm);
         }
-        showToast('Offline form draft saved on this device.');
-        refreshWorkspace();
     }
 
     async function removeForm(clientUuid) {
@@ -1133,7 +898,6 @@
             return;
         }
 
-        deleteDraft(clientUuid);
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
             await window.seepoOfflineSync.refreshStatus();
         }
@@ -1174,7 +938,6 @@
         for (const form of forms) {
             if (isPendingRecord(form)) {
                 await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', form.client_uuid);
-                deleteDraft(form.client_uuid);
             }
         }
 
@@ -1290,16 +1053,22 @@
     }
 
     if (createOfflineFormBtn) {
-        createOfflineFormBtn.addEventListener('click', openFormModal);
+        createOfflineFormBtn.addEventListener('click', openInlineFormPanel);
     }
 
     if (createOfflineFormEmptyBtn) {
-        createOfflineFormEmptyBtn.addEventListener('click', openFormModal);
+        createOfflineFormEmptyBtn.addEventListener('click', openInlineFormPanel);
     }
 
-    if (saveOfflineMonthlyFormBtn) {
-        saveOfflineMonthlyFormBtn.addEventListener('click', function () {
+    if (inlineFormSaveBtn) {
+        inlineFormSaveBtn.addEventListener('click', function () {
             saveForm();
+        });
+    }
+
+    if (inlineFormCancelBtn) {
+        inlineFormCancelBtn.addEventListener('click', function () {
+            closeInlineFormPanel();
         });
     }
 
@@ -1336,17 +1105,6 @@
                 window.location.href = buildOfflineFormDetailUrl(payload);
             }
         });
-    }
-
-    [sheetDeposits, sheetFines, sheetLoanRepayment, sheetLoans, sheetWithdrawals, sheetExpenses, sheetMembersExpected, sheetMembersPaid].forEach(function (input) {
-        if (!input) {
-            return;
-        }
-        input.addEventListener('input', refreshSheetSummary);
-    });
-
-    if (sheetSaveBtn) {
-        sheetSaveBtn.addEventListener('click', saveSheetDraft);
     }
 
     if (syncNowHeaderBtn) {

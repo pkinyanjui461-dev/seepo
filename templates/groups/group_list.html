@@ -238,56 +238,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="offline-monthly-form-modal" tabindex="-1" aria-labelledby="offline-monthly-form-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border-main">
-            <div class="modal-header border-main">
-                <h5 class="modal-title" id="offline-monthly-form-modal-title">Create Offline Monthly Form</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="offline-monthly-form-group-name" class="small text-muted mb-3"></p>
-                <div class="mb-3">
-                    <label for="offline-monthly-form-month" class="form-label fw-bold">Month</label>
-                    <select id="offline-monthly-form-month" class="form-select">
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="offline-monthly-form-year" class="form-label fw-bold">Year</label>
-                    <input id="offline-monthly-form-year" class="form-control" type="number" min="2000" max="2100" required>
-                </div>
-                <div class="mb-3">
-                    <label for="offline-monthly-form-status" class="form-label fw-bold">Status</label>
-                    <select id="offline-monthly-form-status" class="form-select">
-                        <option value="draft">Draft</option>
-                        <option value="submitted">Submitted</option>
-                        <option value="approved">Approved</option>
-                    </select>
-                </div>
-                <div class="mb-0">
-                    <label for="offline-monthly-form-notes" class="form-label fw-bold">Notes (Optional)</label>
-                    <textarea id="offline-monthly-form-notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer border-main">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="save-offline-monthly-form-btn" class="btn btn-primary">Save Form Offline</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -327,20 +277,10 @@
     const offlineWorkspaceMembersEmpty = document.getElementById('offline-workspace-members-empty');
     const offlineWorkspaceFormsEmpty = document.getElementById('offline-workspace-forms-empty');
     const offlineWorkspaceAddMemberBtn = document.getElementById('offline-workspace-add-member-btn');
-    const offlineWorkspaceAddFormBtn = document.getElementById('offline-workspace-add-form-btn');
     const offlineWorkspaceSyncBtn = document.getElementById('offline-workspace-sync-btn');
-
-    const monthlyFormModalEl = document.getElementById('offline-monthly-form-modal');
-    const monthlyFormGroupName = document.getElementById('offline-monthly-form-group-name');
-    const monthlyFormMonthInput = document.getElementById('offline-monthly-form-month');
-    const monthlyFormYearInput = document.getElementById('offline-monthly-form-year');
-    const monthlyFormStatusInput = document.getElementById('offline-monthly-form-status');
-    const monthlyFormNotesInput = document.getElementById('offline-monthly-form-notes');
-    const saveOfflineMonthlyFormBtn = document.getElementById('save-offline-monthly-form-btn');
 
     let memberModal = null;
     let groupEditModal = null;
-    let monthlyFormModal = null;
     let activeWorkspaceGroup = null;
 
     if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
@@ -404,18 +344,6 @@
 
     function getWorkspaceModal() {
         return null;
-    }
-
-    function getMonthlyFormModal() {
-        if (!monthlyFormModalEl || !window.bootstrap || !window.bootstrap.Modal) {
-            return null;
-        }
-
-        if (!monthlyFormModal) {
-            monthlyFormModal = window.bootstrap.Modal.getOrCreateInstance(monthlyFormModalEl);
-        }
-
-        return monthlyFormModal;
     }
 
     function pauseWorkspaceModalForChild() {}
@@ -715,80 +643,6 @@
         }
 
         showToast('Member saved offline for this pending group.');
-        await renderPendingGroups();
-        await renderWorkspaceContents();
-    }
-
-    function openOfflineMonthlyFormModal() {
-        if (!activeWorkspaceGroup || !monthlyFormYearInput || !monthlyFormMonthInput) {
-            return;
-        }
-
-        pauseWorkspaceModalForChild();
-
-        if (monthlyFormGroupName) {
-            monthlyFormGroupName.textContent = 'Group: ' + activeWorkspaceGroup.name;
-        }
-
-        const now = new Date();
-        monthlyFormMonthInput.value = String(now.getMonth() + 1);
-        monthlyFormYearInput.value = String(now.getFullYear());
-        if (monthlyFormStatusInput) {
-            monthlyFormStatusInput.value = 'draft';
-        }
-        if (monthlyFormNotesInput) {
-            monthlyFormNotesInput.value = '';
-        }
-
-        const modal = getMonthlyFormModal();
-        if (modal) {
-            modal.show();
-        }
-    }
-
-    async function saveOfflineMonthlyForm() {
-        if (!activeWorkspaceGroup || !window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
-            showToast('Offline monthly form creation is unavailable on this page.');
-            return;
-        }
-
-        const monthValue = Number(monthlyFormMonthInput ? monthlyFormMonthInput.value : 0);
-        const yearValue = Number(monthlyFormYearInput ? monthlyFormYearInput.value : 0);
-        const statusValue = String(monthlyFormStatusInput ? monthlyFormStatusInput.value : 'draft').trim() || 'draft';
-        const notesValue = String(monthlyFormNotesInput ? monthlyFormNotesInput.value : '').trim();
-
-        if (monthValue < 1 || monthValue > 12 || yearValue < 2000 || yearValue > 2100) {
-            showToast('Month and year are required and must be valid.');
-            return;
-        }
-
-        const existingForms = await getPendingFormsForGroup(activeWorkspaceGroup.client_uuid);
-        const duplicate = existingForms.find(function (item) {
-            return Number(item.month || 0) === monthValue && Number(item.year || 0) === yearValue;
-        });
-        if (duplicate) {
-            showToast('A pending offline form for this month already exists.');
-            return;
-        }
-
-        await window.seepoOfflineSync.saveOffline('monthly_form', {
-            group_client_uuid: activeWorkspaceGroup.client_uuid,
-            month: monthValue,
-            year: yearValue,
-            status: statusValue,
-            notes: notesValue,
-        });
-
-        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
-            await window.seepoOfflineSync.refreshStatus();
-        }
-
-        const modal = getMonthlyFormModal();
-        if (modal) {
-            modal.hide();
-        }
-
-        showToast('Monthly form saved offline for this group.');
         await renderPendingGroups();
         await renderWorkspaceContents();
     }
@@ -1127,18 +981,6 @@
         });
     }
 
-    if (offlineWorkspaceAddFormBtn) {
-        offlineWorkspaceAddFormBtn.addEventListener('click', function () {
-            openOfflineMonthlyFormModal();
-        });
-    }
-
-    if (saveOfflineMonthlyFormBtn) {
-        saveOfflineMonthlyFormBtn.addEventListener('click', async function () {
-            await saveOfflineMonthlyForm();
-        });
-    }
-
     if (offlineWorkspaceSyncBtn) {
         offlineWorkspaceSyncBtn.addEventListener('click', async function () {
             await syncNow();
@@ -1153,12 +995,6 @@
 
     if (memberModalEl) {
         memberModalEl.addEventListener('hidden.bs.modal', function () {
-            restoreWorkspaceModalAfterChild();
-        });
-    }
-
-    if (monthlyFormModalEl) {
-        monthlyFormModalEl.addEventListener('hidden.bs.modal', function () {
             restoreWorkspaceModalAfterChild();
         });
     }

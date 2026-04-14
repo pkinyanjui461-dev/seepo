@@ -33,7 +33,7 @@ def monthly_form_create(request, group_pk):
         mform = form.save(commit=False)
         mform.group = group
         mform.created_by = request.user
-        
+
         # Check for duplicates before saving to give a friendly error
         from django.db import IntegrityError
         month = mform.month
@@ -44,16 +44,16 @@ def monthly_form_create(request, group_pk):
             return render(request, 'finance/monthly_form_form.html', {
                 'form': form, 'group': group, 'title': 'Create Monthly Form'
             })
-        
+
         mform.save()
-        
+
         # Determine the most recent previous form for this group
         # Sort by year descending, month descending
         # Correctly find the previous month's form
         previous_form = group.monthly_forms.filter(
             Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
         ).order_by('-year', '-month').first()
-        
+
         # Build a fast lookup dict of previous member records
         prev_records = {}
         if previous_form:
@@ -64,21 +64,21 @@ def monthly_form_create(request, group_pk):
         for i, member in enumerate(members):
             savings_bf = Decimal('0')
             loan_bf = Decimal('0')
-            
+
             # Auto-carry forward logic
             if previous_form and member.id in prev_records:
                 prev_record = prev_records[member.id]
                 savings_bf = prev_record.savings_share_cf
                 loan_bf = prev_record.loan_balance_cf
-                
+
                 # ALSO add loans given in Performance Form Section B
                 if hasattr(previous_form, 'performance_form'):
                     p_entry = previous_form.performance_form.entries.filter(section='B', description=member.name).first()
                     if p_entry:
                         loan_bf += p_entry.secondary_amount
-                
+
             record, created = MemberRecord.objects.get_or_create(
-                monthly_form=mform, 
+                monthly_form=mform,
                 member=member,
                 defaults={
                     'order': i,
@@ -90,10 +90,10 @@ def monthly_form_create(request, group_pk):
             if created:
                 record.calculate()
                 record.save()
-                
+
         messages.success(request, 'Monthly form created successfully.')
         return redirect('monthly_form_detail', pk=mform.pk)
-    
+
     return render(request, 'finance/monthly_form_form.html', {
         'form': form, 'group': group, 'title': 'Create Monthly Form'
     })
@@ -108,7 +108,7 @@ def monthly_form_detail(request, pk):
     # Ensure all active members have a record
     existing_member_ids = records.values_list('member_id', flat=True)
     new_members = group.member_set.filter(is_active=True).exclude(id__in=existing_member_ids)
-    
+
     # Correctly find the previous month's form
     previous_form = group.monthly_forms.filter(
         Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
@@ -130,17 +130,17 @@ def monthly_form_detail(request, pk):
                 p_entry = previous_form.performance_form.entries.filter(section='B', description=member.name).first()
                 if p_entry:
                     loan_bf += p_entry.secondary_amount
-            
+
         record = MemberRecord.objects.create(
-            monthly_form=mform, 
-            member=member, 
+            monthly_form=mform,
+            member=member,
             order=records.count() + i,
             savings_share_bf=savings_bf,
             loan_balance_bf=loan_bf
         )
         record.calculate()
         record.save()
-        
+
     records = mform.member_records.select_related('member').order_by('order', 'member__name')
     # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates.
     # New: Also dynamically synchronize carry-forward values if the previous month was updated.
@@ -149,7 +149,7 @@ def monthly_form_detail(request, pk):
             prev_r = prev_records[r.member_id]
             r.savings_share_bf = prev_r.savings_share_cf
             r.loan_balance_bf = prev_r.loan_balance_cf
-            
+
             # Add new loans taken in Section B of the previous month
             if hasattr(previous_form, 'performance_form'):
                 # Look at the member's number first, then fallback to name matching
@@ -349,7 +349,7 @@ def save_member_record(request, record_pk):
 def performance_form_view(request, mform_pk):
     mform = get_object_or_404(MonthlyForm, pk=mform_pk)
     perf_form, created = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
-    
+
     from finance.utils import ensure_performance_form_initialized
     banking_bf, debt_bf = ensure_performance_form_initialized(perf_form)
 
@@ -370,7 +370,7 @@ def performance_form_view(request, mform_pk):
         sections = request.POST.getlist('section')
         descriptions = request.POST.getlist('description')
         amounts = request.POST.getlist('amount')
-        
+
         # New fields for Section A checkboxes, secondary amounts, and Section B tertiary amounts
         is_paid_list = request.POST.getlist('is_paid')
         secondary_amounts = request.POST.getlist('secondary_amount')
@@ -382,18 +382,18 @@ def performance_form_view(request, mform_pk):
                     amount = Decimal(amt or '0')
                 except InvalidOperation:
                     amount = Decimal('0')
-                
+
                 # Safely get is_paid and secondary_amount for this row (if they exist)
                 is_paid = False
                 if i < len(is_paid_list):
                     is_paid = is_paid_list[i].lower() == 'true'
-                
+
                 try:
                     sec_amt_val = secondary_amounts[i] if i < len(secondary_amounts) else '0'
                     secondary_amount = Decimal(sec_amt_val or '0')
                 except InvalidOperation:
                     secondary_amount = Decimal('0')
-                    
+
                 try:
                     tert_amt_val = tertiary_amounts[i] if i < len(tertiary_amounts) else '0'
                     tertiary_amount = Decimal(tert_amt_val or '0')
@@ -401,57 +401,57 @@ def performance_form_view(request, mform_pk):
                     tertiary_amount = Decimal('0')
 
                 PerformanceEntry.objects.create(
-                    performance_form=perf_form, 
-                    section=sec, 
-                    description=desc, 
+                    performance_form=perf_form,
+                    section=sec,
+                    description=desc,
                     amount=amount,
                     is_paid=is_paid,
                     secondary_amount=secondary_amount,
                     tertiary_amount=tertiary_amount,
                     order=i
                 )
-        
+
         # Save Next Meeting values
         nm_date = request.POST.get('next_meeting_date')
         nm_time = request.POST.get('next_meeting_time')
         nm_venue = request.POST.get('next_meeting_venue')
-        
+
         if nm_date:
             try:
                 from datetime import datetime
                 d_obj = datetime.strptime(nm_date, '%Y-%m-%d').date()
                 perf_form.next_meeting_date = d_obj
-                
+
                 # Sync to DiaryEntry
                 from groups.models import DiaryEntry
                 diary, _ = DiaryEntry.objects.get_or_create(group=mform.group)
-                
+
                 # Update venue/time if provided
                 if nm_venue: diary.venue = nm_venue
                 if nm_time: diary.time = nm_time
-                
+
                 # Get month field name
                 month_name = d_obj.strftime('%B').lower()
                 # Day formatting (e.g. 15 -> 15th)
                 day = d_obj.day
                 suffix = 'th' if 11<=day<=13 else {1:'st',2:'nd',3:'rd'}.get(day%10, 'th')
                 day_str = f"{day}{suffix}"
-                
+
                 if hasattr(diary, month_name):
                     setattr(diary, month_name, day_str)
                 diary.save()
             except (ValueError, TypeError):
                 pass
-                
+
         if nm_time:
             try:
                 perf_form.next_meeting_time = nm_time
             except (ValueError, TypeError):
                 pass
-                
+
         if nm_venue:
             perf_form.next_meeting_venue = nm_venue
-            
+
         perf_form.notes = request.POST.get('comments', '')
         perf_form.save()
 
@@ -527,14 +527,14 @@ def api_dashboard_stats(request):
     from django.db.models import Sum
     """JSON endpoint for dashboard chart aggregate data based on latest active month."""
     groups = Group.objects.all()
-    
+
     # Target the most recent month that actually has performance entries populated that are not automatic carry-forwards
     from django.db.models import Q
     latest_global_form = MonthlyForm.objects.filter(
         Q(performance_form__entries__description__in=['Service Fee', 'Pass Book', 'Loan Forms', 'Mpesa Charges'], performance_form__entries__amount__gt=0) |
         Q(member_records__fines_charges__gt=0)
     ).order_by('-year', '-month').first()
-    
+
     # Fallback to current month if no forms at all
     from datetime import date
     target_year = latest_global_form.year if latest_global_form else date.today().year
@@ -547,31 +547,31 @@ def api_dashboard_stats(request):
     total_loan_form = 0
     total_mpesa = 0
     total_risk_fund = 0
-    
+
     for g in groups:
         latest_form = g.monthly_forms.filter(year=target_year, month=target_month).first()
-        
+
         if latest_form and hasattr(latest_form, 'performance_form'):
             perf_form = latest_form.performance_form
-            
+
             b_entry = perf_form.entries.filter(section='E', description='Total Banking').first()
             if b_entry: total_banking += float(b_entry.amount)
-            
+
             d_entry = perf_form.entries.filter(section='E', description='Total Debt').first()
             if d_entry: total_office_debt += float(d_entry.amount)
 
             sf_entry = perf_form.entries.filter(section='D', description='Service Fee').first()
             if sf_entry: total_service_fee += float(sf_entry.amount)
-            
+
             lf_entry = perf_form.entries.filter(section='D', description='Loan Forms').first()
             if lf_entry: total_loan_form += float(lf_entry.amount)
-            
+
             mp_entry = perf_form.entries.filter(section='D', description='Mpesa Charges').first()
             if mp_entry: total_mpesa += float(mp_entry.amount)
 
             pb_entry = perf_form.entries.filter(section='C', description='Pass Book').first()
             if pb_entry: total_passbook += float(pb_entry.amount)
-            
+
         if latest_form:
             # Risk Fund is calculated from all fines and charges for that month
             rf_total = latest_form.member_records.aggregate(total=Sum('fines_charges'))['total'] or 0
@@ -620,7 +620,7 @@ def _get_perf_summary(mform, totals, sections):
     office_debt = sum(e.amount for e in sections.get('E', []) if e.description == 'Total Debt')
     trf = adv + loans + banking
     interest = trf - (shares + office_debt)
-    
+
     return {
         'shares': shares,
         'loans': loans,
@@ -636,15 +636,15 @@ def _get_perf_summary(mform, totals, sections):
 def monthly_form_pdf(request, pk):
     """Generates PDF for the Accounting Sheet (Member Records)."""
     mform = get_object_or_404(MonthlyForm, pk=pk)
-    
+
     from finance.models import GroupPerformanceForm
     from finance.utils import ensure_performance_form_initialized
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
     ensure_performance_form_initialized(perf_form)
-    
+
     records, totals = _get_monthly_form_data(mform)
     padding = range(max(0, 15 - records.count()))
-    
+
     # Calculate performance summary for the header
     entries = perf_form.entries.all().order_by('section', 'order')
     sections = {
@@ -652,7 +652,7 @@ def monthly_form_pdf(request, pk):
         'E': [e for e in entries if e.section == 'E'],
     }
     perf_summary = _get_perf_summary(mform, totals, sections)
-    
+
     from django.utils.text import slugify
     filename = slugify(f"accounting_sheet_{mform.group.name}_{mform.get_month_name()}_{mform.year}") + ".pdf"
     inline = request.GET.get('inline') == '1'
@@ -670,12 +670,12 @@ def performance_form_pdf(request, pk):
     """Generates PDF for the Monthly Performance Form."""
     mform = get_object_or_404(MonthlyForm, pk=pk)
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
-    
+
     from finance.utils import ensure_performance_form_initialized
     ensure_performance_form_initialized(perf_form)
-    
+
     records, totals = _get_monthly_form_data(mform)
-    
+
     # Performance specific logic
     entries = perf_form.entries.all().order_by('section', 'order')
     sections = {
@@ -700,12 +700,12 @@ def performance_form_pdf(request, pk):
     for e in sections['C']:
         if e.description == 'Total Repaid': e.amount = totals.get('total_repaid', 0)
         elif e.description == 'Advance Paid': e.amount = a_paid_total
-    
+
     for e in sections['D']:
         if e.description == 'Withdrawals': e.amount = section_totals['B_with']
         elif e.description == 'Loans Given': e.amount = section_totals['B_loan']
         elif e.description == 'Advance Given': e.amount = section_totals['B_adv']
-    
+
     # Recalculate totals after dynamic overrides
     section_totals['C'] = sum(e.amount for e in sections['C'])
     section_totals['D'] = sum(e.amount for e in sections['D'])
@@ -713,7 +713,7 @@ def performance_form_pdf(request, pk):
     adv_total = sum(e.amount for e in sections['A'] if e.is_paid)
     perf_summary = _get_perf_summary(mform, totals, sections)
 
-    
+
     from django.utils.text import slugify
     filename = slugify(f"performance_form_{mform.group.name}_{mform.get_month_name()}_{mform.year}") + ".pdf"
     inline = request.GET.get('inline') == '1'
@@ -744,17 +744,17 @@ def combined_monthly_report_pdf(request, pk):
     """Generates a two-page PDF: Page 1 Accounting Sheet, Page 2 Performance Form."""
     mform = get_object_or_404(MonthlyForm, pk=pk)
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
-    
+
     from finance.utils import ensure_performance_form_initialized
     ensure_performance_form_initialized(perf_form)
-    
+
     records, totals = _get_monthly_form_data(mform)
-    
+
     from finance.utils import render_to_pdf, render_performance_form_reportlab, merge_pdf_bytes, generate_pdf_response
-    
+
     # 1. Page 1: Accounting Sheet Bytes
     padding = range(max(0, 15 - records.count()))
-    
+
     # Calculate performance summary for the first page header
     entries = perf_form.entries.all().order_by('section', 'order')
     sections = {
@@ -762,7 +762,7 @@ def combined_monthly_report_pdf(request, pk):
         'E': [e for e in entries if e.section == 'E'],
     }
     perf_summary = _get_perf_summary(mform, totals, sections)
-    
+
     accounting_pdf = render_to_pdf('pdf/accounting_sheet_pdf.html', {
         'mform': mform,
         'records': records,
@@ -771,7 +771,7 @@ def combined_monthly_report_pdf(request, pk):
         'perf_summary': perf_summary,
         'base_dir': settings.BASE_DIR,
     })
-    
+
     # 2. Page 2: Performance Form Bytes
     entries = perf_form.entries.all().order_by('section', 'order')
     sections = {
@@ -796,12 +796,12 @@ def combined_monthly_report_pdf(request, pk):
     for e in sections['C']:
         if e.description == 'Total Repaid': e.amount = totals.get('total_repaid', 0)
         elif e.description == 'Advance Paid': e.amount = a_paid_total
-    
+
     for e in sections['D']:
         if e.description == 'Withdrawals': e.amount = section_totals['B_with']
         elif e.description == 'Loans Given': e.amount = section_totals['B_loan']
         elif e.description == 'Advance Given': e.amount = section_totals['B_adv']
-    
+
     # Recalculate totals after dynamic overrides
     section_totals['C'] = sum(e.amount for e in sections['C'])
     section_totals['D'] = sum(e.amount for e in sections['D'])
@@ -823,10 +823,10 @@ def combined_monthly_report_pdf(request, pk):
         'base_dir': settings.BASE_DIR,
         'member_num_map': member_num_map,
     })
-    
+
     # 3. Merge
     merged_pdf = merge_pdf_bytes([accounting_pdf, performance_pdf])
-    
+
     from django.utils.text import slugify
     filename = slugify(f"full_report_{mform.group.name}_{mform.get_month_name()}_{mform.year}") + ".pdf"
     inline = request.GET.get('inline') == '1'

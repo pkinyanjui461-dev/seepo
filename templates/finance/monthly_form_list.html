@@ -80,69 +80,6 @@
     {% endfor %}
 </div>
 
-<div class="modal fade" id="offline-pending-form-sheet-modal" tabindex="-1" aria-labelledby="offline-pending-form-sheet-modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content bg-card border-main">
-            <div class="modal-header border-main">
-                <div>
-                    <h5 class="modal-title" id="offline-pending-form-sheet-modal-title">Offline Accounting Mock Sheet</h5>
-                    <p id="offline-pending-form-sheet-modal-subtitle" class="small text-muted mb-0">Pending monthly form</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="offline-pending-form-sheet-client-uuid" value="">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="offline-sheet-deposits" class="form-label fw-bold">Deposits</label>
-                        <input id="offline-sheet-deposits" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-fines" class="form-label fw-bold">Fines</label>
-                        <input id="offline-sheet-fines" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-loan-repayment" class="form-label fw-bold">Loan Repayment</label>
-                        <input id="offline-sheet-loan-repayment" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-loans" class="form-label fw-bold">Loans Disbursed</label>
-                        <input id="offline-sheet-loans" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-withdrawals" class="form-label fw-bold">Withdrawals</label>
-                        <input id="offline-sheet-withdrawals" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="offline-sheet-expenses" class="form-label fw-bold">Expenses</label>
-                        <input id="offline-sheet-expenses" type="number" step="0.01" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="offline-sheet-members-expected" class="form-label fw-bold">Members Expected</label>
-                        <input id="offline-sheet-members-expected" type="number" step="1" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="offline-sheet-members-paid" class="form-label fw-bold">Members Paid</label>
-                        <input id="offline-sheet-members-paid" type="number" step="1" min="0" class="form-control" value="0">
-                    </div>
-                    <div class="col-12">
-                        <label for="offline-sheet-notes" class="form-label fw-bold">Diary/Notes</label>
-                        <textarea id="offline-sheet-notes" class="form-control" rows="3" placeholder="Capture offline notes for this pending form"></textarea>
-                    </div>
-                </div>
-
-                <div class="alert alert-light border mt-3 mb-0">
-                    <div><strong>Computed Balance:</strong> <span id="offline-sheet-balance-preview">0</span></div>
-                    <div><strong>Arrears Members:</strong> <span id="offline-sheet-arrears-preview">0</span></div>
-                </div>
-            </div>
-            <div class="modal-footer border-main">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" id="offline-sheet-save-btn" class="btn btn-primary">Save Offline Draft</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -155,25 +92,6 @@
     const formsEmpty = document.getElementById('monthly-form-list-empty');
     const formsNoteWrap = document.getElementById('offline-pending-monthly-forms-note');
     const formsNoteText = document.getElementById('offline-pending-monthly-forms-note-text');
-    const sheetModalEl = document.getElementById('offline-pending-form-sheet-modal');
-    const sheetModalSubtitle = document.getElementById('offline-pending-form-sheet-modal-subtitle');
-    const sheetFormClientUuid = document.getElementById('offline-pending-form-sheet-client-uuid');
-    const sheetDeposits = document.getElementById('offline-sheet-deposits');
-    const sheetFines = document.getElementById('offline-sheet-fines');
-    const sheetLoanRepayment = document.getElementById('offline-sheet-loan-repayment');
-    const sheetLoans = document.getElementById('offline-sheet-loans');
-    const sheetWithdrawals = document.getElementById('offline-sheet-withdrawals');
-    const sheetExpenses = document.getElementById('offline-sheet-expenses');
-    const sheetMembersExpected = document.getElementById('offline-sheet-members-expected');
-    const sheetMembersPaid = document.getElementById('offline-sheet-members-paid');
-    const sheetNotes = document.getElementById('offline-sheet-notes');
-    const sheetBalancePreview = document.getElementById('offline-sheet-balance-preview');
-    const sheetArrearsPreview = document.getElementById('offline-sheet-arrears-preview');
-    const sheetSaveBtn = document.getElementById('offline-sheet-save-btn');
-    const offlineFormDraftStorageKey = 'seepoPendingMonthlyFormSheetDraftsV1';
-
-    let sheetModal = null;
-
     if (!formsRow || !window.seepoOfflineDb || !groupClientUuid) {
         return;
     }
@@ -223,184 +141,6 @@
         );
     }
 
-    function getSheetModal() {
-        if (!sheetModalEl || !window.bootstrap || !window.bootstrap.Modal) {
-            return null;
-        }
-
-        if (!sheetModal) {
-            sheetModal = window.bootstrap.Modal.getOrCreateInstance(sheetModalEl);
-        }
-
-        return sheetModal;
-    }
-
-    function safeToNumber(value) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-    function loadOfflineFormDrafts() {
-        try {
-            const raw = window.localStorage.getItem(offlineFormDraftStorageKey);
-            if (!raw) {
-                return {};
-            }
-
-            const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object') {
-                return {};
-            }
-
-            return parsed;
-        } catch (error) {
-            return {};
-        }
-    }
-
-    function saveOfflineFormDrafts(map) {
-        try {
-            window.localStorage.setItem(offlineFormDraftStorageKey, JSON.stringify(map || {}));
-        } catch (error) {
-            showToast('Unable to save offline draft on this device.');
-        }
-    }
-
-    function getOfflineFormDraft(clientUuid) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return null;
-        }
-
-        const drafts = loadOfflineFormDrafts();
-        return drafts[key] || null;
-    }
-
-    function setOfflineFormDraft(clientUuid, payload) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return;
-        }
-
-        const drafts = loadOfflineFormDrafts();
-        drafts[key] = payload;
-        saveOfflineFormDrafts(drafts);
-    }
-
-    function deleteOfflineFormDraft(clientUuid) {
-        const key = String(clientUuid || '').trim();
-        if (!key) {
-            return;
-        }
-
-        const drafts = loadOfflineFormDrafts();
-        if (!Object.prototype.hasOwnProperty.call(drafts, key)) {
-            return;
-        }
-
-        delete drafts[key];
-        saveOfflineFormDrafts(drafts);
-    }
-
-    function refreshSheetPreviews() {
-        const deposits = safeToNumber(sheetDeposits ? sheetDeposits.value : 0);
-        const fines = safeToNumber(sheetFines ? sheetFines.value : 0);
-        const loanRepayment = safeToNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0);
-        const loans = safeToNumber(sheetLoans ? sheetLoans.value : 0);
-        const withdrawals = safeToNumber(sheetWithdrawals ? sheetWithdrawals.value : 0);
-        const expenses = safeToNumber(sheetExpenses ? sheetExpenses.value : 0);
-        const membersExpected = safeToNumber(sheetMembersExpected ? sheetMembersExpected.value : 0);
-        const membersPaid = safeToNumber(sheetMembersPaid ? sheetMembersPaid.value : 0);
-
-        const balance = (deposits + fines + loanRepayment) - (loans + withdrawals + expenses);
-        const arrears = Math.max(0, membersExpected - membersPaid);
-
-        if (sheetBalancePreview) {
-            sheetBalancePreview.textContent = balance.toLocaleString();
-        }
-        if (sheetArrearsPreview) {
-            sheetArrearsPreview.textContent = String(arrears);
-        }
-    }
-
-    function openOfflineSheet(clientUuid, monthLabel, yearLabel) {
-        const targetClientUuid = String(clientUuid || '').trim();
-        if (!targetClientUuid) {
-            return;
-        }
-
-        const draft = getOfflineFormDraft(targetClientUuid) || {};
-        if (sheetFormClientUuid) {
-            sheetFormClientUuid.value = targetClientUuid;
-        }
-        if (sheetModalSubtitle) {
-            sheetModalSubtitle.textContent = monthLabel + ' ' + yearLabel + ' (Offline Pending)';
-        }
-
-        if (sheetDeposits) {
-            sheetDeposits.value = String(safeToNumber(draft.deposits));
-        }
-        if (sheetFines) {
-            sheetFines.value = String(safeToNumber(draft.fines));
-        }
-        if (sheetLoanRepayment) {
-            sheetLoanRepayment.value = String(safeToNumber(draft.loan_repayment));
-        }
-        if (sheetLoans) {
-            sheetLoans.value = String(safeToNumber(draft.loans));
-        }
-        if (sheetWithdrawals) {
-            sheetWithdrawals.value = String(safeToNumber(draft.withdrawals));
-        }
-        if (sheetExpenses) {
-            sheetExpenses.value = String(safeToNumber(draft.expenses));
-        }
-        if (sheetMembersExpected) {
-            sheetMembersExpected.value = String(safeToNumber(draft.members_expected));
-        }
-        if (sheetMembersPaid) {
-            sheetMembersPaid.value = String(safeToNumber(draft.members_paid));
-        }
-        if (sheetNotes) {
-            sheetNotes.value = String(draft.notes || '');
-        }
-
-        refreshSheetPreviews();
-        const modal = getSheetModal();
-        if (modal) {
-            modal.show();
-        }
-    }
-
-    function saveOfflineSheetDraft() {
-        const clientUuid = String(sheetFormClientUuid ? sheetFormClientUuid.value : '').trim();
-        if (!clientUuid) {
-            showToast('Unable to identify pending offline form.');
-            return;
-        }
-
-        setOfflineFormDraft(clientUuid, {
-            deposits: safeToNumber(sheetDeposits ? sheetDeposits.value : 0),
-            fines: safeToNumber(sheetFines ? sheetFines.value : 0),
-            loan_repayment: safeToNumber(sheetLoanRepayment ? sheetLoanRepayment.value : 0),
-            loans: safeToNumber(sheetLoans ? sheetLoans.value : 0),
-            withdrawals: safeToNumber(sheetWithdrawals ? sheetWithdrawals.value : 0),
-            expenses: safeToNumber(sheetExpenses ? sheetExpenses.value : 0),
-            members_expected: safeToNumber(sheetMembersExpected ? sheetMembersExpected.value : 0),
-            members_paid: safeToNumber(sheetMembersPaid ? sheetMembersPaid.value : 0),
-            notes: String(sheetNotes ? sheetNotes.value : '').trim(),
-            updated_at: new Date().toISOString(),
-        });
-
-        showToast('Offline sheet draft saved on this device.');
-        const modal = getSheetModal();
-        if (modal) {
-            modal.hide();
-        }
-
-        renderPendingMonthlyForms();
-    }
-
     async function getPendingMonthlyForms() {
         let forms = [];
         if (typeof window.seepoOfflineDb.getPendingRecordsByModel === 'function') {
@@ -443,8 +183,6 @@
             return;
         }
 
-        deleteOfflineFormDraft(clientUuid);
-
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
             await window.seepoOfflineSync.refreshStatus();
         }
@@ -478,7 +216,6 @@
         const cards = forms.map(function (form) {
             const monthLabel = getMonthLabel(form.month);
             const yearLabel = String(form.year || '?');
-            const draft = getOfflineFormDraft(form.client_uuid || '');
             const statusLabel = String(form.status || 'draft');
 
             return (
@@ -493,7 +230,6 @@
                                 '</div>' +
                                 '<div class="d-grid gap-1 text-end">' +
                                     '<span class="badge" style="background-color:#f59e0b;color:#1f2937;font-weight:600;padding:6px 10px;border-radius:6px;">Offline Pending</span>' +
-                                    (draft ? '<span class="badge" style="background-color:#d1fae5;color:#065f46;font-weight:600;padding:5px 8px;border-radius:6px;">Draft Saved</span>' : '') +
                                 '</div>' +
                             '</div>' +
                             '<p class="small text-muted mb-3">Open the full accounting sheet view offline and continue working with live calculations.</p>' +
@@ -553,22 +289,6 @@
 
         await handlePendingFormAction(button);
     });
-
-    [sheetDeposits, sheetFines, sheetLoanRepayment, sheetLoans, sheetWithdrawals, sheetExpenses, sheetMembersExpected, sheetMembersPaid].forEach(function (input) {
-        if (!input) {
-            return;
-        }
-
-        input.addEventListener('input', function () {
-            refreshSheetPreviews();
-        });
-    });
-
-    if (sheetSaveBtn) {
-        sheetSaveBtn.addEventListener('click', function () {
-            saveOfflineSheetDraft();
-        });
-    }
 
     window.addEventListener('online', function () {
         renderPendingMonthlyForms();
