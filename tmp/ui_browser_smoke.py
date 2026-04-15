@@ -200,6 +200,19 @@ def run() -> Dict[str, Any]:
 
             if rows_count > 0:
                 first_row = page.locator("#offline-finance-table-body tr.record-row").first
+                
+                # Extract rendered member data to verify it's not empty
+                first_row.wait_for()
+                member_name_element = first_row.locator("td.fw-bold.bg-light")
+                member_name = member_name_element.inner_text().strip() if member_name_element else ""
+                member_number_element = first_row.locator("td.text-center.text-muted.small").first
+                member_number = member_number_element.inner_text().strip() if member_number_element else ""
+                
+                rendered_text = f"name='{member_name}', number='{member_number}'"
+                record("offline_form_member_data_populated", 
+                       member_name and member_name != "" and member_name != "Member", 
+                       rendered_text)
+                
                 first_row.locator("input[data-field='savings_share_bf']").fill("1000")
                 first_row.locator("input[data-field='loan_balance_bf']").fill("500")
                 first_row.locator("input[data-field='total_repaid']").fill("400")
