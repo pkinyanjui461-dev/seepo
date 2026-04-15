@@ -1,12 +1,12 @@
 {% load static %}
-const CACHE_VERSION = 'v35';
-const CSS_ASSET_VERSION = '11';
+const CACHE_VERSION = 'v36';
+const CSS_ASSET_VERSION = '12';
 const OFFLINE_SYNC_ASSET_VERSION = '7';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '35';
+const SW_REGISTER_ASSET_VERSION = '36';
 const DEXIE_ASSET_VERSION = '1';
 const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
-const OFFLINE_GLOBAL_STATE_VERSION = '2';
+const OFFLINE_GLOBAL_STATE_VERSION = '3';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -61,7 +61,7 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-form-auto-persist.js" %}',
   '{% static "js/offline-global-state.js" %}?v=' + OFFLINE_GLOBAL_STATE_VERSION,
   '{% static "js/offline-global-state.js" %}',
-  '{% static "js/offline-monthly-form-detail.js" %}?v=3',
+  '{% static "js/offline-monthly-form-detail.js" %}?v=4',
   '{% static "js/offline-monthly-form-detail.js" %}',
   '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',

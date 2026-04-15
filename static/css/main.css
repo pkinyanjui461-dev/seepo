@@ -6,20 +6,64 @@
     right: 0;
     background: linear-gradient(90deg, #ef4444, #dc2626);
     color: white;
-    padding: 12px 16px;
+    padding: 14px 16px 12px;
     z-index: 10000;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     font-size: 14px;
     font-weight: 500;
+    overflow: hidden;
+    transition: padding 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
 .seepo-offline-banner-content {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.seepo-offline-banner-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease, margin 220ms ease;
+}
+
+.seepo-offline-banner-message {
+    display: block;
+    line-height: 1.45;
+}
+
+.seepo-offline-banner-divider {
+    border: 0;
+    border-top: 1px solid rgba(127, 29, 29, 0.95);
+    margin: 10px 0 0;
+    opacity: 0.95;
+    transition: margin 220ms ease, opacity 220ms ease, transform 220ms ease;
+}
+
+.seepo-offline-banner-compact {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.seepo-offline-banner-compact .seepo-offline-banner-copy {
+    max-height: 0;
+    margin: 0;
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.92);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.seepo-offline-banner-compact .seepo-offline-banner-divider {
+    margin-top: 4px;
+    opacity: 0.85;
+    transform: scaleX(0.96);
 }
 
 .seepo-banner-close {
@@ -40,11 +84,15 @@
 @media (max-width: 640px) {
     .seepo-offline-banner {
         font-size: 12px;
-        padding: 10px 12px;
+        padding: 10px 12px 8px;
     }
 
     .seepo-offline-banner-content {
         gap: 8px;
+    }
+
+    .seepo-offline-banner-divider {
+        margin-top: 8px;
     }
 }
 

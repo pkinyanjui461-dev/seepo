@@ -14,9 +14,11 @@
 
   const BANNER_ID = 'seepo-global-offline-banner';
   const STATUS_INDICATOR_ID = 'seepo-online-status-indicator';
+  const BANNER_COMPACT_DELAY_MS = 10000;
   const AUTO_SYNC_INTERVAL_MS = 5000; // Check every 5 seconds
   let autoSyncTimer = null;
   let deferredSyncTimer = null;
+  let bannerCompactTimer = null;
 
   function ensureOnlineBanner() {
     if (document.getElementById(BANNER_ID)) {
@@ -28,24 +30,71 @@
     banner.className = 'seepo-offline-banner';
     banner.innerHTML = `
       <div class="seepo-offline-banner-content">
-        <span>📡 You're working offline. Data is saved locally and will sync when you're back online.</span>
+        <div class="seepo-offline-banner-copy">
+          <span class="seepo-offline-banner-message">📡 You're working offline. Data is saved locally and will sync when you're back online.</span>
+        </div>
         <button type="button" class="seepo-banner-close" aria-label="Close">&times;</button>
       </div>
+      <hr class="seepo-offline-banner-divider">
     `;
     banner.style.display = 'none';
 
     document.body.insertBefore(banner, document.body.firstChild);
 
     banner.querySelector('.seepo-banner-close').addEventListener('click', () => {
-      banner.style.display = 'none';
+      showOfflineBanner(false);
     });
+
+    syncBannerLayout();
+  }
+
+  function syncBannerLayout() {
+    const banner = document.getElementById(BANNER_ID);
+    if (!banner || banner.style.display === 'none') {
+      document.body.style.paddingTop = '';
+      return;
+    }
+
+    const height = Math.ceil(banner.getBoundingClientRect().height);
+    document.body.style.paddingTop = height > 0 ? height + 'px' : '';
+  }
+
+  function setBannerCompact(isCompact) {
+    const banner = document.getElementById(BANNER_ID);
+    if (!banner) {
+      return;
+    }
+
+    banner.classList.toggle('seepo-offline-banner-compact', isCompact);
+    window.requestAnimationFrame(syncBannerLayout);
+  }
+
+  function scheduleBannerCompact() {
+    clearTimeout(bannerCompactTimer);
+    bannerCompactTimer = window.setTimeout(() => {
+      const banner = document.getElementById(BANNER_ID);
+      if (!banner || banner.style.display === 'none') {
+        return;
+      }
+
+      setBannerCompact(true);
+    }, BANNER_COMPACT_DELAY_MS);
   }
 
   function showOfflineBanner(visible) {
     ensureOnlineBanner();
     const banner = document.getElementById(BANNER_ID);
     if (banner) {
-      banner.style.display = visible ? 'block' : 'none';
+      clearTimeout(bannerCompactTimer);
+      if (visible) {
+        banner.style.display = 'block';
+        setBannerCompact(false);
+        scheduleBannerCompact();
+      } else {
+        setBannerCompact(false);
+        banner.style.display = 'none';
+      }
+      syncBannerLayout();
     }
   }
 

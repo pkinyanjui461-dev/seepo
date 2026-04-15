@@ -35,13 +35,13 @@
     </div>
 </div>
 
-<div class="alert alert-info py-2 small shadow-sm">
+<div id="offline-sheet-mock-banner" class="alert alert-info py-2 small shadow-sm d-none">
     <i class="fas fa-info-circle me-1"></i>
     <strong>Offline Mock Sheet:</strong>
     Uses the same monthly form calculations as online. Your edits are saved locally and synced to server records when online.
 </div>
 
-<div class="offline-sheet-context mb-3" id="offline-sheet-context-line"></div>
+<div class="offline-sheet-context mb-3 d-none" id="offline-sheet-context-line"></div>
 
 <div class="card shadow-sm border-0 mb-5">
     <div class="card-body p-0 table-container">
@@ -65,8 +65,10 @@
             <tbody id="offline-finance-table-body">
                 <tr id="offline-finance-empty-row">
                     <td colspan="12" class="text-center text-muted py-5">
-                        <i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>
-                        No cached members found for this group on this device.
+                        <div id="offline-finance-empty-message">
+                            <i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>
+                            No cached members found for this group on this device.
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -116,5 +118,5 @@ window.seepoOfflineMonthlyFormContext = {
     }
 };
 </script>
-<script src="{% static 'js/offline-monthly-form-detail.js' %}?v=3"></script>
+<script src="{% static 'js/offline-monthly-form-detail.js' %}?v=4"></script>
 {% endblock %}

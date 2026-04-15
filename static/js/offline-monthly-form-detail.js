@@ -22,12 +22,14 @@
   const table = document.getElementById('offlineFinanceTable');
   const tableBody = document.getElementById('offline-finance-table-body');
   const emptyRow = document.getElementById('offline-finance-empty-row');
+  const emptyMessage = document.getElementById('offline-finance-empty-message');
   const saveButton = document.getElementById('offlineManualSaveBtn');
   const syncNowButton = document.getElementById('offlineSyncNowBtn');
   const performanceButton = document.getElementById('offlinePerformanceBtn');
   const backLink = document.getElementById('offline-sheet-back-link');
   const statusBadge = document.getElementById('offline-sheet-status-badge');
   const contextLine = document.getElementById('offline-sheet-context-line');
+  const mockBanner = document.getElementById('offline-sheet-mock-banner');
   const pageGroupTitle = document.getElementById('offline-sheet-page-group');
   const pagePeriodTitle = document.getElementById('offline-sheet-page-period');
 
@@ -78,6 +80,43 @@
       return String(month || '?');
     }
     return MONTH_NAMES[index];
+  }
+
+  function updateOfflineCopyVisibility() {
+    const offline = !navigator.onLine;
+
+    if (mockBanner) {
+      mockBanner.classList.toggle('d-none', !offline);
+    }
+
+    if (contextLine) {
+      contextLine.classList.toggle('d-none', !offline);
+      if (!offline) {
+        contextLine.textContent = '';
+      }
+    }
+  }
+
+  function updateEmptyStateMessage() {
+    if (!emptyRow) {
+      return;
+    }
+
+    const isOffline = !navigator.onLine;
+    const messageHtml = isOffline
+      ? '<i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>No cached members found for this group on this device.'
+      : '<i class="fas fa-spinner fa-spin fs-3 mb-3 d-block text-primary opacity-75"></i>Members are syncing to this device. Stay online while the cache refreshes.';
+
+    if (emptyMessage) {
+      emptyMessage.innerHTML = messageHtml;
+    } else {
+      const cell = emptyRow.querySelector('td');
+      if (cell) {
+        cell.innerHTML = messageHtml;
+      }
+    }
+
+    emptyRow.classList.toggle('d-none', state.members.length > 0);
   }
 
   function showToast(message, isError) {
@@ -307,7 +346,9 @@
 
     setStatusBadge(state.form);
 
-    if (contextLine) {
+    updateOfflineCopyVisibility();
+
+    if (contextLine && !navigator.onLine) {
       const sourceLabel = normalizeText(context.source) || 'direct';
       const syncState = state.form && Number(state.form.synced || 0) === 1 ? 'cached synced record' : 'local pending record';
       contextLine.innerHTML =
@@ -559,9 +600,7 @@
     });
 
     if (!state.members.length) {
-      if (emptyRow) {
-        emptyRow.classList.remove('d-none');
-      }
+      updateEmptyStateMessage();
       updateRowPendingState();
       return;
     }
@@ -987,6 +1026,11 @@
     }
   }
 
+  async function handleConnectivityChange() {
+    state.hydrationAttempted = false;
+    await refreshFromStorage();
+  }
+
   function handlePerformanceButton(event) {
     if (!performanceButton) {
       return;
@@ -1032,8 +1076,12 @@
     performanceButton.addEventListener('click', handlePerformanceButton);
   }
 
-  window.addEventListener('online', function () {
-    syncQueuedSheets();
+  window.addEventListener('seepo:online', function () {
+    handleConnectivityChange();
+  });
+
+  window.addEventListener('seepo:offline', function () {
+    handleConnectivityChange();
   });
 
   window.addEventListener('seepo:queue-status', function () {
