@@ -864,7 +864,18 @@
                 return;
             }
 
-            console.info(message);
+            const toast = document.getElementById('sync-toast');
+            if (!toast) {
+                console.info(message);
+                return;
+            }
+
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(function () {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
         function setOpen(open) {
