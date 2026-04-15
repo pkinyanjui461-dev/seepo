@@ -47,7 +47,7 @@ const APP_SHELL_URLS = [
   '{% static "css/main.css" %}',
   '{% static "js/sidebar.js" %}',
   '{% static "js/calculations.js" %}',
-  '{% static "js/dev-log-tools.js" %}?v=2',
+  '{% static "js/dev-log-tools.js" %}?v=3',
   '{% static "js/dev-log-tools.js" %}',
   '{% static "js/vendor/dexie.min.js" %}?v=' + DEXIE_ASSET_VERSION,
   '{% static "js/vendor/dexie.min.js" %}',

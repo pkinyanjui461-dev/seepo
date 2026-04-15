@@ -256,7 +256,11 @@
       ? await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray()
       : [];
     const memberMatchesByGroupId = resolvedGroupServerId > 0
-      ? await membersTable.where('group_id').equals(resolvedGroupServerId).toArray()
+      ? await membersTable
+          .filter(function (record) {
+            return Number(record.group_id || 0) === resolvedGroupServerId;
+          })
+          .toArray()
       : [];
 
     const syncedMembersByGroupUuid = memberMatchesByGroupUuid.filter(function (record) {
