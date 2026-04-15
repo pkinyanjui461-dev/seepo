@@ -281,6 +281,9 @@ def _serialize_user(user: User) -> dict[str, Any]:
 def _serialize_member_record(member_record: MemberRecord) -> dict[str, Any]:
     return {
         'server_id': member_record.pk,
+        'client_uuid': str(member_record.client_uuid),
+        'client_updated_at': member_record.client_updated_at.isoformat(),
+        'updated_at': member_record.updated_at.isoformat(),
         'monthly_form_id': member_record.monthly_form.pk,
         'member_id': member_record.member.pk,
         'order': member_record.order,
@@ -307,6 +310,7 @@ def _apply_member_record(payload: dict[str, Any], request) -> dict[str, Any]:
         'monthly_form_id': monthly_form_id,
         'member_id': member_id,
         'order': _parse_int(payload.get('order'), 'order', 0),
+        'client_updated_at': _parse_client_updated_at(payload.get('client_updated_at')),
         'savings_share_bf': _parse_decimal(payload.get('savings_share_bf'), 'savings_share_bf'),
         'loan_balance_bf': _parse_decimal(payload.get('loan_balance_bf'), 'loan_balance_bf'),
         'total_repaid': _parse_decimal(payload.get('total_repaid'), 'total_repaid'),

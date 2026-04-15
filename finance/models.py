@@ -40,6 +40,11 @@ class MonthlyForm(models.Model):
 
 
 class MemberRecord(models.Model):
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now, db_index=True)
+
     monthly_form = models.ForeignKey(MonthlyForm, on_delete=models.CASCADE, related_name='member_records')
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     order = models.PositiveSmallIntegerField(default=0)
@@ -66,6 +71,13 @@ class MemberRecord(models.Model):
 
     def __str__(self):
         return f"{self.member.name} – {self.monthly_form}"
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            kwargs['update_fields'] = set(update_fields) | {'updated_at'}
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
 
     def calculate(self):
         """Backend calculation mirror of JS logic."""

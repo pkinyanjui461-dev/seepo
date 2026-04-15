@@ -3,7 +3,7 @@
     return;
   }
 
-  const DEFAULT_MODEL_ORDER = ['group', 'member', 'monthly_form', 'expense'];
+  const DEFAULT_MODEL_ORDER = ['group', 'member', 'monthly_form', 'member_record', 'expense'];
 
   function resolveModelOrder() {
     const body = document.body;

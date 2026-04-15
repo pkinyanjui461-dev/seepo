@@ -5,10 +5,11 @@
   }
 
   const db = new Dexie('seepoOfflineDb');
-  db.version(2).stores({
+  db.version(3).stores({
     groups: '++_localId,&client_uuid,synced,client_updated_at,name',
     members: '++_localId,&client_uuid,synced,client_updated_at,group_client_uuid,name,member_number',
     monthly_forms: '++_localId,&client_uuid,synced,client_updated_at,group_client_uuid,year,month',
+    member_records: '++_localId,&client_uuid,synced,client_updated_at,monthly_form_id,member_id,order',
     expenses: '++_localId,&client_uuid,synced,client_updated_at,date,name',
     users: '++_localId,&client_uuid,synced,client_updated_at,username,phone_number,role',
     sync_meta: '&model,last_pull_ts'
@@ -18,6 +19,7 @@
     group: 'groups',
     member: 'members',
     monthly_form: 'monthly_forms',
+    member_record: 'member_records',
     expense: 'expenses',
     user: 'users'
   };
@@ -71,6 +73,11 @@
       const month = record.month || '?';
       const year = record.year || '?';
       return 'Monthly form ' + month + '/' + year;
+    }
+
+    if (modelName === 'member_record') {
+      const memberId = record.member_id ? ' #' + record.member_id : '';
+      return 'Member record' + memberId;
     }
 
     if (modelName === 'expense') {

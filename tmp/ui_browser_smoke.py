@@ -36,7 +36,7 @@ def get_seeded_data() -> dict | None:
             cwd=project_dir,
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=30
         )
 
         if result.returncode != 0:
@@ -207,6 +207,88 @@ def run() -> Dict[str, Any]:
                 record("offline_form_member_data_populated",
                        bool(member_name and member_name != "" and member_name != "Member"),
                        rendered_text)
+
+                initial_values = page.evaluate(
+                    """
+                    async (formUuid) => {
+                        const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+                        const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
+                        const form = await formsTable.where('client_uuid').equals(formUuid).first();
+                        if (!form) {
+                            return null;
+                        }
+
+                        const records = await memberRecordsTable.where('monthly_form_id').equals(Number(form.server_id || 0)).sortBy('order');
+                        const firstRecord = records[0];
+                        const firstRow = document.querySelector('#offline-finance-table-body tr.record-row');
+                        if (!firstRecord || !firstRow) {
+                            return null;
+                        }
+
+                        const read = (field) => {
+                            const input = firstRow.querySelector(`input[data-field="${field}"]`);
+                            return input ? input.value : '';
+                        };
+
+                        const normalize = (value) => {
+                            if (value === null || value === undefined || value === '') {
+                                return '';
+                            }
+                            const number = Number(value);
+                            return Number.isFinite(number) ? String(Math.round(number)) : String(value);
+                        };
+
+                        return {
+                            savings_share_bf_expected: normalize(firstRecord.savings_share_bf),
+                            savings_share_bf_actual: read('savings_share_bf'),
+                            loan_balance_bf_expected: normalize(firstRecord.loan_balance_bf),
+                            loan_balance_bf_actual: read('loan_balance_bf'),
+                            total_repaid_expected: normalize(firstRecord.total_repaid),
+                            total_repaid_actual: read('total_repaid'),
+                            principal_expected: normalize(firstRecord.principal),
+                            principal_actual: read('principal'),
+                            loan_interest_expected: normalize(firstRecord.loan_interest),
+                            loan_interest_actual: read('loan_interest'),
+                            shares_this_month_expected: normalize(firstRecord.shares_this_month),
+                            shares_this_month_actual: read('shares_this_month'),
+                            withdrawals_expected: normalize(firstRecord.withdrawals),
+                            withdrawals_actual: read('withdrawals'),
+                            fines_charges_expected: normalize(firstRecord.fines_charges),
+                            fines_charges_actual: read('fines_charges'),
+                            savings_share_cf_expected: normalize(firstRecord.savings_share_cf),
+                            savings_share_cf_actual: read('savings_share_cf'),
+                            loan_balance_cf_expected: normalize(firstRecord.loan_balance_cf),
+                            loan_balance_cf_actual: read('loan_balance_cf'),
+                        };
+                    }
+                    """,
+                    seeded["form_client_uuid"]
+                )
+
+                initial_match = initial_values is not None and all(
+                    initial_values[f"{field}_expected"] == initial_values[f"{field}_actual"]
+                    for field in [
+                        "savings_share_bf",
+                        "loan_balance_bf",
+                        "total_repaid",
+                        "principal",
+                        "loan_interest",
+                        "shares_this_month",
+                        "withdrawals",
+                        "fines_charges",
+                        "savings_share_cf",
+                        "loan_balance_cf",
+                    ]
+                )
+
+                record(
+                    "offline_form_initial_values_match_cached_member_records",
+                    bool(initial_match),
+                    json.dumps(initial_values, sort_keys=True) if initial_values else "no member record match",
+                )
+
+                if not initial_match:
+                    raise RuntimeError("Offline form initial values do not match cached member records")
 
                 # Edit transaction values to create drafts in Dexie
                 first_row.locator("input[data-field='savings_share_bf']").fill("1000")

@@ -622,6 +622,59 @@
     return null;
   }
 
+  function parseTouchedFields(value) {
+    return String(value || '')
+      .split(',')
+      .map(normalizeText)
+      .filter(Boolean);
+  }
+
+  function getRowTouchedFields(row) {
+    if (!row) {
+      return [];
+    }
+
+    return parseTouchedFields(row.getAttribute('data-touched-fields'));
+  }
+
+  function setRowTouchedField(row, fieldName) {
+    if (!row) {
+      return;
+    }
+
+    const normalizedFieldName = normalizeText(fieldName);
+    if (!normalizedFieldName) {
+      return;
+    }
+
+    const fields = new Set(getRowTouchedFields(row));
+    fields.add(normalizedFieldName);
+    row.setAttribute('data-touched-fields', Array.from(fields).join(','));
+  }
+
+  function resolveFieldValue(fieldName, draft, memberRecord) {
+    const touchedFields = parseTouchedFields(draft && draft.touched_fields);
+    const draftHasField = !!draft && Object.prototype.hasOwnProperty.call(draft, fieldName);
+    const draftValue = draftHasField ? draft[fieldName] : undefined;
+    const memberValue = memberRecord ? memberRecord[fieldName] : undefined;
+
+    if (touchedFields.indexOf(fieldName) >= 0) {
+      return draftValue;
+    }
+
+    const normalizedDraftValue = normalizeText(draftValue);
+    if (normalizedDraftValue && Number(normalizedDraftValue) !== 0) {
+      return draftValue;
+    }
+
+    const normalizedMemberValue = normalizeText(memberValue);
+    if (normalizedMemberValue) {
+      return memberValue;
+    }
+
+    return draftValue;
+  }
+
   async function getMemberRecordsForCurrentForm() {
     // Load MemberRecord data from Dexie cache for initial field values
     if (!window.seepoOfflineDb || !state.form) {
@@ -689,22 +742,24 @@
       // Priority 2: Use member record data (initial cached data)
       const draft = getDraftForMember(draftMap, member) || {};
       const memberRecord = memberId > 0 ? state.memberRecords['member_id:' + memberId] : null;
+      const touchedFields = parseTouchedFields(draft.touched_fields);
+      const touchedFieldsAttr = touchedFields.length ? ' data-touched-fields="' + htmlEscape(touchedFields.join(',')) + '"' : '';
 
       const values = {
-        savings_share_bf: integerString(draft.savings_share_bf || (memberRecord && memberRecord.savings_share_bf) || ''),
-        loan_balance_bf: integerString(draft.loan_balance_bf || (memberRecord && memberRecord.loan_balance_bf) || ''),
-        total_repaid: integerString(draft.total_repaid || (memberRecord && memberRecord.total_repaid) || ''),
-        principal: integerString(draft.principal || (memberRecord && memberRecord.principal) || ''),
-        loan_interest: integerString(draft.loan_interest || (memberRecord && memberRecord.loan_interest) || ''),
-        shares_this_month: integerString(draft.shares_this_month || (memberRecord && memberRecord.shares_this_month) || ''),
-        withdrawals: integerString(draft.withdrawals || (memberRecord && memberRecord.withdrawals) || ''),
-        fines_charges: integerString(draft.fines_charges || (memberRecord && memberRecord.fines_charges) || ''),
-        savings_share_cf: integerString(draft.savings_share_cf || (memberRecord && memberRecord.savings_share_cf) || ''),
-        loan_balance_cf: integerString(draft.loan_balance_cf || (memberRecord && memberRecord.loan_balance_cf) || ''),
+        savings_share_bf: integerString(resolveFieldValue('savings_share_bf', draft, memberRecord)),
+        loan_balance_bf: integerString(resolveFieldValue('loan_balance_bf', draft, memberRecord)),
+        total_repaid: integerString(resolveFieldValue('total_repaid', draft, memberRecord)),
+        principal: integerString(resolveFieldValue('principal', draft, memberRecord)),
+        loan_interest: integerString(resolveFieldValue('loan_interest', draft, memberRecord)),
+        shares_this_month: integerString(resolveFieldValue('shares_this_month', draft, memberRecord)),
+        withdrawals: integerString(resolveFieldValue('withdrawals', draft, memberRecord)),
+        fines_charges: integerString(resolveFieldValue('fines_charges', draft, memberRecord)),
+        savings_share_cf: integerString(resolveFieldValue('savings_share_cf', draft, memberRecord)),
+        loan_balance_cf: integerString(resolveFieldValue('loan_balance_cf', draft, memberRecord)),
       };
 
       return (
-        '<tr data-offline-row="true" class="record-row" data-member-client-uuid="' + htmlEscape(member.client_uuid || '') + '" data-member-number="' + htmlEscape(memberNumber) + '">' +
+        '<tr data-offline-row="true" class="record-row" data-member-client-uuid="' + htmlEscape(member.client_uuid || '') + '" data-member-number="' + htmlEscape(memberNumber) + '"' + touchedFieldsAttr + '>' +
           '<td class="text-center text-muted small align-middle" style="background-color: #f8f9fa;">' + htmlEscape(memberNumber || '-') + '</td>' +
           '<td class="fw-bold bg-light text-wrap" style="position: sticky; left: 0; border-right: 2px solid #ccc; z-index: 5; font-size: 0.85rem; line-height: 1.2;">' + htmlEscape(member.name || 'Member') + '</td>' +
           '<td><input type="number" step="1" class="form-control calc-input" data-field="savings_share_bf" value="' + htmlEscape(values.savings_share_bf) + '"></td>' +
@@ -862,6 +917,8 @@
       editableFields.forEach(function (fieldName) {
         payload[fieldName] = Math.round(getVal(tr, fieldName));
       });
+
+      payload.touched_fields = getRowTouchedFields(tr);
 
       payload.loan_interest = Math.round(getVal(tr, 'loan_interest'));
       payload.shares_this_month = Math.round(getVal(tr, 'shares_this_month'));
@@ -1032,6 +1089,11 @@
         const row = event.target.closest('tr.record-row');
         if (!row) {
           return;
+        }
+
+        const fieldName = event.target.getAttribute('data-field');
+        if (fieldName) {
+          setRowTouchedField(row, fieldName);
         }
 
         performRowCalculations(row);
