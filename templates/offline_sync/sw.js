@@ -1,12 +1,12 @@
 {% load static %}
-const CACHE_VERSION = 'v34';
+const CACHE_VERSION = 'v35';
 const CSS_ASSET_VERSION = '11';
-const OFFLINE_SYNC_ASSET_VERSION = '6';
+const OFFLINE_SYNC_ASSET_VERSION = '7';
 const OFFLINE_DB_ASSET_VERSION = '4';
-const SW_REGISTER_ASSET_VERSION = '34';
+const SW_REGISTER_ASSET_VERSION = '35';
 const DEXIE_ASSET_VERSION = '1';
 const OFFLINE_FORM_AUTO_PERSIST_VERSION = '1';
-const OFFLINE_GLOBAL_STATE_VERSION = '1';
+const OFFLINE_GLOBAL_STATE_VERSION = '2';
 const SHELL_CACHE = `seepo-offline-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `seepo-offline-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = '/offline/';
@@ -38,7 +38,6 @@ const APP_SHELL_URLS = [
   '/groups/offline/workspace/',
   '/groups/create/',
   '/groups/diary/',
-  '/members/create/',
   '/finance/expenses/',
   '{% url "monthly_form_detail_offline" %}',
   '/reports/',
@@ -113,12 +112,26 @@ async function cacheFirst(request) {
     return cached;
   }
 
-  const response = await fetch(request);
-  const cache = await caches.open(RUNTIME_CACHE);
-  if (response && (response.ok || response.type === 'opaque')) {
-    cache.put(request, response.clone());
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open(RUNTIME_CACHE);
+    if (response && (response.ok || response.type === 'opaque')) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const fallback = await caches.match(request, { ignoreSearch: true });
+    if (fallback) {
+      return fallback;
+    }
+
+    return new Response('Offline resource unavailable. Please reconnect and retry.', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
   }
-  return response;
 }
 
 async function networkFirst(request) {
@@ -197,6 +210,10 @@ self.addEventListener('fetch', (event) => {
 
   // Let API/data requests fail normally when offline so client code can handle fetch errors.
   if (isApiRequest) {
+    return;
+  }
+
+  if (requestUrl.origin !== self.location.origin) {
     return;
   }
 

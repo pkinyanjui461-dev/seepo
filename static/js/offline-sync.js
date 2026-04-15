@@ -31,6 +31,9 @@
       this.modelOrder = resolveModelOrder();
       this.fabFlashTimer = null;
       this.fabFlashUntil = 0;
+      this.networkBackoffMs = 15000;
+      this.networkBackoffUntil = 0;
+      this.networkBackoffMaxMs = 300000;
     }
 
     normalizeError(error, context) {
@@ -39,6 +42,21 @@
         context,
         message,
       };
+    }
+
+    isTransientNetworkError(error) {
+      const message = error && error.message ? String(error.message) : String(error || '');
+      return /Failed to fetch|NetworkError|ERR_INTERNET_DISCONNECTED|network request failed|The network connection was lost/i.test(message);
+    }
+
+    registerNetworkFailure() {
+      this.networkBackoffUntil = Date.now() + this.networkBackoffMs;
+      this.networkBackoffMs = Math.min(this.networkBackoffMs * 2, this.networkBackoffMaxMs);
+    }
+
+    resetNetworkBackoff() {
+      this.networkBackoffUntil = 0;
+      this.networkBackoffMs = 15000;
     }
 
     updateQueueChip(total, breakdown) {
@@ -190,13 +208,23 @@
     }
 
     async preloadReadData() {
-      if (!navigator.onLine || this.isSyncing) {
+      if (!navigator.onLine || this.isSyncing || Date.now() < this.networkBackoffUntil) {
         return;
       }
 
       try {
         for (const modelName of this.modelOrder) {
-          await this.pullModel(modelName);
+          try {
+            await this.pullModel(modelName);
+          } catch (error) {
+            if (this.isTransientNetworkError(error)) {
+              this.registerNetworkFailure();
+              return;
+            }
+
+            console.error('Read-data preload failed:', error);
+            return;
+          }
         }
 
         const metaTable = window.seepoOfflineDb.db.table('sync_meta');
@@ -366,6 +394,19 @@
         ...(options || {}),
       };
 
+      if (syncOptions.respectBackoff && Date.now() < this.networkBackoffUntil) {
+        return {
+          success: false,
+          skipped: true,
+          errors: [
+            {
+              context: 'network',
+              message: 'Sync deferred after a recent network failure.',
+            },
+          ],
+        };
+      }
+
       if (this.isSyncing) {
         return {
           success: false,
@@ -396,6 +437,8 @@
       this.lastSyncErrors = [];
       await this.refreshStatus();
 
+      let sawTransientNetworkFailure = false;
+
       for (const modelName of this.modelOrder) {
         try {
           await this.pushModel(modelName);
@@ -403,7 +446,15 @@
           const normalized = this.normalizeError(error, modelName);
           this.lastSyncError = normalized;
           this.lastSyncErrors.push(normalized);
-          console.error('Push failed for model', modelName, error);
+          if (this.isTransientNetworkError(error)) {
+            sawTransientNetworkFailure = true;
+          }
+
+          if (syncOptions.quietNetworkErrors && this.isTransientNetworkError(error)) {
+            console.warn('Push failed for model', modelName, error);
+          } else {
+            console.error('Push failed for model', modelName, error);
+          }
         }
 
         try {
@@ -412,7 +463,15 @@
           const normalized = this.normalizeError(error, modelName);
           this.lastSyncError = normalized;
           this.lastSyncErrors.push(normalized);
-          console.error('Pull failed for model', modelName, error);
+          if (this.isTransientNetworkError(error)) {
+            sawTransientNetworkFailure = true;
+          }
+
+          if (syncOptions.quietNetworkErrors && this.isTransientNetworkError(error)) {
+            console.warn('Pull failed for model', modelName, error);
+          } else {
+            console.error('Pull failed for model', modelName, error);
+          }
         }
       }
 
@@ -422,7 +481,15 @@
         const normalized = this.normalizeError(error, 'auxiliary');
         this.lastSyncError = normalized;
         this.lastSyncErrors.push(normalized);
-        console.error('Auxiliary queue sync failed', error);
+        if (this.isTransientNetworkError(error)) {
+          sawTransientNetworkFailure = true;
+        }
+
+        if (syncOptions.quietNetworkErrors && this.isTransientNetworkError(error)) {
+          console.warn('Auxiliary queue sync failed', error);
+        } else {
+          console.error('Auxiliary queue sync failed', error);
+        }
       }
 
       this.isSyncing = false;
@@ -434,7 +501,13 @@
       };
 
       if (result.success) {
+        this.resetNetworkBackoff();
         this.flashFabState('success', 10000);
+      } else if (sawTransientNetworkFailure) {
+        this.registerNetworkFailure();
+        if (!syncOptions.quietNetworkErrors) {
+          this.flashFabState('error', 10000);
+        }
       } else {
         this.flashFabState('error', 10000);
       }

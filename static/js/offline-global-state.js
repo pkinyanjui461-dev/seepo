@@ -96,14 +96,22 @@
     }
 
     STATE.isSyncing = true;
+    let didAttemptSync = false;
 
     try {
-      await window.seepoOfflineSync.syncNow({ throwOnError: false });
+      const result = await window.seepoOfflineSync.syncNow({
+        throwOnError: false,
+        quietNetworkErrors: true,
+        respectBackoff: true,
+      });
+      didAttemptSync = !result || result.skipped !== true;
     } catch (error) {
       console.warn('[AutoSync] Sync error:', error);
     } finally {
       STATE.isSyncing = false;
-      STATE.lastSyncTime = Date.now();
+      if (didAttemptSync) {
+        STATE.lastSyncTime = Date.now();
+      }
     }
   }
 
