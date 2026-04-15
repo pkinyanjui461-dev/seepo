@@ -186,3 +186,36 @@ For any offline-related change, do this order:
 4. Update tests
 5. Run checks/tests
 6. Validate one manual offline round-trip
+
+## Offline Monthly Form Data Fetching
+
+### Auto-Hydration When Page Loads Online
+
+The offline monthly form page (`offline-monthly-form-detail.js`) implements automatic data fetching:
+- When the page loads **while online** and no cached data is found, it triggers background pulls for `group`, `member`, `monthly_form`, and `member_record` models
+- This ensures the offline database is populated with the necessary data cache before the user goes offline
+- During hydration, the page displays "Syncing group data to cache for offline use..." toast
+- The monthly form table shows "Members are syncing..." until hydration completes
+
+### Context Persistence via localStorage
+
+Context variables (form_client_uuid, group_client_uuid, group_name, month, year, status) are persisted in localStorage with key `seepoOfflineMonthlyFormContextV1`:
+- When the offline form page loads, it reads context from: template variables → URL query parameters → localStorage (priority order)
+- If context is found via URL or template, it updates localStorage for future offline access
+- This ensures the page displays correctly even when the service worker serves the cached page without query parameters
+- The stored context includes only non-runtime data and expires when the user's offline session ends
+
+### Service Worker Behavior for Offline Forms
+
+The service worker (`sw.js`) uses `navigationNetworkFirst` strategy for the `/finance/forms/offline/` route:
+1. Attempts to fetch the page from the network first (preserving query parameters)
+2. On network failure, serves the cached page (which may lack query parameters in the URL)
+3. The offline form page's JavaScript compensates by reading context from localStorage or URL search params
+4. Query parameters are preserved in the browser's URL bar even when a cached fallback is served
+
+### Form Still Needs Context Even Offline
+
+If the user accesses the offline form without having visited it online first:
+- Context will be empty and the form will show "Connect once online to cache..."
+- This is expected behavior - users cannot create forms offline, only edit drafted data
+- The form becomes fully functional after caching data during an online session

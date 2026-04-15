@@ -3,8 +3,70 @@
     return;
   }
 
-  const context = window.seepoOfflineMonthlyFormContext || {};
   const STORAGE_KEY = 'seepoOfflineMonthlyFormSheetQueueV1';
+  const CONTEXT_STORAGE_KEY = 'seepoOfflineMonthlyFormContextV1';
+
+  // Initialize context: prefer template-provided context, fallback to URL params, fallback to localStorage
+  function buildContextFromUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      formClientUuid: params.get('form_client_uuid') || '',
+      groupClientUuid: params.get('group_client_uuid') || '',
+      groupName: params.get('group_name') || '',
+      month: params.get('month') || '',
+      year: params.get('year') || '',
+      status: params.get('status') || 'draft',
+      source: params.get('source') || '',
+      urls: window.seepoOfflineMonthlyFormContext && window.seepoOfflineMonthlyFormContext.urls ? window.seepoOfflineMonthlyFormContext.urls : {}
+    };
+  }
+
+  function getStoredContext() {
+    try {
+      const stored = window.localStorage.getItem(CONTEXT_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storeContext(ctx) {
+    try {
+      const toStore = {
+        formClientUuid: ctx.formClientUuid,
+        groupClientUuid: ctx.groupClientUuid,
+        groupName: ctx.groupName,
+        month: ctx.month,
+        year: ctx.year,
+        status: ctx.status,
+        source: ctx.source
+      };
+      window.localStorage.setItem(CONTEXT_STORAGE_KEY, JSON.stringify(toStore));
+    } catch (e) {
+      console.error('Failed to store context:', e);
+    }
+  }
+
+  const urlContext = buildContextFromUrlParams();
+  const storedContext = getStoredContext();
+  const templateContext = window.seepoOfflineMonthlyFormContext || {};
+
+  // Priority: template > URL params > localStorage
+  const context = {
+    formClientUuid: templateContext.formClientUuid || urlContext.formClientUuid || (storedContext && storedContext.formClientUuid) || '',
+    groupClientUuid: templateContext.groupClientUuid || urlContext.groupClientUuid || (storedContext && storedContext.groupClientUuid) || '',
+    groupName: templateContext.groupName || urlContext.groupName || (storedContext && storedContext.groupName) || '',
+    month: templateContext.month || urlContext.month || (storedContext && storedContext.month) || '',
+    year: templateContext.year || urlContext.year || (storedContext && storedContext.year) || '',
+    status: templateContext.status || urlContext.status || (storedContext && storedContext.status) || 'draft',
+    source: templateContext.source || urlContext.source || (storedContext && storedContext.source) || '',
+    urls: templateContext.urls || urlContext.urls
+  };
+
+  // Store context for future offline access
+  if (context.formClientUuid) {
+    storeContext(context);
+  }
   const MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -1263,6 +1325,33 @@
     refreshFromStorage();
     if (navigator.onLine) {
       syncQueuedSheets();
+      
+      // Auto-hydrate if this is the first visit online - pull data to cache for offline use
+      if (!state.members.length && !state.hydrationAttempted && navigator.onLine) {
+        state.hydrationAttempted = true;
+        showToast('Syncing group data to cache for offline use...', false);
+        
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.pullModel === 'function') {
+          // Trigger background data pull for this context
+          (async function () {
+            try {
+              const models = ['group', 'member', 'monthly_form', 'member_record'];
+              for (const modelName of models) {
+                try {
+                  await window.seepoOfflineSync.pullModel(modelName, { forceFull: false });
+                } catch (error) {
+                  console.warn('Failed to pull', modelName, '- form may still be usable online:', error);
+                }
+              }
+              // Refresh display after hydration
+              await refreshFromStorage();
+              showToast('Group data cached for offline use.', false);
+            } catch (error) {
+              console.error('Auto-hydration failed:', error);
+            }
+          })();
+        }
+      }
     }
   });
 })();
