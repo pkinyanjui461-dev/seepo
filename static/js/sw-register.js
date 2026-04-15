@@ -16,6 +16,18 @@
   let swForceUpdateTimer = null;
   let lastSwUpdateWarnAt = 0;
 
+  function publishSwVersion(version) {
+    const normalized = String(version || SW_ASSET_VERSION || '').trim();
+    window.seepoSwVersion = normalized;
+    window.dispatchEvent(new CustomEvent('seepo:sw-version-updated', {
+      detail: {
+        version: normalized,
+      },
+    }));
+  }
+
+  publishSwVersion(SW_ASSET_VERSION);
+
   function showInstallMessage(message) {
     if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
       window.seepoOfflineSync.showToast(message);
@@ -197,6 +209,7 @@
       const swVersion = shellCacheKey
         ? shellCacheKey.replace('seepo-offline-shell-', '')
         : (runtimeCacheKey ? runtimeCacheKey.replace('seepo-offline-runtime-', '') : '');
+      publishSwVersion(swVersion || SW_ASSET_VERSION);
       const swVersionLabel = ' | ' + getSwBadgeLabel(swVersion);
 
       if (!shellCacheKey) {

@@ -111,6 +111,72 @@
             margin-bottom: 10px;
         }
 
+        .sw-tools-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 12px;
+            padding: 4px;
+            border-radius: 12px;
+            background: var(--muted-surface);
+        }
+
+        .sw-tools-tab {
+            border: none;
+            border-radius: 9px;
+            padding: 8px 10px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: transparent;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sw-tools-tab:hover,
+        .sw-tools-tab:focus-visible {
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .sw-tools-tab.is-active {
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 10px 18px rgba(37, 99, 235, 0.24);
+        }
+
+        .sw-tools-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sw-tools-pane[hidden] {
+            display: none !important;
+        }
+
+        .sw-tools-section-title {
+            margin: 0;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .sw-tools-version {
+            width: 100%;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--text-main);
+            background: var(--muted-surface);
+            border: 1px solid var(--border-color);
+        }
+
         .sw-tools-title {
             margin: 0;
             font-size: 0.86rem;
@@ -689,24 +755,38 @@
         <p class="sw-tools-title">Offline & Sync Tools</p>
         <button id="sw-tools-close" class="sw-tools-close" type="button" aria-label="Close diagnostics"><i class="fas fa-times"></i></button>
     </div>
-    <div class="sw-tools-row">
-        <span class="sw-tools-label">Sync</span>
-        <div id="sync-badge" class="sync-badge sync-state-synced">Synced</div>
+    <div class="sw-tools-tabs" role="tablist" aria-label="Offline sync tool sections">
+        <button id="sw-tools-actions-tab" class="sw-tools-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="sw-tools-actions-pane">Actions</button>
+        <button id="sw-tools-advanced-tab" class="sw-tools-tab" type="button" role="tab" aria-selected="false" aria-controls="sw-tools-advanced-pane">Advanced</button>
     </div>
-    <div class="sw-tools-row">
-        <span class="sw-tools-label">Service Worker</span>
-        <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">OH-Checking</div>
+    <div id="sw-tools-actions-pane" class="sw-tools-pane" role="tabpanel" aria-labelledby="sw-tools-actions-tab">
+        <div class="sw-tools-section-title">Sync info</div>
+        <div class="sw-tools-row">
+            <span class="sw-tools-label">Sync</span>
+            <div id="sync-badge" class="sync-badge sync-state-synced">Synced</div>
+        </div>
+        <div class="sw-tools-row">
+            <span class="sw-tools-label">Service Worker</span>
+            <div id="offline-host-ready-badge" class="offline-host-ready-badge host-ready-checking" aria-live="polite">OH-Checking</div>
+        </div>
+        <div class="sw-tools-row sw-tools-row-column">
+            <span class="sw-tools-label">Queued by model</span>
+            <div id="sync-queue-chip" class="sync-queue-chip sync-queue-chip-empty">No queued records</div>
+        </div>
+        <button id="sync-now-btn" class="sync-now-btn" type="button"><i class="fas fa-rotate me-2"></i>Sync Now</button>
+        <button id="delete-pending-syncs-btn" class="delete-pending-syncs-btn" type="button"><i class="fas fa-trash-can me-2"></i>Delete Pending Syncs</button>
     </div>
-    <div class="sw-tools-row sw-tools-row-column">
-        <span class="sw-tools-label">Queued by model</span>
-        <div id="sync-queue-chip" class="sync-queue-chip sync-queue-chip-empty">No queued records</div>
+    <div id="sw-tools-advanced-pane" class="sw-tools-pane" role="tabpanel" aria-labelledby="sw-tools-advanced-tab" hidden>
+        <div class="sw-tools-section-title">Advanced</div>
+        <button id="download-offline-db-btn" class="download-offline-db-btn" type="button"><i class="fas fa-download me-2"></i>Download Offline DB</button>
+        {% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
+        <button id="copy-dev-logs-btn" class="copy-dev-logs-btn" type="button"><i class="fas fa-copy me-2"></i>Copy Logs</button>
+        {% endif %}
+        <div class="sw-tools-row sw-tools-row-column">
+            <span class="sw-tools-label">Service Worker version</span>
+            <div id="sw-version-value" class="sw-tools-version">Unknown</div>
+        </div>
     </div>
-    <button id="download-offline-db-btn" class="download-offline-db-btn" type="button"><i class="fas fa-download me-2"></i>Download Offline DB</button>
-    <button id="sync-now-btn" class="sync-now-btn" type="button"><i class="fas fa-rotate me-2"></i>Sync Now</button>
-    <button id="delete-pending-syncs-btn" class="delete-pending-syncs-btn" type="button"><i class="fas fa-trash-can me-2"></i>Delete Pending Syncs</button>
-    {% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
-    <button id="copy-dev-logs-btn" class="copy-dev-logs-btn" type="button"><i class="fas fa-copy me-2"></i>Copy Logs</button>
-    {% endif %}
 </div>
 <button id="pwa-install-btn" class="pwa-install-btn" type="button" hidden>Install App</button>
 
@@ -744,21 +824,26 @@
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script src="{% static 'js/dev-log-tools.js' %}?v=3"></script>
 <script src="{% static 'js/offline-db.js' %}?v=5"></script>
-<script src="{% static 'js/offline-sync.js' %}?v=10"></script>
+<script src="{% static 'js/offline-sync.js' %}?v=11"></script>
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}?v=4"></script>
-<script src="{% static 'js/sw-register.js' %}?v=38"></script>
+<script src="{% static 'js/sw-register.js' %}?v=39"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
         const panel = document.getElementById('sw-tools-panel');
         const closeBtn = document.getElementById('sw-tools-close');
+        const actionsTabBtn = document.getElementById('sw-tools-actions-tab');
+        const advancedTabBtn = document.getElementById('sw-tools-advanced-tab');
+        const actionsPane = document.getElementById('sw-tools-actions-pane');
+        const advancedPane = document.getElementById('sw-tools-advanced-pane');
         const downloadOfflineDbBtn = document.getElementById('download-offline-db-btn');
         const syncNowBtn = document.getElementById('sync-now-btn');
         const deletePendingBtn = document.getElementById('delete-pending-syncs-btn');
+        const swVersionValue = document.getElementById('sw-version-value');
         const deletePendingModalEl = document.getElementById('delete-pending-modal');
         const pendingSyncList = document.getElementById('pending-sync-list');
         const pendingSyncEmpty = document.getElementById('pending-sync-empty');
@@ -767,6 +852,7 @@
         const pendingSyncSelectionCount = document.getElementById('pending-sync-selection-count');
         const confirmDeletePendingBtn = document.getElementById('confirm-delete-pending-btn');
         let deletePendingModal = null;
+        let activeToolTab = 'actions';
 
         if (!fab || !panel) {
             return;
@@ -784,6 +870,53 @@
         function setOpen(open) {
             panel.hidden = !open;
             fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+                refreshSwVersionLabel();
+            }
+        }
+
+        function refreshSwVersionLabel() {
+            if (!swVersionValue) {
+                return;
+            }
+
+            const rawVersion = typeof window.seepoSwVersion === 'string' ? window.seepoSwVersion.trim() : '';
+            if (!rawVersion) {
+                swVersionValue.textContent = 'Unknown';
+                swVersionValue.title = 'Service Worker version unavailable';
+                return;
+            }
+
+            const normalized = rawVersion.replace(/^v/i, '');
+            swVersionValue.textContent = normalized.toLowerCase().startsWith('sw') ? normalized : 'SW ' + normalized;
+            swVersionValue.title = 'Service Worker version: ' + rawVersion;
+        }
+
+        function setActiveToolTab(tabName) {
+            activeToolTab = tabName === 'advanced' ? 'advanced' : 'actions';
+
+            const isActions = activeToolTab === 'actions';
+            if (actionsTabBtn) {
+                actionsTabBtn.classList.toggle('is-active', isActions);
+                actionsTabBtn.setAttribute('aria-selected', isActions ? 'true' : 'false');
+            }
+
+            if (advancedTabBtn) {
+                advancedTabBtn.classList.toggle('is-active', !isActions);
+                advancedTabBtn.setAttribute('aria-selected', !isActions ? 'true' : 'false');
+            }
+
+            if (actionsPane) {
+                actionsPane.hidden = !isActions;
+            }
+
+            if (advancedPane) {
+                advancedPane.hidden = isActions;
+            }
+
+            if (!isActions) {
+                refreshSwVersionLabel();
+            }
         }
 
         function modelDisplayName(modelName) {
@@ -1044,6 +1177,18 @@
             setOpen(panel.hidden);
         });
 
+        if (actionsTabBtn) {
+            actionsTabBtn.addEventListener('click', function () {
+                setActiveToolTab('actions');
+            });
+        }
+
+        if (advancedTabBtn) {
+            advancedTabBtn.addEventListener('click', function () {
+                setActiveToolTab('advanced');
+            });
+        }
+
         if (closeBtn) {
             closeBtn.addEventListener('click', function () {
                 setOpen(false);
@@ -1069,6 +1214,12 @@
         if (syncNowBtn) {
             syncNowBtn.addEventListener('click', async function () {
                 if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+                    showToast('Offline sync tools are not ready on this page yet.');
+                    return;
+                }
+
+                if (window.seepoOfflineSync.isSyncing || window.seepoOfflineSync.isDownloading) {
+                    showToast('Wait for the current sync or download to finish.');
                     return;
                 }
 
@@ -1104,32 +1255,42 @@
             });
         }
 
-            if (downloadOfflineDbBtn) {
-                downloadOfflineDbBtn.addEventListener('click', async function () {
-                    if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.downloadOfflineDb !== 'function') {
-                        return;
-                    }
+        if (downloadOfflineDbBtn) {
+            downloadOfflineDbBtn.addEventListener('click', async function () {
+                if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.downloadOfflineDb !== 'function') {
+                    showToast('Offline sync tools are not ready on this page yet.');
+                    return;
+                }
 
-                    if (!navigator.onLine) {
-                        showToast('Connect to the internet to download the offline database.');
-                        return;
-                    }
+                if (window.seepoOfflineSync.isSyncing || window.seepoOfflineSync.isDownloading) {
+                    showToast('Wait for the current sync or download to finish.');
+                    return;
+                }
 
-                    downloadOfflineDbBtn.disabled = true;
-                    const originalText = downloadOfflineDbBtn.innerHTML;
-                    downloadOfflineDbBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Downloading...';
+                if (!navigator.onLine) {
+                    showToast('Connect to the internet to download the offline database.');
+                    return;
+                }
 
-                    try {
-                        await window.seepoOfflineSync.downloadOfflineDb();
-                    } catch (error) {
-                        const detail = error && error.message ? error.message : 'Unknown error.';
-                        showToast('Offline database download failed: ' + detail);
-                    } finally {
-                        downloadOfflineDbBtn.disabled = false;
-                        downloadOfflineDbBtn.innerHTML = originalText;
-                    }
-                });
-            }
+                downloadOfflineDbBtn.disabled = true;
+                const originalText = downloadOfflineDbBtn.innerHTML;
+                downloadOfflineDbBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Downloading...';
+
+                try {
+                    await window.seepoOfflineSync.downloadOfflineDb();
+                } catch (error) {
+                    const detail = error && error.message ? error.message : 'Unknown error.';
+                    showToast('Offline database download failed: ' + detail);
+                } finally {
+                    downloadOfflineDbBtn.disabled = false;
+                    downloadOfflineDbBtn.innerHTML = originalText;
+                }
+            });
+        }
+
+        refreshSwVersionLabel();
+        window.addEventListener('seepo:sw-version-updated', refreshSwVersionLabel);
+        setActiveToolTab('actions');
 
         if (deletePendingBtn) {
             deletePendingBtn.addEventListener('click', async function () {

@@ -13,57 +13,59 @@ from decimal import Decimal
 from django.db.models import Case, When, Value, IntegerField
 from typing import Any
 
-def ensure_performance_form_initialized(perf_form):
+def ensure_performance_form_initialized(perf_form, carry_over=True):
     """
     Ensures that a GroupPerformanceForm has its required entries (A, B, E)
-    initialized with carry-over values from the previous month.
+    initialized. When carry_over is enabled, values are seeded from the
+    previous month.
     """
     from django.db.models import Q
     from finance.models import MonthlyForm, PerformanceEntry, GroupPerformanceForm
 
     mform = perf_form.monthly_form
 
-    # 1. Find previous month's form (handling year transitions and gaps)
-    prev_mform = MonthlyForm.objects.filter(
-        group=perf_form.monthly_form.group
-    ).filter(
-        Q(year__lt=perf_form.monthly_form.year) |
-        Q(year=perf_form.monthly_form.year, month__lt=perf_form.monthly_form.month)
-    ).order_by('-year', '-month').first()
-
     banking_bf = Decimal('0')
     debt_bf = Decimal('0')
     carry_over_balances = {}
 
     prev_perf = None
-    if prev_mform:
-        prev_perf = GroupPerformanceForm.objects.filter(monthly_form=prev_mform).first()
+    if carry_over:
+        # 1. Find previous month's form (handling year transitions and gaps)
+        prev_mform = MonthlyForm.objects.filter(
+            group=perf_form.monthly_form.group
+        ).filter(
+            Q(year__lt=perf_form.monthly_form.year) |
+            Q(year=perf_form.monthly_form.year, month__lt=perf_form.monthly_form.month)
+        ).order_by('-year', '-month').first()
 
-    if prev_perf:
-        # 1. Collect unpaid advances from Section A
-        for entry in PerformanceEntry.objects.filter(performance_form=prev_perf, section='A', is_paid=False):
-            increase = entry.amount
-            carry_over_balances[entry.description] = carry_over_balances.get(entry.description, Decimal('0')) + increase
+        if prev_mform:
+            prev_perf = GroupPerformanceForm.objects.filter(monthly_form=prev_mform).first()
 
-        # 2. Collect advances given in Section B (tertiary_amount)
-        for entry in PerformanceEntry.objects.filter(performance_form=prev_perf, section='B'):
-            if entry.tertiary_amount > 0:
-                increase = (entry.tertiary_amount * Decimal('1.1')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        if prev_perf:
+            # 1. Collect unpaid advances from Section A
+            for entry in PerformanceEntry.objects.filter(performance_form=prev_perf, section='A', is_paid=False):
+                increase = entry.amount
                 carry_over_balances[entry.description] = carry_over_balances.get(entry.description, Decimal('0')) + increase
 
-        # 3. Collect Section E Banking and Debt C/F (Source for new month)
-        b_cf_entry = PerformanceEntry.objects.filter(
-            performance_form=prev_perf,
-            section='E',
-            description='Total Banking'
-        ).first()
-        if b_cf_entry: banking_bf = b_cf_entry.amount
-        d_cf_entry = PerformanceEntry.objects.filter(
-            performance_form=prev_perf,
-            section='E',
-            description='Total Debt'
-        ).first()
-        if d_cf_entry: debt_bf = d_cf_entry.amount
+            # 2. Collect advances given in Section B (tertiary_amount)
+            for entry in PerformanceEntry.objects.filter(performance_form=prev_perf, section='B'):
+                if entry.tertiary_amount > 0:
+                    increase = (entry.tertiary_amount * Decimal('1.1')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                    carry_over_balances[entry.description] = carry_over_balances.get(entry.description, Decimal('0')) + increase
+
+            # 3. Collect Section E Banking and Debt C/F (Source for new month)
+            b_cf_entry = PerformanceEntry.objects.filter(
+                performance_form=prev_perf,
+                section='E',
+                description='Total Banking'
+            ).first()
+            if b_cf_entry: banking_bf = b_cf_entry.amount
+            d_cf_entry = PerformanceEntry.objects.filter(
+                performance_form=prev_perf,
+                section='E',
+                description='Total Debt'
+            ).first()
+            if d_cf_entry: debt_bf = d_cf_entry.amount
 
     # 2. Initialize A & B if empty
     has_a_b = perf_form.entries.filter(section__in=['A', 'B']).exists()
