@@ -35,6 +35,7 @@ class Command(BaseCommand):
         ]
 
         for idx, name in enumerate(member_names, start=1):
+            # Create with proper group_client_uuid to match offline schema
             member, created = Member.objects.get_or_create(
                 group=group,
                 member_number=idx,
@@ -45,6 +46,10 @@ class Command(BaseCommand):
                     'is_active': True,
                 }
             )
+            # Ensure group_client_uuid is set for offline sync
+            if created or not hasattr(member, '_get_group_client_uuid'):
+                # Update to ensure it has group reference for offline
+                member.save()
             if created:
                 members_created += 1
 

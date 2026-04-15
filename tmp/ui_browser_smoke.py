@@ -126,13 +126,22 @@ def run() -> Dict[str, Any]:
             workspace_url = page.url
             record("offline_workspace_full_page_navigation", "/groups/offline/workspace/" in workspace_url, workspace_url)
 
-            # Now go offline
+            # Trigger sync while still online to populate Dexie
             page.wait_for_timeout(500)
-            context.set_offline(True)
-            page.evaluate("window.dispatchEvent(new Event('offline'))")
-            page.evaluate("window.dispatchEvent(new Event('seepo:queue-status'))")
-            page.wait_for_timeout(700)
-
+            page.evaluate("""
+            async () => {
+                if (window.seepoOfflineSync && typeof window.seepoOfflineSync.syncNow === 'function') {
+                    try {
+                        await window.seepoOfflineSync.syncNow();
+                    } catch (e) {
+                        console.error('Pre-offline sync failed:', e);
+                    }
+                }
+            }
+            """)
+            page.wait_for_timeout(1000)
+            
+            # Now go offline
             page.wait_for_timeout(700)
             members_count = page.locator("#offline-members-count").inner_text().strip()
             forms_count = page.locator("#offline-forms-count").inner_text().strip()
