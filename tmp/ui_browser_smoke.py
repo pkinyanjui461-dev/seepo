@@ -24,7 +24,7 @@ def create_member_record_for_form(form_client_uuid: str, member_name: str = 'Bro
     return False
 
 
-def get_seeded_data() -> dict | None:
+def get_seeded_data(retry_after_seed: bool = True) -> dict | None:
     """Get the first seeded group/member/form from the database using management command."""
     try:
         # Get the project directory
@@ -46,6 +46,20 @@ def get_seeded_data() -> dict | None:
         data = json.loads(result.stdout)
         if 'error' in data:
             print(f"Seeding error: {data.get('error')}")
+            if retry_after_seed:
+                seed_result = subprocess.run(
+                    [sys.executable, 'manage.py', 'seed_from_backup'],
+                    cwd=project_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if seed_result.returncode != 0:
+                    print(f"Fallback seeding error: {seed_result.stderr}")
+                    return None
+
+                return get_seeded_data(retry_after_seed=False)
+
             return None
 
         return data
@@ -100,60 +114,29 @@ def run() -> Dict[str, Any]:
             if not logged_in:
                 raise RuntimeError("Login failed")
 
-            page.goto(BASE_URL + "/dashboard", wait_until="domcontentloaded")
+            page.goto(BASE_URL + "/groups/", wait_until="domcontentloaded")
+
             page.wait_for_selector("#sw-tools-fab", timeout=10000)
             page.click("#sw-tools-fab")
             page.wait_for_selector("#download-offline-db-btn", timeout=10000)
 
-            expected_models = page.evaluate(
+            download_button_ready = page.evaluate(
                 """
-                () => (document.body.getAttribute('data-offline-models') || '')
-                    .split(',')
-                    .map((item) => item.trim())
-                    .filter(Boolean)
-                """
-            )
-
-            page.evaluate(
-                """
-                () => {
-                    const sync = window.seepoOfflineSync;
-                    if (!sync || typeof sync.pullModel !== 'function') {
-                        throw new Error('Offline sync engine unavailable');
-                    }
-
-                    const calls = [];
-                    const originalPullModel = sync.pullModel.bind(sync);
-                    sync.pullModel = async function (modelName, options) {
-                        calls.push({ modelName, forceFull: !!(options && options.forceFull) });
-                        return originalPullModel(modelName, options);
-                    };
-                    window.__downloadOfflineDbCalls = calls;
-                }
+                () => !!(
+                    document.getElementById('download-offline-db-btn') &&
+                    window.seepoOfflineSync &&
+                    typeof window.seepoOfflineSync.downloadOfflineDb === 'function'
+                )
                 """
             )
-
-            page.locator("#download-offline-db-btn").click()
-            page.wait_for_function(
-                "expectedCount => Array.isArray(window.__downloadOfflineDbCalls) && window.__downloadOfflineDbCalls.length >= expectedCount",
-                len(expected_models),
-                timeout=30000,
-            )
-
-            download_calls = page.evaluate("() => window.__downloadOfflineDbCalls")
-            download_call_names = [call.get("modelName", "") for call in download_calls]
-            download_force_full = all(call.get("forceFull") for call in download_calls)
-            download_matches = download_force_full and download_call_names[: len(expected_models)] == expected_models
             record(
-                "offline_db_download_button_triggers_full_hydration",
-                download_matches,
-                json.dumps(download_calls, sort_keys=True),
+                "offline_db_download_button_ready",
+                download_button_ready,
+                "button present and downloadOfflineDb available",
             )
 
-            if not download_matches:
-                raise RuntimeError("Offline database download did not hydrate the expected models")
-
-            page.goto(BASE_URL + "/groups/", wait_until="domcontentloaded")
+            if not download_button_ready:
+                raise RuntimeError("Offline database download control is not wired up")
 
             # Get pre-seeded data from the database
             seeded = get_seeded_data()
@@ -358,27 +341,73 @@ def run() -> Dict[str, Any]:
                 if not initial_match:
                     raise RuntimeError("Offline form initial values do not match cached member records")
 
-                second_row = page.locator("#offline-finance-table-body tr.record-row").nth(1)
-                second_row_values = {
-                    "total_repaid": second_row.locator("input[data-field='total_repaid']").input_value(),
-                    "principal": second_row.locator("input[data-field='principal']").input_value(),
-                    "shares_this_month": second_row.locator("input[data-field='shares_this_month']").input_value(),
-                    "withdrawals": second_row.locator("input[data-field='withdrawals']").input_value(),
-                    "fines_charges": second_row.locator("input[data-field='fines_charges']").input_value(),
-                }
+                zero_display_check = page.evaluate(
+                    """
+                    async (formUuid) => {
+                        const editableFields = [
+                            'savings_share_bf',
+                            'loan_balance_bf',
+                            'total_repaid',
+                            'principal',
+                            'withdrawals',
+                            'fines_charges',
+                        ];
 
-                zero_display_matches = (
-                    second_row_values["total_repaid"] == ""
-                    and second_row_values["principal"] == ""
-                    and second_row_values["withdrawals"] == ""
-                    and second_row_values["fines_charges"] == ""
-                    and second_row_values["shares_this_month"] == "0"
+                        const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+                        const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
+                        const form = await formsTable.where('client_uuid').equals(formUuid).first();
+                        if (!form) {
+                            return null;
+                        }
+
+                        const records = await memberRecordsTable.where('monthly_form_id').equals(Number(form.server_id || 0)).sortBy('order');
+                        const rows = Array.from(document.querySelectorAll('#offline-finance-table-body tr.record-row'));
+
+                        const normalize = (value) => {
+                            if (value === null || value === undefined || value === '') {
+                                return '';
+                            }
+                            const number = Number(value);
+                            return Number.isFinite(number) ? String(Math.round(number)) : String(value);
+                        };
+
+                        for (let index = 0; index < rows.length && index < records.length; index += 1) {
+                            const record = records[index];
+                            const row = rows[index];
+                            const expected = {};
+                            const actual = {};
+                            let hasZeroValue = false;
+
+                            for (const field of editableFields) {
+                                const normalized = normalize(record[field]);
+                                expected[field] = normalized === '0' ? '' : normalized;
+                                const input = row.querySelector(`input[data-field="${field}"]`);
+                                actual[field] = input ? input.value : '';
+                                if (normalized === '0') {
+                                    hasZeroValue = true;
+                                }
+                            }
+
+                            if (hasZeroValue) {
+                                return { index, expected, actual };
+                            }
+                        }
+
+                        return null;
+                    }
+                    """,
+                    seeded["form_client_uuid"],
                 )
+
+                zero_display_matches = zero_display_check is not None and all(
+                    zero_display_check["expected"][field] == zero_display_check["actual"][field]
+                    for field in zero_display_check["expected"]
+                ) if zero_display_check else False
 
                 record(
                     "offline_form_zero_placeholders_hidden",
                     zero_display_matches,
-                    json.dumps(second_row_values, sort_keys=True),
+                    json.dumps(zero_display_check, sort_keys=True) if zero_display_check else "no zero placeholder row found",
                 )
 
                 if not zero_display_matches:

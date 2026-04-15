@@ -1325,12 +1325,12 @@
     refreshFromStorage();
     if (navigator.onLine) {
       syncQueuedSheets();
-      
+
       // Auto-hydrate if this is the first visit online - pull data to cache for offline use
       if (!state.members.length && !state.hydrationAttempted && navigator.onLine) {
         state.hydrationAttempted = true;
         showToast('Syncing group data to cache for offline use...', false);
-        
+
         if (window.seepoOfflineSync && typeof window.seepoOfflineSync.pullModel === 'function') {
           // Trigger background data pull for this context
           (async function () {

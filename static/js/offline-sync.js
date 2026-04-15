@@ -24,6 +24,8 @@
     constructor() {
       this.isSyncing = false;
       this.isDownloading = false;
+      this.downloadSizeBytes = 0;
+      this.autoDownloadAttempted = false;
       this.lastSyncError = null;
       this.lastSyncErrors = [];
       this.statusTimer = null;
@@ -205,6 +207,10 @@
       if (navigator.onLine) {
         await this.syncNow();
         await this.preloadReadData();
+        // Auto-download on first load if offline DB is mostly empty
+        setTimeout(async () => {
+          await this.autoDownloadIfNeeded();
+        }, 1000);
       }
     }
 
@@ -238,6 +244,61 @@
       }
     }
 
+    formatFileSize(bytes) {
+      if (!Number.isFinite(bytes) || bytes < 0) {
+        return '0 B';
+      }
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let size = bytes;
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+      }
+      return (unitIndex === 0 ? Math.round(size) : size.toFixed(1)) + ' ' + units[unitIndex];
+    }
+
+    async countOfflineDbSize() {
+      if (!window.seepoOfflineDb || !window.seepoOfflineDb.db) {
+        return 0;
+      }
+
+      let totalSize = 0;
+      try {
+        const tables = ['group', 'member', 'monthly_form', 'member_record', 'expense'];
+        for (const tableName of tables) {
+          const table = window.seepoOfflineDb.tableForModel(tableName);
+          if (!table) continue;
+          const records = await table.toArray();
+          for (const record of records) {
+            totalSize += JSON.stringify(record).length;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate offline db size:', error);
+      }
+      return totalSize;
+    }
+
+    async autoDownloadIfNeeded() {
+      if (this.autoDownloadAttempted || !navigator.onLine || !window.seepoOfflineDb) {
+        return;
+      }
+
+      this.autoDownloadAttempted = true;
+
+      try {
+        const currentSize = await this.countOfflineDbSize();
+        // Auto-download if offline DB is under 100 KB (probably empty or mostly empty)
+        if (currentSize < 102400) {
+          console.info('Auto-downloading offline database...');
+          await this.downloadOfflineDb();
+        }
+      } catch (error) {
+        console.warn('Auto-download check failed:', error);
+      }
+    }
+
     async downloadOfflineDb() {
       if (!navigator.onLine) {
         return {
@@ -264,11 +325,13 @@
       }
 
       this.isDownloading = true;
+      this.downloadSizeBytes = 0;
       this.showToast('Downloading offline database to this device...');
       this.setBadge('syncing', 'Downloading...');
 
       const errors = [];
       const modelOrder = Array.isArray(this.modelOrder) ? this.modelOrder.slice() : [];
+      const startTime = Date.now();
 
       try {
         for (const modelName of modelOrder) {
@@ -286,10 +349,14 @@
           }
         }
 
+        // Calculate final size
+        this.downloadSizeBytes = await this.countOfflineDbSize();
+
         const metaTable = window.seepoOfflineDb.db.table('sync_meta');
         await metaTable.put({
           model: '_last_full_download',
           last_pull_ts: Math.floor(Date.now() / 1000),
+          size_bytes: this.downloadSizeBytes,
         });
       } finally {
         this.isDownloading = false;
@@ -297,18 +364,22 @@
 
       await this.refreshStatus();
 
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      const sizeText = this.formatFileSize(this.downloadSizeBytes);
       const result = {
         success: errors.length === 0,
         errors,
         modelOrder,
+        sizeBytes: this.downloadSizeBytes,
+        elapsedMs: Date.now() - startTime,
       };
 
       if (result.success) {
         this.resetNetworkBackoff();
-        this.showToast('Offline database downloaded to this device.');
+        this.showToast('✓ Offline database downloaded: ' + sizeText + ' in ' + elapsedSec.toFixed(1) + 's');
         this.flashFabState('success', 10000);
       } else {
-        this.showToast('Offline database download completed with warnings.');
+        this.showToast('⚠ Download completed with warnings. Downloaded: ' + sizeText);
         this.flashFabState('error', 10000);
       }
 
@@ -317,6 +388,8 @@
           success: result.success,
           errors: result.errors.slice(),
           modelOrder: result.modelOrder.slice(),
+          sizeBytes: result.sizeBytes,
+          elapsedMs: result.elapsedMs,
           ts: Date.now(),
         },
       }));
