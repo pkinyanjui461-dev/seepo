@@ -248,6 +248,18 @@
             text-align: center;
         }
 
+        .download-offline-db-btn {
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #0f766e 0%, #0ea5e9 100%);
+            text-align: center;
+        }
+
         .delete-pending-syncs-btn {
             border: none;
             border-radius: 10px;
@@ -267,6 +279,11 @@
         }
 
         .sync-now-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .download-offline-db-btn:disabled {
             opacity: 0.7;
             cursor: wait;
         }
@@ -684,6 +701,7 @@
         <span class="sw-tools-label">Queued by model</span>
         <div id="sync-queue-chip" class="sync-queue-chip sync-queue-chip-empty">No queued records</div>
     </div>
+    <button id="download-offline-db-btn" class="download-offline-db-btn" type="button"><i class="fas fa-download me-2"></i>Download Offline DB</button>
     <button id="sync-now-btn" class="sync-now-btn" type="button"><i class="fas fa-rotate me-2"></i>Sync Now</button>
     <button id="delete-pending-syncs-btn" class="delete-pending-syncs-btn" type="button"><i class="fas fa-trash-can me-2"></i>Delete Pending Syncs</button>
     {% if user.role == 'ict' or user.role == 'admin' or user.is_superuser %}
@@ -726,18 +744,19 @@
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script src="{% static 'js/dev-log-tools.js' %}?v=3"></script>
 <script src="{% static 'js/offline-db.js' %}?v=5"></script>
-<script src="{% static 'js/offline-sync.js' %}?v=9"></script>
+<script src="{% static 'js/offline-sync.js' %}?v=10"></script>
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}?v=4"></script>
-<script src="{% static 'js/sw-register.js' %}?v=37"></script>
+<script src="{% static 'js/sw-register.js' %}?v=38"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
         const panel = document.getElementById('sw-tools-panel');
         const closeBtn = document.getElementById('sw-tools-close');
+        const downloadOfflineDbBtn = document.getElementById('download-offline-db-btn');
         const syncNowBtn = document.getElementById('sync-now-btn');
         const deletePendingBtn = document.getElementById('delete-pending-syncs-btn');
         const deletePendingModalEl = document.getElementById('delete-pending-modal');
@@ -1084,6 +1103,33 @@
                 }
             });
         }
+
+            if (downloadOfflineDbBtn) {
+                downloadOfflineDbBtn.addEventListener('click', async function () {
+                    if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.downloadOfflineDb !== 'function') {
+                        return;
+                    }
+
+                    if (!navigator.onLine) {
+                        showToast('Connect to the internet to download the offline database.');
+                        return;
+                    }
+
+                    downloadOfflineDbBtn.disabled = true;
+                    const originalText = downloadOfflineDbBtn.innerHTML;
+                    downloadOfflineDbBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Downloading...';
+
+                    try {
+                        await window.seepoOfflineSync.downloadOfflineDb();
+                    } catch (error) {
+                        const detail = error && error.message ? error.message : 'Unknown error.';
+                        showToast('Offline database download failed: ' + detail);
+                    } finally {
+                        downloadOfflineDbBtn.disabled = false;
+                        downloadOfflineDbBtn.innerHTML = originalText;
+                    }
+                });
+            }
 
         if (deletePendingBtn) {
             deletePendingBtn.addEventListener('click', async function () {

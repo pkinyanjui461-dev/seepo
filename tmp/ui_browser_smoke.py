@@ -100,6 +100,59 @@ def run() -> Dict[str, Any]:
             if not logged_in:
                 raise RuntimeError("Login failed")
 
+            page.goto(BASE_URL + "/dashboard", wait_until="domcontentloaded")
+            page.wait_for_selector("#sw-tools-fab", timeout=10000)
+            page.click("#sw-tools-fab")
+            page.wait_for_selector("#download-offline-db-btn", timeout=10000)
+
+            expected_models = page.evaluate(
+                """
+                () => (document.body.getAttribute('data-offline-models') || '')
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter(Boolean)
+                """
+            )
+
+            page.evaluate(
+                """
+                () => {
+                    const sync = window.seepoOfflineSync;
+                    if (!sync || typeof sync.pullModel !== 'function') {
+                        throw new Error('Offline sync engine unavailable');
+                    }
+
+                    const calls = [];
+                    const originalPullModel = sync.pullModel.bind(sync);
+                    sync.pullModel = async function (modelName, options) {
+                        calls.push({ modelName, forceFull: !!(options && options.forceFull) });
+                        return originalPullModel(modelName, options);
+                    };
+                    window.__downloadOfflineDbCalls = calls;
+                }
+                """
+            )
+
+            page.locator("#download-offline-db-btn").click()
+            page.wait_for_function(
+                "expectedCount => Array.isArray(window.__downloadOfflineDbCalls) && window.__downloadOfflineDbCalls.length >= expectedCount",
+                len(expected_models),
+                timeout=30000,
+            )
+
+            download_calls = page.evaluate("() => window.__downloadOfflineDbCalls")
+            download_call_names = [call.get("modelName", "") for call in download_calls]
+            download_force_full = all(call.get("forceFull") for call in download_calls)
+            download_matches = download_force_full and download_call_names[: len(expected_models)] == expected_models
+            record(
+                "offline_db_download_button_triggers_full_hydration",
+                download_matches,
+                json.dumps(download_calls, sort_keys=True),
+            )
+
+            if not download_matches:
+                raise RuntimeError("Offline database download did not hydrate the expected models")
+
             page.goto(BASE_URL + "/groups/", wait_until="domcontentloaded")
 
             # Get pre-seeded data from the database

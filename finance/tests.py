@@ -62,6 +62,7 @@ class MonthlyFormListOfflineUiTests(TestCase):
 
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'id="offlineFinanceTable"')
+		self.assertContains(response, 'id="download-offline-db-btn"')
 		self.assertContains(response, 'offline-monthly-form-detail.js')
 
 	def test_monthly_form_detail_orders_rows_by_member_number_then_name(self):

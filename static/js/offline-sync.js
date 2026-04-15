@@ -23,6 +23,7 @@
   class SeepoOfflineSync {
     constructor() {
       this.isSyncing = false;
+      this.isDownloading = false;
       this.lastSyncError = null;
       this.lastSyncErrors = [];
       this.statusTimer = null;
@@ -237,6 +238,92 @@
       }
     }
 
+    async downloadOfflineDb() {
+      if (!navigator.onLine) {
+        return {
+          success: false,
+          errors: [
+            {
+              context: 'network',
+              message: 'Cannot download the offline database while offline.',
+            },
+          ],
+        };
+      }
+
+      if (this.isSyncing || this.isDownloading) {
+        return {
+          success: false,
+          errors: [
+            {
+              context: 'sync',
+              message: 'A sync or download is already running.',
+            },
+          ],
+        };
+      }
+
+      this.isDownloading = true;
+      this.showToast('Downloading offline database to this device...');
+      this.setBadge('syncing', 'Downloading...');
+
+      const errors = [];
+      const modelOrder = Array.isArray(this.modelOrder) ? this.modelOrder.slice() : [];
+
+      try {
+        for (const modelName of modelOrder) {
+          try {
+            await this.pullModel(modelName, { forceFull: true });
+          } catch (error) {
+            const normalized = this.normalizeError(error, modelName);
+            errors.push(normalized);
+            if (this.isTransientNetworkError(error)) {
+              this.registerNetworkFailure();
+              break;
+            }
+
+            console.error('Offline database download failed for model', modelName, error);
+          }
+        }
+
+        const metaTable = window.seepoOfflineDb.db.table('sync_meta');
+        await metaTable.put({
+          model: '_last_full_download',
+          last_pull_ts: Math.floor(Date.now() / 1000),
+        });
+      } finally {
+        this.isDownloading = false;
+      }
+
+      await this.refreshStatus();
+
+      const result = {
+        success: errors.length === 0,
+        errors,
+        modelOrder,
+      };
+
+      if (result.success) {
+        this.resetNetworkBackoff();
+        this.showToast('Offline database downloaded to this device.');
+        this.flashFabState('success', 10000);
+      } else {
+        this.showToast('Offline database download completed with warnings.');
+        this.flashFabState('error', 10000);
+      }
+
+      window.dispatchEvent(new CustomEvent('seepo:offline-db-downloaded', {
+        detail: {
+          success: result.success,
+          errors: result.errors.slice(),
+          modelOrder: result.modelOrder.slice(),
+          ts: Date.now(),
+        },
+      }));
+
+      return result;
+    }
+
     getCsrfToken() {
       const cookieName = 'csrftoken=';
       const cookies = document.cookie ? document.cookie.split(';') : [];
@@ -349,6 +436,11 @@
       }
 
       this.showOfflineBanner(false);
+
+      if (this.isDownloading) {
+        this.setBadge('syncing', 'Downloading...');
+        return;
+      }
 
       if (this.isSyncing) {
         this.setBadge('syncing', 'Syncing...');
