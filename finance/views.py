@@ -371,7 +371,7 @@ def performance_form_view(request, mform_pk):
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
 
     from finance.utils import ensure_performance_form_initialized
-    banking_bf, debt_bf = ensure_performance_form_initialized(perf_form, carry_over=perf_form.entries.exists())
+    banking_bf, debt_bf = ensure_performance_form_initialized(perf_form)
 
     # For existing forms, these will be the default fallback for the template
     initial_banking_bf = banking_bf
@@ -660,7 +660,7 @@ def monthly_form_pdf(request, pk):
     from finance.models import GroupPerformanceForm
     from finance.utils import ensure_performance_form_initialized
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
-    ensure_performance_form_initialized(perf_form, carry_over=perf_form.entries.exists())
+    ensure_performance_form_initialized(perf_form)
 
     records, totals = _get_monthly_form_data(mform)
     padding = range(max(0, 15 - records.count()))
@@ -692,7 +692,7 @@ def performance_form_pdf(request, pk):
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
 
     from finance.utils import ensure_performance_form_initialized
-    ensure_performance_form_initialized(perf_form, carry_over=perf_form.entries.exists())
+    ensure_performance_form_initialized(perf_form)
 
     records, totals = _get_monthly_form_data(mform)
 
@@ -766,7 +766,7 @@ def combined_monthly_report_pdf(request, pk):
     perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=mform)
 
     from finance.utils import ensure_performance_form_initialized
-    ensure_performance_form_initialized(perf_form, carry_over=perf_form.entries.exists())
+    ensure_performance_form_initialized(perf_form)
 
     records, totals = _get_monthly_form_data(mform)
 
