@@ -104,7 +104,7 @@
 
     const isOffline = !navigator.onLine;
     const messageHtml = isOffline
-      ? '<i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>No cached members found for this group on this device.'
+      ? '<i class="fas fa-folder-open fs-3 mb-3 d-block opacity-50"></i>Connect once online so this group can cache its members on this device.'
       : '<i class="fas fa-spinner fa-spin fs-3 mb-3 d-block text-primary opacity-75"></i>Members are syncing to this device. Stay online while the cache refreshes.';
 
     if (emptyMessage) {

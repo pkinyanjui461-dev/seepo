@@ -30,19 +30,30 @@
     banner.className = 'seepo-offline-banner';
     banner.innerHTML = `
       <div class="seepo-offline-banner-content">
-        <div class="seepo-offline-banner-copy">
-          <span class="seepo-offline-banner-message">📡 You're working offline. Data is saved locally and will sync when you're back online.</span>
-        </div>
+        <span class="seepo-offline-banner-message">📡 You're working offline. Data is saved locally and will sync when you're back online.</span>
         <button type="button" class="seepo-banner-close" aria-label="Close">&times;</button>
       </div>
-      <hr class="seepo-offline-banner-divider">
     `;
     banner.style.display = 'none';
+    banner.setAttribute('role', 'button');
+    banner.setAttribute('aria-label', 'Offline status banner. Click to expand.');
 
     document.body.insertBefore(banner, document.body.firstChild);
 
     banner.querySelector('.seepo-banner-close').addEventListener('click', () => {
       showOfflineBanner(false);
+    });
+
+    banner.addEventListener('click', (event) => {
+      if (!banner.classList.contains('seepo-offline-banner-compact')) {
+        return;
+      }
+
+      if (event.target && event.target.closest && event.target.closest('.seepo-banner-close')) {
+        return;
+      }
+
+      showOfflineBanner(true);
     });
 
     syncBannerLayout();

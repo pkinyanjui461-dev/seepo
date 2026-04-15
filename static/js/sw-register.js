@@ -1,5 +1,5 @@
 (function () {
-  const SW_ASSET_VERSION = '36';
+  const SW_ASSET_VERSION = '37';
   const SW_SCRIPT_URL = '/sw.js?v=' + SW_ASSET_VERSION;
   const SW_FORCE_UPDATE_INTERVAL_MS = 90 * 1000;
   const SW_UPDATE_WARN_THROTTLE_MS = 120 * 1000;
@@ -351,6 +351,10 @@
   async function forceServiceWorkerUpdate(registration) {
     if (!registration) {
       return null;
+    }
+
+    if (!navigator.onLine) {
+      return registration;
     }
 
     let activeRegistration = registration;
