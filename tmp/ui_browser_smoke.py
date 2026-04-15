@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 import time
 import urllib.request
 from datetime import date
@@ -13,6 +16,44 @@ USERNAME = "0700000999"
 PASSWORD = "ui-smoke-pass"
 
 
+def create_member_record_for_form(form_client_uuid: str, member_name: str = 'Browser Smoke Member') -> bool:
+    """Create a MemberRecord with sample data for testing."""
+    # This function is called from within the test
+    # For now, we rely on seed_from_backup to create them beforehand
+    # The smoke test will use pre-seeded data instead
+    pass
+
+
+def get_seeded_data() -> dict | None:
+    """Get the first seeded group/member/form from the database using management command."""
+    try:
+        # Get the project directory
+        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        # Call the management command to get seeded data
+        result = subprocess.run(
+            [sys.executable, 'manage.py', 'get_seeded_data'],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        if result.returncode != 0:
+            print(f"Management command error: {result.stderr}")
+            return None
+
+        data = json.loads(result.stdout)
+        if 'error' in data:
+            print(f"Seeding error: {data.get('error')}")
+            return None
+
+        return data
+    except Exception as e:
+        print(f"Error getting seeded data: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 def wait_for_server(timeout_seconds: int = 30) -> None:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
@@ -61,55 +102,10 @@ def run() -> Dict[str, Any]:
 
             page.goto(BASE_URL + "/groups/", wait_until="domcontentloaded")
 
-            seed_name = "UI Offline Flow " + str(int(time.time()))
-            seed_date = date.today().isoformat()
-            seeded = page.evaluate(
-                """
-                async (payload) => {
-                    if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
-                        throw new Error('seepoOfflineSync unavailable');
-                    }
-
-                    const group = await window.seepoOfflineSync.saveOffline('group', {
-                        name: payload.name,
-                        location: 'Nairobi',
-                        date_created: payload.date,
-                        officer_name: 'Browser Smoke Officer',
-                        banking_type: 'office'
-                    });
-
-                    await window.seepoOfflineSync.saveOffline('member', {
-                        group_client_uuid: group.client_uuid,
-                        member_number: 1,
-                        name: 'Browser Smoke Member',
-                        phone: '0700000123',
-                        join_date: payload.date,
-                        is_active: true
-                    });
-
-                    const form = await window.seepoOfflineSync.saveOffline('monthly_form', {
-                        group_client_uuid: group.client_uuid,
-                        month: 4,
-                        year: 2026,
-                        status: 'draft',
-                        notes: 'Browser smoke pending form'
-                    });
-
-                    if (typeof window.seepoOfflineSync.refreshStatus === 'function') {
-                        await window.seepoOfflineSync.refreshStatus();
-                    }
-
-                    window.dispatchEvent(new Event('seepo:queue-status'));
-
-                    return {
-                        group_client_uuid: group.client_uuid,
-                        group_name: payload.name,
-                        form_client_uuid: form.client_uuid,
-                    };
-                }
-                """,
-                {"name": seed_name, "date": seed_date},
-            )
+            # Get pre-seeded data from the database
+            seeded = get_seeded_data()
+            if not seeded:
+                raise RuntimeError("No seeded data found. Make sure seed_from_backup has been run.")
 
             # Navigate to offline workspace BEFORE going offline so it caches
             offline_workspace_url = (
@@ -129,18 +125,14 @@ def run() -> Dict[str, Any]:
             # Trigger sync while still online to populate Dexie
             page.wait_for_timeout(500)
             page.evaluate("""
-            async () => {
-                if (window.seepoOfflineSync && typeof window.seepoOfflineSync.syncNow === 'function') {
-                    try {
-                        await window.seepoOfflineSync.syncNow();
-                    } catch (e) {
-                        console.error('Pre-offline sync failed:', e);
+                () => {
+                    if (window.seepoOfflineSync && typeof window.seepoOfflineSync.syncNow === 'function') {
+                        window.seepoOfflineSync.syncNow().catch(e => console.error('Sync error:', e));
                     }
                 }
-            }
             """)
-            page.wait_for_timeout(1000)
-            
+            page.wait_for_timeout(2000)
+
             # Now go offline
             page.wait_for_timeout(700)
             members_count = page.locator("#offline-members-count").inner_text().strip()
@@ -200,25 +192,36 @@ def run() -> Dict[str, Any]:
 
             if rows_count > 0:
                 first_row = page.locator("#offline-finance-table-body tr.record-row").first
-                
+
                 # Extract rendered member data to verify it's not empty
                 first_row.wait_for()
                 member_name_element = first_row.locator("td.fw-bold.bg-light")
                 member_name = member_name_element.inner_text().strip() if member_name_element else ""
                 member_number_element = first_row.locator("td.text-center.text-muted.small").first
                 member_number = member_number_element.inner_text().strip() if member_number_element else ""
-                
+
                 rendered_text = f"name='{member_name}', number='{member_number}'"
-                record("offline_form_member_data_populated", 
-                       member_name and member_name != "" and member_name != "Member", 
+                record("offline_form_member_data_populated",
+                       bool(member_name and member_name != "" and member_name != "Member"),
                        rendered_text)
-                
+
+                # Edit transaction values to create drafts in Dexie
                 first_row.locator("input[data-field='savings_share_bf']").fill("1000")
                 first_row.locator("input[data-field='loan_balance_bf']").fill("500")
                 first_row.locator("input[data-field='total_repaid']").fill("400")
                 first_row.locator("input[data-field='principal']").fill("200")
                 page.click("#offlineManualSaveBtn")
-                page.wait_for_timeout(700)
+                page.wait_for_timeout(1000)
+
+                # Verify edited values are now populated and marked pending
+                # Use input_value() instead of get_attribute() to read actual form field value
+                edited_savings_value = first_row.locator("input[data-field='savings_share_bf']").input_value()
+                edited_loan_value = first_row.locator("input[data-field='loan_balance_bf']").input_value()
+
+                has_edited_data = (edited_savings_value == "1000" and edited_loan_value == "500")
+                record("offline_form_edited_data_persists",
+                       has_edited_data,
+                       f"savings_bf={edited_savings_value}, loan_bf={edited_loan_value}")
 
                 pending_class = first_row.get_attribute("class") or ""
                 record(

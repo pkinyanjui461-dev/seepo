@@ -4,7 +4,7 @@ from datetime import date
 
 from groups.models import Group
 from members.models import Member
-from finance.models import MonthlyForm
+from finance.models import MonthlyForm, MemberRecord
 
 class Command(BaseCommand):
     help = 'Seed database with realistic test data (like backup data)'
@@ -57,6 +57,7 @@ class Command(BaseCommand):
 
         # Create monthly forms for this group
         forms_created = 0
+        forms = []
         for month in [1, 2, 3]:
             form, created = MonthlyForm.objects.get_or_create(
                 group=group,
@@ -67,8 +68,37 @@ class Command(BaseCommand):
                     'notes': f'Monthly form for {month}/2026',
                 }
             )
+            forms.append(form)
             if created:
                 forms_created += 1
 
         self.stdout.write(self.style.SUCCESS(f'  Monthly forms created: {forms_created}'))
+
+        # Create MemberRecords for each form × member combination with sample data
+        records_created = 0
+        all_members = Member.objects.filter(group=group)
+        for form in forms:
+            for idx, member in enumerate(all_members, start=1):
+                record, created = MemberRecord.objects.get_or_create(
+                    monthly_form=form,
+                    member=member,
+                    defaults={
+                        'order': idx,
+                        'savings_share_bf': 5000 if idx % 2 == 0 else 3000,
+                        'loan_balance_bf': 10000 if idx % 3 == 0 else 8000,
+                        'total_repaid': 2000 if idx % 2 == 0 else 1500,
+                        'principal': 1000,
+                        'shares_this_month': 500 if idx % 2 == 0 else 300,
+                        'withdrawals': 200 if idx % 4 == 0 else 0,
+                        'fines_charges': 50 if idx % 5 == 0 else 0,
+                    }
+                )
+                if created:
+                    # Calculate derived fields
+                    record.calculate()
+                    record.validate()
+                    record.save()
+                    records_created += 1
+
+        self.stdout.write(self.style.SUCCESS(f'  Member records created: {records_created}'))
         self.stdout.write(self.style.SUCCESS('Seeding complete!'))
