@@ -570,7 +570,7 @@
       return false;
     }
 
-    const models = ['group', 'member', 'monthly_form'];
+    const models = ['group', 'member', 'monthly_form', 'member_record'];
     let pulledAny = false;
 
     for (const modelName of models) {
