@@ -392,6 +392,8 @@ def performance_form_view(request, mform_pk):
 
 @login_required
 @require_POST
+@login_required
+@require_POST
 def monthly_form_delete(request, pk):
     from django.urls import reverse
     mform = get_object_or_404(MonthlyForm, pk=pk)
