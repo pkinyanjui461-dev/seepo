@@ -9,6 +9,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 import pypdf
 from decimal import Decimal
+from django.db.models import Case, When, Value, IntegerField
 
 def ensure_performance_form_initialized(perf_form):
     """
@@ -17,14 +18,14 @@ def ensure_performance_form_initialized(perf_form):
     """
     from django.db.models import Q
     from finance.models import MonthlyForm, PerformanceEntry
-    
+
     mform = perf_form.monthly_form
-    
+
     # 1. Find previous month's form (handling year transitions and gaps)
     prev_mform = MonthlyForm.objects.filter(
         group=perf_form.monthly_form.group
     ).filter(
-        Q(year__lt=perf_form.monthly_form.year) | 
+        Q(year__lt=perf_form.monthly_form.year) |
         Q(year=perf_form.monthly_form.year, month__lt=perf_form.monthly_form.month)
     ).order_by('-year', '-month').first()
 
@@ -38,7 +39,7 @@ def ensure_performance_form_initialized(perf_form):
         for entry in prev_perf.entries.filter(section='A', is_paid=False):
             increase = entry.amount
             carry_over_balances[entry.description] = carry_over_balances.get(entry.description, Decimal('0')) + increase
-        
+
         # 2. Collect advances given in Section B (tertiary_amount)
         for entry in prev_perf.entries.filter(section='B'):
             if entry.tertiary_amount > 0:
