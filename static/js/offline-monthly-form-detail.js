@@ -801,7 +801,7 @@
     try {
       const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
       const monthlyFormsTable = window.seepoOfflineDb.tableForModel('monthly_form');
-      
+
       if (!memberRecordsTable || !monthlyFormsTable) {
         return {};
       }
@@ -810,21 +810,21 @@
       const allForms = await monthlyFormsTable.toArray();
       const currentMonth = Number(context.month || 0);
       const currentYear = Number(context.year || 0);
-      
+
       let previousForm = null;
       allForms.forEach(function (form) {
         const formMonth = Number(form.month || 0);
         const formYear = Number(form.year || 0);
         const groupUuid = String(form.group_client_uuid || '').trim();
-        
+
         if (groupUuid === state.groupClientUuid) {
           // Check if this is the previous month
-          const isPrevious = (formYear < currentYear) || 
+          const isPrevious = (formYear < currentYear) ||
                             (formYear === currentYear && formMonth < currentMonth);
-          
+
           if (isPrevious) {
-            if (!previousForm || 
-                formYear > previousForm.year || 
+            if (!previousForm ||
+                formYear > previousForm.year ||
                 (formYear === previousForm.year && formMonth > previousForm.month)) {
               previousForm = form;
             }
@@ -839,7 +839,7 @@
       // Load member records from previous month
       const allRecords = await memberRecordsTable.toArray();
       const previousFormId = Number(previousForm.server_id || 0);
-      
+
       if (!previousFormId || previousFormId <= 0) {
         return {};
       }
@@ -886,7 +886,7 @@
     // Load member records if not already loaded
     if (!Object.keys(state.memberRecords).length) {
       state.memberRecords = await getMemberRecordsForCurrentForm();
-      
+
       // If no current form records, load carry-over from previous month
       if (!Object.keys(state.memberRecords).length) {
         state.memberRecords = await getCarryoverRecordsFromPreviousMonth();
