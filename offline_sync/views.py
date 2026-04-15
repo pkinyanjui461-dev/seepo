@@ -175,6 +175,17 @@ def sync_push(request):
                     instance.set_password(raw_password)
                 instance.save()
 
+            # Auto-initialize performance form with carry-over when a MonthlyForm is synced
+            if model_name == 'monthly_form':
+                from finance.models import GroupPerformanceForm
+                from finance.utils import ensure_performance_form_initialized
+                try:
+                    perf_form, _ = GroupPerformanceForm.objects.get_or_create(monthly_form=instance)
+                    ensure_performance_form_initialized(perf_form)
+                except Exception as perf_error:
+                    # Don't fail the entire sync if performance form init fails
+                    pass
+
             synced += 1
             records_saved.append({'client_uuid': client_uuid, 'server_id': instance.pk})
         except Exception as exc:
