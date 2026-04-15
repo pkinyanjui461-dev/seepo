@@ -552,6 +552,24 @@
     return lines.join('\n');
   }
 
+  async function exportTableDataAsJson() {
+    const tableSnapshot = getFinanceTableSnapshot();
+    if (!tableSnapshot) {
+      return JSON.stringify({
+        error: 'No table found on this page',
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+      }, null, 2);
+    }
+
+    return JSON.stringify({
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      online: navigator.onLine,
+      table: tableSnapshot,
+    }, null, 2);
+  }
+
   async function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
@@ -583,11 +601,22 @@
     button.textContent = 'Copying...';
 
     try {
-      const report = await buildReport();
+      // Check if we're on a monthly form page with a table
+      const hasTable = document.getElementById('financeTable') || document.getElementById('offlineFinanceTable');
+
+      let report;
+      if (hasTable) {
+        // Export table data as pure JSON for monthly forms
+        report = await exportTableDataAsJson();
+      } else {
+        // Export dev logs as text for other pages
+        report = await buildReport();
+      }
+
       const copied = await copyToClipboard(report);
 
       if (copied) {
-        showToast('Developer logs copied to clipboard.');
+        showToast('Data copied to clipboard.');
       } else {
         showToast('Copy failed. Inspect window.seepoDevLogs.buildReport().');
       }
