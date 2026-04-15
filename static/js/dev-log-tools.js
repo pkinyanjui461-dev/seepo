@@ -103,6 +103,124 @@
     });
   }
 
+  const OFFLINE_DB_SAMPLE_FIELDS = {
+    group: [
+      'client_uuid',
+      'server_id',
+      'name',
+      'location',
+      'date_created',
+      'banking_type',
+      'synced',
+      'client_updated_at',
+    ],
+    member: [
+      'client_uuid',
+      'server_id',
+      'group_client_uuid',
+      'group_id',
+      'member_number',
+      'name',
+      'phone',
+      'is_active',
+      'synced',
+      'client_updated_at',
+    ],
+    monthly_form: [
+      'client_uuid',
+      'server_id',
+      'group_client_uuid',
+      'group_id',
+      'month',
+      'year',
+      'status',
+      'notes',
+      'synced',
+      'client_updated_at',
+    ],
+    expense: [
+      'client_uuid',
+      'server_id',
+      'date',
+      'name',
+      'amount',
+      'synced',
+      'client_updated_at',
+    ],
+    user: [
+      'client_uuid',
+      'server_id',
+      'username',
+      'phone_number',
+      'role',
+      'synced',
+      'client_updated_at',
+    ],
+  };
+
+  function getOfflineDbSampleFields(modelName) {
+    return OFFLINE_DB_SAMPLE_FIELDS[modelName] || [
+      'client_uuid',
+      'server_id',
+      'synced',
+      'client_updated_at',
+    ];
+  }
+
+  async function getOfflineDbSnapshot() {
+    if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.tableForModel !== 'function') {
+      return null;
+    }
+
+    const modelNames = Object.keys(window.seepoOfflineDb.modelTableMap || {});
+    const models = {};
+
+    for (const modelName of modelNames) {
+      const table = window.seepoOfflineDb.tableForModel(modelName);
+      const [totalCount, pendingCount] = await Promise.all([
+        table.count(),
+        table.where('synced').equals(0).count(),
+      ]);
+
+      const sampleRecords = await table
+        .orderBy('client_updated_at')
+        .reverse()
+        .limit(3)
+        .toArray()
+        .catch(function () {
+          return [];
+        });
+
+      models[modelName] = {
+        total: totalCount,
+        pending: pendingCount,
+        synced: Math.max(0, totalCount - pendingCount),
+        sample: sampleRecords.map(function (record) {
+          return pickFields(record, getOfflineDbSampleFields(modelName));
+        }),
+      };
+    }
+
+    const syncMetaTable = window.seepoOfflineDb.db && typeof window.seepoOfflineDb.db.table === 'function'
+      ? window.seepoOfflineDb.db.table('sync_meta')
+      : null;
+
+    const syncMeta = syncMetaTable
+      ? await syncMetaTable.toArray().catch(function () {
+          return [];
+        })
+      : [];
+
+    return {
+      databaseName: window.seepoOfflineDb.db && window.seepoOfflineDb.db.name ? window.seepoOfflineDb.db.name : 'unknown',
+      modelNames: modelNames,
+      models: models,
+      syncMeta: syncMeta.map(function (record) {
+        return pickFields(record, ['model', 'last_pull_ts']);
+      }),
+    };
+  }
+
   async function getOfflineSheetSnapshot() {
     if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.tableForModel !== 'function') {
       return null;
@@ -306,6 +424,7 @@
   async function buildReport() {
     const sw = await getServiceWorkerDiagnostics();
     const hostBadge = document.getElementById('offline-host-ready-badge');
+    const offlineDbSnapshot = await getOfflineDbSnapshot();
     const offlineSheetSnapshot = await getOfflineSheetSnapshot();
     const lines = [];
 
@@ -325,6 +444,9 @@
     lines.push('shellCacheCount=' + String(sw.shellCount));
     lines.push('runtimeCacheCount=' + String(sw.runtimeCount));
     lines.push('cacheKeys=' + (sw.cacheKeys.length ? sw.cacheKeys.join(', ') : 'none'));
+    if (offlineDbSnapshot) {
+      lines.push('offlineDbSnapshot=' + JSON.stringify(offlineDbSnapshot));
+    }
     if (offlineSheetSnapshot) {
       lines.push('offlineSheetSnapshot=' + JSON.stringify(offlineSheetSnapshot));
     }
