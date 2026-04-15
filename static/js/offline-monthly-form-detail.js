@@ -492,28 +492,49 @@
     const allMembers = await membersTable.toArray();
 
     const formGroupUuid = normalizeText(state.form && state.form.group_client_uuid);
-    const targetGroupUuid = normalizeText(state.groupClientUuid || formGroupUuid);
-    const targetServerGroupId = Math.max(
-      Number((state.group && state.group.server_id) || 0),
-      Number((state.form && state.form.group_id) || 0)
-    );
-
     let filtered = [];
 
-    if (targetGroupUuid) {
-      filtered = allMembers.filter(function (item) {
-        return normalizeText(item.group_client_uuid) === targetGroupUuid;
+    const candidateGroupUuids = [];
+    [state.groupClientUuid, formGroupUuid, normalizeText(state.group && state.group.client_uuid)].forEach(function (candidate) {
+      const key = normalizeText(candidate);
+      if (key && candidateGroupUuids.indexOf(key) === -1) {
+        candidateGroupUuids.push(key);
+      }
+    });
+
+    for (let i = 0; i < candidateGroupUuids.length; i += 1) {
+      const candidateGroupUuid = candidateGroupUuids[i];
+      const matches = allMembers.filter(function (item) {
+        return normalizeText(item.group_client_uuid) === candidateGroupUuid;
       });
 
-      if (!state.groupClientUuid) {
-        state.groupClientUuid = targetGroupUuid;
+      if (matches.length) {
+        filtered = matches;
+        state.groupClientUuid = candidateGroupUuid;
+        break;
       }
     }
 
-    if (!filtered.length && targetServerGroupId > 0) {
-      filtered = allMembers.filter(function (item) {
-        return Number(item.group_id || 0) === targetServerGroupId;
-      });
+    const candidateGroupIds = [];
+    [state.group && state.group.server_id, state.form && state.form.group_id].forEach(function (candidate) {
+      const key = Number(candidate || 0);
+      if (Number.isFinite(key) && key > 0 && candidateGroupIds.indexOf(key) === -1) {
+        candidateGroupIds.push(key);
+      }
+    });
+
+    if (!filtered.length) {
+      for (let i = 0; i < candidateGroupIds.length; i += 1) {
+        const candidateGroupId = candidateGroupIds[i];
+        const matches = allMembers.filter(function (item) {
+          return Number(item.group_id || 0) === candidateGroupId;
+        });
+
+        if (matches.length) {
+          filtered = matches;
+          break;
+        }
+      }
     }
 
     filtered = filtered.filter(function (item) {
