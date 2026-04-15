@@ -944,6 +944,15 @@
     bindRowInputs();
   }
 
+  async function handleSyncComplete() {
+    if (state.members.length > 0) {
+      return;
+    }
+
+    state.hydrationAttempted = false;
+    await refreshFromStorage();
+  }
+
   function bindRowInputs() {
     tableBody.querySelectorAll('tr.record-row .calc-input').forEach(function (input) {
       if (input.readOnly) {
@@ -1088,6 +1097,12 @@
 
   window.addEventListener('seepo:offline', function () {
     handleConnectivityChange();
+  });
+
+  window.addEventListener('seepo:sync-complete', function () {
+    handleSyncComplete().catch(function (error) {
+      console.error('Offline sheet refresh after sync failed', error);
+    });
   });
 
   window.addEventListener('seepo:queue-status', function () {

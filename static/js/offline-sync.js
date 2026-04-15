@@ -500,6 +500,15 @@
         errors: this.lastSyncErrors.slice(),
       };
 
+      window.dispatchEvent(new CustomEvent('seepo:sync-complete', {
+        detail: {
+          success: result.success,
+          errors: result.errors.slice(),
+          modelOrder: this.modelOrder.slice(),
+          ts: Date.now(),
+        },
+      }));
+
       if (result.success) {
         this.resetNetworkBackoff();
         this.flashFabState('success', 10000);
