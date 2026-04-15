@@ -425,6 +425,86 @@
     };
   }
 
+  function getFinanceTableSnapshot() {
+    // Capture monthly form table data for debugging
+    const onlineTable = document.getElementById('financeTable');
+    const offlineTable = document.getElementById('offlineFinanceTable');
+    const table = onlineTable || offlineTable;
+
+    if (!table) {
+      return null;
+    }
+
+    const rows = [];
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+      return null;
+    }
+
+    // Extract header
+    const thead = table.querySelector('thead tr');
+    const headers = [];
+    if (thead) {
+      thead.querySelectorAll('th').forEach(function (th) {
+        headers.push(th.textContent.trim());
+      });
+    }
+
+    // Extract data rows
+    tbody.querySelectorAll('tr.record-row').forEach(function (tr, index) {
+      const rowData = {
+        row_number: index + 1,
+        member_name: '',
+        member_number: '',
+        savings_share_bf: '',
+        loan_balance_bf: '',
+        total_repaid: '',
+        principal: '',
+        loan_interest: '',
+        shares_this_month: '',
+        withdrawals: '',
+        fines_charges: '',
+        savings_share_cf: '',
+        loan_balance_cf: '',
+      };
+
+      // Extract member name from sticky column
+      const nameCell = tr.querySelector('td.fw-bold.bg-light');
+      if (nameCell) {
+        rowData.member_name = nameCell.textContent.trim();
+      }
+
+      // Extract member number from first cell
+      const numCell = tr.querySelector('td.text-center.text-muted.small');
+      if (numCell) {
+        rowData.member_number = numCell.textContent.trim();
+      }
+
+      // Extract input values
+      const fields = [
+        'savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal',
+        'loan_interest', 'shares_this_month', 'withdrawals', 'fines_charges',
+        'savings_share_cf', 'loan_balance_cf'
+      ];
+
+      fields.forEach(function (field) {
+        const input = tr.querySelector('input[data-field="' + field + '"]');
+        if (input && input.value) {
+          rowData[field] = input.value;
+        }
+      });
+
+      rows.push(rowData);
+    });
+
+    return {
+      table_type: onlineTable ? 'online' : 'offline',
+      headers: headers,
+      row_count: rows.length,
+      rows: rows,
+    };
+  }
+
   async function buildReport() {
     const sw = await getServiceWorkerDiagnostics();
     const hostBadge = document.getElementById('offline-host-ready-badge');
@@ -453,6 +533,10 @@
     }
     if (offlineSheetSnapshot) {
       lines.push('offlineSheetSnapshot=' + JSON.stringify(offlineSheetSnapshot));
+    }
+    const tableSnapshot = getFinanceTableSnapshot();
+    if (tableSnapshot) {
+      lines.push('financeTableSnapshot=' + JSON.stringify(tableSnapshot));
     }
     lines.push('');
     lines.push('Recent Logs:');
