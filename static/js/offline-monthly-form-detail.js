@@ -636,7 +636,7 @@
 
       const allRecords = await memberRecordsTable.toArray();
       const formId = Number(state.form.server_id || 0);
-      
+
       if (!formId || formId <= 0) {
         return {};
       }
@@ -675,7 +675,7 @@
     }
 
     const draftMap = getDraftMapForCurrentForm();
-    
+
     // Load member records if not already loaded
     if (!Object.keys(state.memberRecords).length) {
       state.memberRecords = await getMemberRecordsForCurrentForm();
