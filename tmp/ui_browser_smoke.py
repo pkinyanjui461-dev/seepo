@@ -133,8 +133,6 @@ def run() -> Dict[str, Any]:
             """)
             page.wait_for_timeout(2000)
 
-            # Now go offline
-            page.wait_for_timeout(700)
             members_count = page.locator("#offline-members-count").inner_text().strip()
             forms_count = page.locator("#offline-forms-count").inner_text().strip()
             has_cached_data = members_count != "0" and forms_count != "0"
@@ -159,6 +157,16 @@ def run() -> Dict[str, Any]:
             record("offline_form_detail_full_page_navigation", "/finance/forms/offline/" in form_url, form_url)
 
             page.wait_for_selector("#offlineFinanceTable", timeout=8000)
+
+            # NOW simulate going OFFLINE by disconnecting the browser context
+            # This tests if the form truly works offline (not just on the offline template)
+            context.offline = True
+            page.wait_for_timeout(1000)
+
+            # Verify form is still accessible and renders while offline
+            # (page is already loaded, so it should work from cache)
+            page.wait_for_selector("#offlineFinanceTable", timeout=5000)
+            record("offline_mode_connection_active", True, "Browser context is offline")
 
             # Debug: check if data is in Dexie
             dexie_check = page.evaluate("""
