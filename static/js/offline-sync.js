@@ -510,13 +510,23 @@
       }
     }
 
-    async pullModel(modelName) {
+    async pullModel(modelName, options) {
+      const pullOptions = {
+        forceFull: false,
+        ...(options || {}),
+      };
+
       const metaTable = window.seepoOfflineDb.db.table('sync_meta');
       const table = window.seepoOfflineDb.tableForModel(modelName);
       const meta = (await metaTable.get(modelName)) || { model: modelName, last_pull_ts: 0 };
+      const syncedCount = await table.where('synced').equals(1).count();
+
+      const sinceTs = pullOptions.forceFull
+        ? 0
+        : (syncedCount > 0 ? Number(meta.last_pull_ts || 0) : 0);
 
       const response = await fetch(
-        '/api/sync/pull/?model=' + encodeURIComponent(modelName) + '&since=' + encodeURIComponent(meta.last_pull_ts || 0),
+        '/api/sync/pull/?model=' + encodeURIComponent(modelName) + '&since=' + encodeURIComponent(sinceTs),
         {
           method: 'GET',
           credentials: 'same-origin'

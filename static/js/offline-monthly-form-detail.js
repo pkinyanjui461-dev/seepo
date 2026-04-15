@@ -41,6 +41,7 @@
     group: null,
     form: null,
     members: [],
+    hydrationAttempted: false,
     autoSaveTimer: null,
     isSaving: false,
   };
@@ -495,6 +496,26 @@
     return filtered;
   }
 
+  async function hydrateCacheForCurrentContext() {
+    if (!navigator.onLine || !window.seepoOfflineSync || typeof window.seepoOfflineSync.pullModel !== 'function') {
+      return false;
+    }
+
+    const models = ['group', 'member', 'monthly_form'];
+    let pulledAny = false;
+
+    for (const modelName of models) {
+      try {
+        await window.seepoOfflineSync.pullModel(modelName, { forceFull: true });
+        pulledAny = true;
+      } catch (error) {
+        console.error('Context cache hydrate failed for model', modelName, error);
+      }
+    }
+
+    return pulledAny;
+  }
+
   function getDraftMapForCurrentForm() {
     const entry = getQueueEntry(state.formClientUuid);
     const map = {};
@@ -848,6 +869,16 @@
     await resolveFormRecord();
     await resolveMembers();
 
+    if (!state.members.length && !state.hydrationAttempted && navigator.onLine) {
+      state.hydrationAttempted = true;
+      const hydrated = await hydrateCacheForCurrentContext();
+      if (hydrated) {
+        await resolveGroupRecord();
+        await resolveFormRecord();
+        await resolveMembers();
+      }
+    }
+
     if (!state.groupClientUuid && state.group && state.group.client_uuid) {
       state.groupClientUuid = normalizeText(state.group.client_uuid);
     }
@@ -946,6 +977,7 @@
         await syncQueuedSheets();
       }
 
+      state.hydrationAttempted = false;
       await refreshFromStorage();
     } finally {
       if (syncNowButton) {

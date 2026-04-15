@@ -1,7 +1,7 @@
 {% load static %}
 const CACHE_VERSION = 'v34';
 const CSS_ASSET_VERSION = '11';
-const OFFLINE_SYNC_ASSET_VERSION = '5';
+const OFFLINE_SYNC_ASSET_VERSION = '6';
 const OFFLINE_DB_ASSET_VERSION = '4';
 const SW_REGISTER_ASSET_VERSION = '34';
 const DEXIE_ASSET_VERSION = '1';
@@ -62,7 +62,7 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-form-auto-persist.js" %}',
   '{% static "js/offline-global-state.js" %}?v=' + OFFLINE_GLOBAL_STATE_VERSION,
   '{% static "js/offline-global-state.js" %}',
-  '{% static "js/offline-monthly-form-detail.js" %}?v=2',
+  '{% static "js/offline-monthly-form-detail.js" %}?v=3',
   '{% static "js/offline-monthly-form-detail.js" %}',
   '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',
