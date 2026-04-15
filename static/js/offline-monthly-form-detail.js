@@ -792,6 +792,80 @@
     }
   }
 
+  async function getCarryoverRecordsFromPreviousMonth() {
+    // Load MemberRecord data from previous month for carry-over initialization
+    if (!window.seepoOfflineDb || !state.form || !state.groupClientUuid) {
+      return {};
+    }
+
+    try {
+      const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
+      const monthlyFormsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+      
+      if (!memberRecordsTable || !monthlyFormsTable) {
+        return {};
+      }
+
+      // Find previous month's form
+      const allForms = await monthlyFormsTable.toArray();
+      const currentMonth = Number(context.month || 0);
+      const currentYear = Number(context.year || 0);
+      
+      let previousForm = null;
+      allForms.forEach(function (form) {
+        const formMonth = Number(form.month || 0);
+        const formYear = Number(form.year || 0);
+        const groupUuid = String(form.group_client_uuid || '').trim();
+        
+        if (groupUuid === state.groupClientUuid) {
+          // Check if this is the previous month
+          const isPrevious = (formYear < currentYear) || 
+                            (formYear === currentYear && formMonth < currentMonth);
+          
+          if (isPrevious) {
+            if (!previousForm || 
+                formYear > previousForm.year || 
+                (formYear === previousForm.year && formMonth > previousForm.month)) {
+              previousForm = form;
+            }
+          }
+        }
+      });
+
+      if (!previousForm) {
+        return {};
+      }
+
+      // Load member records from previous month
+      const allRecords = await memberRecordsTable.toArray();
+      const previousFormId = Number(previousForm.server_id || 0);
+      
+      if (!previousFormId || previousFormId <= 0) {
+        return {};
+      }
+
+      const map = {};
+      allRecords.forEach(function (record) {
+        const recordFormId = Number(record.monthly_form_id || 0);
+        if (recordFormId === previousFormId) {
+          const memberId = Number(record.member_id || 0);
+          if (memberId > 0) {
+            // Use C/F (closing balance) as B/F (opening balance) for next month
+            map['member_id:' + memberId] = {
+              savings_share_bf: record.savings_share_cf,
+              loan_balance_bf: record.loan_balance_cf,
+            };
+          }
+        }
+      });
+
+      return map;
+    } catch (error) {
+      console.error('Failed to load carry-over records:', error);
+      return {};
+    }
+  }
+
   async function renderRows() {
     tableBody.querySelectorAll('tr[data-offline-row="true"]').forEach(function (row) {
       row.remove();
@@ -812,6 +886,11 @@
     // Load member records if not already loaded
     if (!Object.keys(state.memberRecords).length) {
       state.memberRecords = await getMemberRecordsForCurrentForm();
+      
+      // If no current form records, load carry-over from previous month
+      if (!Object.keys(state.memberRecords).length) {
+        state.memberRecords = await getCarryoverRecordsFromPreviousMonth();
+      }
     }
 
     const rowsHtml = state.members.map(function (member) {
