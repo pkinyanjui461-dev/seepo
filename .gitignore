@@ -30,7 +30,7 @@ venv.bak/
 .idea/
 *.swp
 *.swo
-
+sk/
 full_sync.cmd
 # Scripts & Local Tools
 menu.cmd
@@ -42,3 +42,7 @@ menu.conf
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local backups
+bak/
+db_backups/

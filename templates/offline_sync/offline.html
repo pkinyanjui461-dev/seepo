@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEEPO Offline</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 50%, #e0f2fe 100%);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #111827;
+            padding: 16px;
+        }
+
+        .offline-card {
+            width: 100%;
+            max-width: 760px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .offline-header {
+            padding: 20px 24px;
+            background: linear-gradient(120deg, #1f2937 0%, #334155 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .offline-header img {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #fff;
+            padding: 4px;
+        }
+
+        .offline-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .offline-subtitle {
+            margin: 4px 0 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .offline-body {
+            padding: 24px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            background: #f9fafb;
+        }
+
+        .summary-item .label {
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .summary-item .value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+            background: #ffffff;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 0.95rem;
+        }
+
+        .panel ul {
+            margin: 0;
+            padding-left: 18px;
+            max-height: 180px;
+            overflow: auto;
+            color: #334155;
+            font-size: 0.85rem;
+        }
+
+        .offline-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #111827;
+        }
+    </style>
+</head>
+<body>
+    <main class="offline-card">
+        <header class="offline-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <img src="{% static 'img/logo.png' %}" alt="SEEPO logo">
+                <div>
+                    <h1 class="offline-title">You are offline, but SEEPO is still available</h1>
+                    <p class="offline-subtitle">Recent data and queued updates are available locally and will sync automatically on reconnect.</p>
+                </div>
+            </div>
+        </header>
+
+        <section class="offline-body">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="label">Pending Sync</span>
+                    <span class="value" id="pending-count">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Cached Groups</span>
+                    <span class="value" id="groups-count">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Cached Members</span>
+                    <span class="value" id="members-count">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Cached Forms</span>
+                    <span class="value" id="forms-count">0</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Recent Cached Groups</h3>
+                <ul id="groups-list">
+                    <li>No cached groups yet.</li>
+                </ul>
+            </div>
+
+            <div class="offline-actions">
+                <button class="btn btn-primary" id="retry-button" type="button">Retry Connection</button>
+                <a class="btn btn-secondary" href="/">Back to Dashboard</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            function openDb() {
+                return new Promise(function (resolve, reject) {
+                    var request = indexedDB.open('seepoOfflineDb', 1);
+                    request.onerror = function () { reject(request.error); };
+                    request.onsuccess = function () { resolve(request.result); };
+                });
+            }
+
+            function getAll(store, indexName, value) {
+                return new Promise(function (resolve, reject) {
+                    var tx = store.transaction;
+                    var req;
+                    if (indexName) {
+                        req = store.index(indexName).getAll(value);
+                    } else {
+                        req = store.getAll();
+                    }
+                    req.onsuccess = function () { resolve(req.result || []); };
+                    req.onerror = function () { reject(req.error); };
+                    tx.onerror = function () { reject(tx.error); };
+                });
+            }
+
+            function text(id, value) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.textContent = String(value);
+                }
+            }
+
+            function setGroupsList(groups) {
+                var list = document.getElementById('groups-list');
+                if (!list) {
+                    return;
+                }
+
+                list.innerHTML = '';
+                if (!groups.length) {
+                    list.innerHTML = '<li>No cached groups yet.</li>';
+                    return;
+                }
+
+                groups.slice(0, 12).forEach(function (group) {
+                    var li = document.createElement('li');
+                    li.textContent = (group.name || 'Unnamed group') + (group.location ? ' - ' + group.location : '');
+                    list.appendChild(li);
+                });
+            }
+
+            async function loadOfflineSnapshot() {
+                try {
+                    var db = await openDb();
+                    var groupsStore = db.transaction('groups', 'readonly').objectStore('groups');
+                    var membersStore = db.transaction('members', 'readonly').objectStore('members');
+                    var formsStore = db.transaction('monthly_forms', 'readonly').objectStore('monthly_forms');
+
+                    var pendingGroupsStore = db.transaction('groups', 'readonly').objectStore('groups');
+                    var pendingMembersStore = db.transaction('members', 'readonly').objectStore('members');
+                    var pendingFormsStore = db.transaction('monthly_forms', 'readonly').objectStore('monthly_forms');
+                    var pendingExpensesStore = db.transaction('expenses', 'readonly').objectStore('expenses');
+
+                    var groups = await getAll(groupsStore);
+                    var members = await getAll(membersStore);
+                    var forms = await getAll(formsStore);
+
+                    var pendingGroups = await getAll(pendingGroupsStore, 'synced', 0);
+                    var pendingMembers = await getAll(pendingMembersStore, 'synced', 0);
+                    var pendingForms = await getAll(pendingFormsStore, 'synced', 0);
+                    var pendingExpenses = await getAll(pendingExpensesStore, 'synced', 0);
+
+                    text('groups-count', groups.length);
+                    text('members-count', members.length);
+                    text('forms-count', forms.length);
+                    text('pending-count', pendingGroups.length + pendingMembers.length + pendingForms.length + pendingExpenses.length);
+
+                    groups.sort(function (a, b) {
+                        var t1 = Date.parse(a.client_updated_at || 0) || 0;
+                        var t2 = Date.parse(b.client_updated_at || 0) || 0;
+                        return t2 - t1;
+                    });
+                    setGroupsList(groups);
+                } catch (_error) {
+                    text('pending-count', '?');
+                    setGroupsList([]);
+                }
+            }
+
+            document.getElementById('retry-button')?.addEventListener('click', function () {
+                window.location.reload();
+            });
+
+            window.addEventListener('online', function () {
+                window.location.href = '/';
+            });
+
+            loadOfflineSnapshot();
+        })();
+    </script>
+</body>
+</html>

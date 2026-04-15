@@ -8,13 +8,13 @@
 <div class="row g-4 mb-4">
     <!-- Greeting Card (Left) -->
     <div class="col-lg-5">
-        <div class="card shadow-sm border-0 h-100" style="background-color: #E6E2FF; border-radius: var(--border-radius-lg);">
+        <div class="card shadow-sm border-0 h-100 dashboard-greeting-card" style="background-color: #E6E2FF; border-radius: var(--border-radius-lg);">
             <div class="card-body p-4 d-flex flex-column justify-content-center position-relative overflow-hidden">
-                <i class="fas fa-chart-pie position-absolute text-white" style="font-size: 15rem; right: -40px; top: -30px; opacity: 0.2; transform: rotate(-15deg);"></i>
-                <h3 class="fw-bold mb-2" style="color: var(--primary-color);">Hello {{ user.get_full_name|default:user.username }}!</h3>
-                <p class="text-muted mb-4" style="color: #6B6B8A !important;">Welcome back! Here's what's happening today.</p>
+                <i class="fas fa-chart-pie position-absolute text-white dashboard-greeting-watermark" style="font-size: 15rem; right: -40px; top: -30px; opacity: 0.2; transform: rotate(-15deg);"></i>
+                <h3 class="fw-bold mb-2 dashboard-greeting-title" style="color: var(--primary-color);">Hello {{ user.get_full_name|default:user.username }}!</h3>
+                <p class="mb-4 dashboard-greeting-subtitle">Welcome back! Here's what's happening today.</p>
                 <div>
-                   <button class="btn text-white px-4 py-2" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</button>
+                   <a href="{% url 'group_list' %}" class="btn text-white px-4 py-2 dashboard-greeting-cta" style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">Go to Groups</a>
                 </div>
             </div>
         </div>
@@ -86,6 +86,73 @@
 </div>
 
 <div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 dashboard-meetings-card" style="border-radius: var(--border-radius-lg);">
+            <div class="card-header bg-card border-bottom-0 pt-4 pb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="fw-bold mb-0" style="color: var(--text-main);">
+                    <i class="fas fa-calendar-check me-2"></i>Diary Meeting Timeline
+                </h5>
+                <div class="d-flex align-items-center gap-2 dashboard-meeting-filters">
+                    <span class="dashboard-meeting-pill">Upcoming / Ongoing / Success / Past</span>
+                    <div class="dropdown">
+                        <button id="meeting-filter-btn" class="btn btn-sm btn-outline-primary dashboard-meeting-filter-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Filter: All
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm dashboard-meeting-filter-menu">
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option active" data-meeting-filter="all">All</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="upcoming">Upcoming</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="ongoing">Ongoing</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="success">Success</button></li>
+                            <li><button type="button" class="dropdown-item dashboard-meeting-filter-option" data-meeting-filter="past">Past</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3" id="dashboard-meeting-sections">
+                    {% for section in meeting_sections %}
+                    <div class="col-md-6 col-xl-3 dashboard-meeting-section" data-meeting-section="{{ section.slug }}">
+                        <div class="dashboard-meeting-column h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="dashboard-meeting-title mb-0">{{ section.title }}</h6>
+                                <span class="dashboard-meeting-count">{{ section.count }}</span>
+                            </div>
+
+                            <div class="dashboard-meeting-list">
+                                {% for meeting in section.items %}
+                                <button type="button"
+                                        class="dashboard-meeting-item dashboard-meeting-item-button js-meeting-item"
+                                        data-meeting-status="{{ section.slug }}"
+                                        data-meeting-status-label="{{ section.status_label }}"
+                                        data-meeting-group="{{ meeting.group_name }}"
+                                        data-meeting-group-url="{{ meeting.group_url }}"
+                                        data-meeting-group-location="{{ meeting.group_location|default:'' }}"
+                                        data-meeting-venue="{{ meeting.venue|default:'' }}"
+                                        data-meeting-time="{{ meeting.meeting_time|default:'' }}"
+                                        data-meeting-date="{{ meeting.display_date }}"
+                                        data-meeting-weekday="{{ meeting.weekday|default:'' }}"
+                                        data-meeting-month="{{ meeting.month_name|default:'' }}"
+                                        data-meeting-day-raw="{{ meeting.raw_day_value|default:'' }}">
+                                    <div class="dashboard-meeting-meta text-start">
+                                        <div class="dashboard-meeting-group">{{ meeting.group_name }}</div>
+                                        <div class="dashboard-meeting-date">{{ meeting.display_date }}</div>
+                                    </div>
+                                    <span class="dashboard-status dashboard-status-{{ section.slug }}">{{ section.status_label }}</span>
+                                </button>
+                                {% empty %}
+                                <div class="dashboard-meeting-empty">{{ section.empty_label }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100" style="border-radius: var(--border-radius-lg);">
             <div class="card-body p-4">
@@ -114,13 +181,13 @@
 
 <div class="row">
     <div class="col-12">
-        <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg);">
+        <div class="card shadow-sm border-0 dashboard-recent-groups" style="border-radius: var(--border-radius-lg);">
             <div class="card-header bg-card border-bottom-0 pt-4 pb-0">
                 <h5 class="fw-bold" style="color: var(--text-main);">Recent Groups</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle dashboard-recent-groups-table">
                         <thead class="bg-app">
                             <tr>
                                 <th class="border-0">Name</th>
@@ -149,6 +216,57 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="meeting-detail-modal" tabindex="-1" aria-labelledby="meeting-detail-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meeting-detail-title">Meeting Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="dashboard-meeting-detail-grid">
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Status</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-status">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Group</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-group">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Venue</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-venue">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Group Location</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-group-location">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Date</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-date">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Day</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-weekday">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Time</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-time">-</span>
+                    </div>
+                    <div class="dashboard-meeting-detail-row">
+                        <span class="dashboard-meeting-detail-label">Diary Source</span>
+                        <span class="dashboard-meeting-detail-value" id="meeting-detail-diary-source">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="meeting-detail-group-link" class="btn btn-primary" href="#">Open Group</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -161,6 +279,11 @@
     const accentOrange = '#FFA412';
     const accentBlue = '#3F8CFF';
     const accentGreen = '#22C55E';
+    const isDarkTheme = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+    const legendTextColor = isDarkTheme ? '#dbe4fb' : '#4b5563';
+    const axisTickColor = isDarkTheme ? '#cbd5e1' : '#475569';
+    const axisGridColor = isDarkTheme ? 'rgba(148, 163, 184, 0.22)' : 'rgba(100, 116, 139, 0.2)';
+
     fetch("{% url 'api_dashboard_stats' %}")
         .then(response => response.json())
         .then(data => {
@@ -177,11 +300,18 @@
                         cutout: '70%'
                     }]
                 },
-                options: { 
+                options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                color: legendTextColor
+                            }
+                        }
                     }
                 }
             });
@@ -195,35 +325,147 @@
                     datasets: [{
                         label: 'Amount (Ksh)',
                         data: [
-                            data.service_fee, 
-                            data.passbook, 
-                            data.loan_form, 
-                            data.mpesa, 
+                            data.service_fee,
+                            data.passbook,
+                            data.loan_form,
+                            data.mpesa,
                             data.risk_fund
                         ],
                         backgroundColor: [
-                            accentPurple, 
-                            accentGreen, 
-                            accentBlue, 
-                            accentOrange, 
+                            accentPurple,
+                            accentGreen,
+                            accentBlue,
+                            accentOrange,
                             accentRed
                         ],
                         borderRadius: 6,
                     }]
                 },
-                options: { 
+                options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
-                        x: { grid: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: axisTickColor },
+                            grid: { borderDash: [5, 5], color: axisGridColor }
+                        },
+                        x: {
+                            ticks: { color: axisTickColor },
+                            grid: { display: false }
+                        }
                     }
                 }
             });
         })
         .catch(err => console.error("Error loading dashboard stats:", err));
+
+    (function () {
+        const filterBtn = document.getElementById('meeting-filter-btn');
+        const filterOptions = document.querySelectorAll('.dashboard-meeting-filter-option');
+        const meetingSections = document.querySelectorAll('.dashboard-meeting-section');
+        const meetingItems = document.querySelectorAll('.js-meeting-item');
+        const modalEl = document.getElementById('meeting-detail-modal');
+
+        const statusLabelMap = {
+            upcoming: 'Upcoming',
+            ongoing: 'Ongoing',
+            success: 'Success',
+            past: 'Past',
+            all: 'All',
+        };
+
+        const detailNodes = {
+            status: document.getElementById('meeting-detail-status'),
+            group: document.getElementById('meeting-detail-group'),
+            venue: document.getElementById('meeting-detail-venue'),
+            groupLocation: document.getElementById('meeting-detail-group-location'),
+            date: document.getElementById('meeting-detail-date'),
+            weekday: document.getElementById('meeting-detail-weekday'),
+            time: document.getElementById('meeting-detail-time'),
+            source: document.getElementById('meeting-detail-diary-source'),
+            groupLink: document.getElementById('meeting-detail-group-link'),
+        };
+
+        const detailsModal = (modalEl && window.bootstrap && window.bootstrap.Modal)
+            ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
+            : null;
+
+        function applyFilter(filterSlug) {
+            meetingSections.forEach(function (section) {
+                const shouldShow = filterSlug === 'all' || section.dataset.meetingSection === filterSlug;
+                section.classList.toggle('d-none', !shouldShow);
+                section.classList.toggle('dashboard-meeting-section-single', shouldShow && filterSlug !== 'all');
+            });
+
+            if (filterBtn) {
+                const label = statusLabelMap[filterSlug] || 'All';
+                filterBtn.textContent = 'Filter: ' + label;
+            }
+
+            filterOptions.forEach(function (option) {
+                option.classList.toggle('active', option.dataset.meetingFilter === filterSlug);
+            });
+        }
+
+        function setDetailText(node, value, fallback) {
+            if (!node) {
+                return;
+            }
+            const text = String(value || '').trim();
+            node.textContent = text || fallback;
+        }
+
+        filterOptions.forEach(function (option) {
+            option.addEventListener('click', function () {
+                const filterSlug = option.dataset.meetingFilter || 'all';
+                applyFilter(filterSlug);
+            });
+        });
+
+        meetingItems.forEach(function (item) {
+            item.addEventListener('click', function () {
+                const statusSlug = item.dataset.meetingStatus || '';
+                const statusLabel = item.dataset.meetingStatusLabel || statusLabelMap[statusSlug] || '-';
+                const sourceMonth = item.dataset.meetingMonth || '';
+                const sourceRawDay = item.dataset.meetingDayRaw || '';
+
+                setDetailText(detailNodes.status, statusLabel, '-');
+                setDetailText(detailNodes.group, item.dataset.meetingGroup, '-');
+                setDetailText(detailNodes.venue, item.dataset.meetingVenue, 'Not set');
+                setDetailText(detailNodes.groupLocation, item.dataset.meetingGroupLocation, 'Not set');
+                setDetailText(detailNodes.date, item.dataset.meetingDate, '-');
+                setDetailText(detailNodes.weekday, item.dataset.meetingWeekday, '-');
+                setDetailText(detailNodes.time, item.dataset.meetingTime, 'Not set');
+
+                const sourceText = sourceMonth || sourceRawDay
+                    ? (sourceMonth ? sourceMonth + ' ' : '') + (sourceRawDay ? '(' + sourceRawDay + ')' : '')
+                    : '-';
+                setDetailText(detailNodes.source, sourceText, '-');
+
+                if (detailNodes.groupLink) {
+                    const groupUrl = String(item.dataset.meetingGroupUrl || '').trim();
+                    if (groupUrl) {
+                        detailNodes.groupLink.href = groupUrl;
+                        detailNodes.groupLink.classList.remove('disabled');
+                        detailNodes.groupLink.removeAttribute('aria-disabled');
+                    } else {
+                        detailNodes.groupLink.href = '#';
+                        detailNodes.groupLink.classList.add('disabled');
+                        detailNodes.groupLink.setAttribute('aria-disabled', 'true');
+                    }
+                }
+
+                if (detailsModal) {
+                    detailsModal.show();
+                }
+            });
+        });
+
+        applyFilter('all');
+    })();
 </script>
 {% endblock %}

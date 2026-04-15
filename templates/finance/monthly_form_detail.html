@@ -55,24 +55,24 @@
                         {{ record.member.name }}
                     </td>
                     <td><input type="number" step="1" class="form-control calc-input" data-field="savings_share_bf" value="{% if record.savings_share_bf %}{{ record.savings_share_bf|floatformat:0 }}{% endif %}"></td>
-                    
+
                     <td class="tooltip-custom {% if not record.loan_valid %}cell-error{% endif %}" id="loan-bf-cell-{{ record.pk }}">
                         <input type="number" step="1" class="form-control calc-input" data-field="loan_balance_bf" value="{% if record.loan_balance_bf %}{{ record.loan_balance_bf|floatformat:0 }}{% endif %}">
                     </td>
-                    
+
                     <td><input type="number" step="1" class="form-control calc-input" data-field="total_repaid" value="{% if record.total_repaid %}{{ record.total_repaid|floatformat:0 }}{% endif %}"></td>
                     <td><input type="number" step="1" class="form-control calc-input" data-field="principal" value="{% if record.principal %}{{ record.principal|floatformat:0 }}{% endif %}"></td>
-                    
+
                     <td><input type="number" step="1" class="form-control calc-input text-primary fw-bold" data-field="loan_interest" value="{% if record.loan_interest %}{{ record.loan_interest|floatformat:0 }}{% endif %}" readonly tabindex="-1"></td>
-                    
+
                     <td class="{% if record.shares_this_month < 0 %}cell-negative{% endif %}"><input type="number" step="1" class="form-control calc-input fw-bold text-info" data-field="shares_this_month" value="{{ record.shares_this_month|floatformat:0 }}" readonly tabindex="-1"></td>
                     <td><input type="number" step="1" class="form-control calc-input text-danger" data-field="withdrawals" value="{% if record.withdrawals %}{{ record.withdrawals|floatformat:0 }}{% endif %}"></td>
                     <td><input type="number" step="1" class="form-control calc-input" data-field="fines_charges" value="{% if record.fines_charges %}{{ record.fines_charges|floatformat:0 }}{% endif %}"></td>
-                    
+
                     <td class="tooltip-custom {% if not record.savings_valid %}cell-error{% endif %} {% if record.savings_share_cf < 0 %}cell-negative{% endif %}" id="savings-cf-cell-{{ record.pk }}">
                         <input type="number" step="1" class="form-control calc-input fw-bold text-success" data-field="savings_share_cf" value="{{ record.savings_share_cf|floatformat:0 }}" readonly tabindex="-1">
                     </td>
-                    
+
                     <td class="{% if record.loan_balance_cf < 0 %}cell-negative{% endif %}"><input type="number" step="1" class="form-control calc-input fw-bold text-warning" data-field="loan_balance_cf" value="{{ record.loan_balance_cf|floatformat:0 }}" readonly tabindex="-1"></td>
                 </tr>
                 {% endfor %}
@@ -82,18 +82,18 @@
                     <td style="background: #e9ecef;"></td>
                     <td style="position: sticky; left: 0; background: #e9ecef; z-index: 5; border-right: 2px solid #ccc; padding-left: 10px;">TOTALS</td>
                     <td id="tot-savings-bf" class="text-end pe-2">{% if totals.savings_share_bf %}{{ totals.savings_share_bf|floatformat:0 }}{% endif %}</td>
-                    
+
                     <td id="tot-loan-bf" class="text-end pe-2 tooltip-custom {% if not totals_loan_valid %}cell-error text-danger{% endif %}">{% if totals.loan_balance_bf %}{{ totals.loan_balance_bf|floatformat:0 }}{% endif %}</td>
-                    
+
                     <td id="tot-repaid" class="text-end pe-2">{% if totals.total_repaid %}{{ totals.total_repaid|floatformat:0 }}{% endif %}</td>
                     <td id="tot-principal" class="text-end pe-2">{% if totals.principal %}{{ totals.principal|floatformat:0 }}{% endif %}</td>
                     <td id="tot-interest" class="text-end pe-2 text-primary">{% if totals.loan_interest %}{{ totals.loan_interest|floatformat:0 }}{% endif %}</td>
                     <td id="tot-shares" class="text-end pe-2">{% if totals.shares_this_month %}{{ totals.shares_this_month|floatformat:0 }}{% endif %}</td>
                     <td id="tot-withdrawals" class="text-end pe-2 text-danger">{% if totals.withdrawals %}{{ totals.withdrawals|floatformat:0 }}{% endif %}</td>
                     <td id="tot-fines" class="text-end pe-2">{% if totals.fines_charges %}{{ totals.fines_charges|floatformat:0 }}{% endif %}</td>
-                    
+
                     <td id="tot-savings-cf" class="text-end pe-2 text-success tooltip-custom {% if not totals_savings_valid %}cell-error text-danger{% endif %}">{% if totals.savings_share_cf %}{{ totals.savings_share_cf|floatformat:0 }}{% endif %}</td>
-                    
+
                     <td id="tot-loan-cf" class="text-end pe-2 text-warning">{% if totals.loan_balance_cf %}{{ totals.loan_balance_cf|floatformat:0 }}{% endif %}</td>
                 </tr>
             </tfoot>

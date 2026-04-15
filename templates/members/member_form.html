@@ -9,8 +9,16 @@
     <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body p-4">
-                <form method="POST">
+                    <form method="POST"
+                        data-offline-form="true"
+                        data-offline-model="member"
+                        data-group-client-uuid="{{ group.client_uuid }}"
+                        data-offline-redirect-url="{% url 'group_detail' group.pk %}"
+                            >
                     {% csrf_token %}
+                        {% if form.instance.pk %}
+                        <input type="hidden" name="client_uuid" value="{{ form.instance.client_uuid }}">
+                        {% endif %}
                     {% for field in form %}
                     <div class="mb-3">
                         <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>

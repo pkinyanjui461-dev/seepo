@@ -18,7 +18,12 @@
                 </div>
             </div>
             <div class="card-body p-4">
-                <form method="POST">
+                    <form method="POST"
+                        data-offline-draft-form="true"
+                        data-offline-draft-key="profile-update"
+                        data-offline-draft-label="draft"
+                        data-offline-draft-message="Offline: profile changes saved as draft and will sync when online."
+                        data-offline-redirect-url="{% url 'profile' %}">
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-3">

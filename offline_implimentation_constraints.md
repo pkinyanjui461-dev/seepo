@@ -1,0 +1,221 @@
+# Offline Implementation Constraints (SEEPO)
+
+This document defines mandatory constraints for modifying the offline-first implementation in this repository.
+
+## Scope
+
+These constraints apply to:
+- Service Worker behavior
+- IndexedDB schema and sync logic
+- Offline-enabled forms and templates
+- Sync API contracts
+- Static asset loading for offline shell
+
+## Core Rule
+
+The browser is the offline write/read buffer, Django is the source of truth.
+
+## Files That Form the Offline Core
+
+- `offline_sync/views.py`
+- `offline_sync/urls.py`
+- `offline_sync/registry.py`
+- `templates/offline_sync/sw.js`
+- `templates/offline_sync/offline.html`
+- `static/js/offline-db.js`
+- `static/js/offline-sync.js`
+- `static/js/offline-form-handler.js`
+- `static/js/offline-monthly-form-detail.js`
+- `static/js/sw-register.js`
+- `templates/base.html`
+
+Do not change behavior in one file without checking the others.
+
+## Data Model Contract (Mandatory)
+
+Every model enabled for offline sync must have:
+- `client_uuid` (UUID, unique, indexed)
+- `client_updated_at` (DateTime, indexed)
+- `updated_at` (server-side last update)
+
+If a model is missing these fields, do not add it to offline sync yet.
+
+Current sync-managed models include `member_record` for monthly form row data. It must keep the same sync metadata contract as the other models.
+
+## Sync API Contract (Do Not Break)
+
+`/api/sync/push/` request payload:
+- `model`: string
+- `records`: array of objects with `client_uuid`
+
+`/api/sync/push/` response payload must keep:
+- `synced`
+- `conflicts`
+- `errors`
+- `records_saved` with `client_uuid` and `server_id`
+
+`/api/sync/pull/` response payload must keep:
+- `records`
+- `count`
+- `ts`
+
+If you rename fields, update browser sync logic and tests in the same change.
+
+## IndexedDB Contract (Do Not Break)
+
+Database name: `seepoOfflineDb`
+
+Current object stores:
+- `groups`
+- `members`
+- `monthly_forms`
+- `member_records`
+- `expenses`
+- `sync_meta`
+
+Required record fields for sync-managed stores:
+- `client_uuid`
+- `client_updated_at`
+- `synced` (0 or 1)
+- `server_id` (set after successful push)
+
+For `member_records`, the offline renderer depends on the `monthly_form_id` + `member_id` join so cached row data can be matched back to the visible member rows.
+
+Do not delete or rename stores without Dexie migration code.
+
+## Service Worker Constraints
+
+- Keep `/api/sync/*` out of SW interception (must hit network when online).
+- Keep offline fallback route `/offline/` available.
+- Keep shell pre-cache list aligned with template static imports.
+- For navigation requests, use network-first with cached/fallback response.
+- Bump SW cache version when changing cache strategy.
+- Mandatory on any SW script change: bump all SW version markers in the same commit.
+	- `templates/offline_sync/sw.js`: `CACHE_VERSION`
+	- `templates/offline_sync/sw.js`: `SW_REGISTER_ASSET_VERSION`
+	- `static/js/sw-register.js`: `SW_ASSET_VERSION`
+	- `templates/base.html`: `sw-register.js?v=...` query version (if present)
+- If these are not bumped together, clients can stay on stale SW/caches after deploy.
+
+## Static Asset Constraints
+
+All assets referenced in templates must exist under `static/`.
+
+Current required shell assets:
+- `static/css/main.css`
+- `static/js/sidebar.js`
+- `static/js/offline-db.js`
+- `static/js/offline-sync.js`
+- `static/js/offline-form-handler.js`
+- `static/js/sw-register.js`
+- `static/img/logo.png`
+- `static/favicon.ico`
+
+If any are removed/renamed, update:
+- `templates/base.html`
+- `templates/accounts/login.html`
+- `templates/offline_sync/sw.js`
+
+## Form Integration Rules
+
+Offline-enabled forms must declare:
+- `data-offline-form="true"`
+- `data-offline-model="<model_name>"`
+- `data-offline-redirect-url="<url>"`
+
+If model has FK dependency by UUID, include needed `data-*` attributes (example: `data-group-client-uuid`).
+
+## Read-Data Preload Rules
+
+`static/js/offline-sync.js` performs preload pulls for key models.
+
+When adding a new offline model:
+1. Add it to `MODEL_ORDER`
+2. Add store mapping in `offline-db.js`
+3. Add backend registry spec in `offline_sync/registry.py`
+4. Add/adjust tests in `offline_sync/tests.py`
+
+Do not add a model to only one layer.
+
+Monthly form row rendering is a special case:
+- `member_record` must be preloaded with `monthly_form`
+- The offline monthly form should render cached MemberRecord values on first load
+- Untouched zero-valued editable fields should stay blank if that matches the online form's original presentation
+- Computed read-only fields may still display `0` when the calculation result is zero
+
+## Testing Requirements Before Merge
+
+Minimum required:
+- `python manage.py check`
+- `python manage.py test offline_sync -v 2`
+
+Manual protocol required for major offline changes:
+- server kill test
+- offline form save verification in IndexedDB
+- reconnect replay verification to DB
+- debug endpoint verification
+- monthly form initial-value comparison against cached MemberRecord rows
+- verify blank-zero display rules on untouched editable fields
+
+## Migration/Deployment Workflow Constraint
+
+Before migrations in deploy pipeline:
+- Run `python pgbackup.py backup --label before-feature-x`
+
+The backup script is engine-aware (PostgreSQL/MySQL). Do not remove this step.
+
+## Git and Line Endings
+
+Repository enforces LF with `.gitattributes`.
+
+If line endings drift:
+- `git add --renormalize .`
+
+## Recent Offline Sync Updates
+
+- `member_record` is now part of the offline sync contract, Dexie cache, and monthly form preload order.
+- The offline monthly form now hydrates row values from cached MemberRecord data before any local edits are applied.
+- The browser smoke test asserts that rendered offline row values match cached MemberRecord values, and that untouched zero placeholders stay hidden on editable fields.
+
+## Safe Change Process
+
+For any offline-related change, do this order:
+1. Update backend API/model contract (if needed)
+2. Update IndexedDB/schema mapping
+3. Update SW/template/static references
+4. Update tests
+5. Run checks/tests
+6. Validate one manual offline round-trip
+
+## Offline Monthly Form Data Fetching
+
+### Auto-Hydration When Page Loads Online
+
+The offline monthly form page (`offline-monthly-form-detail.js`) implements automatic data fetching:
+- When the page loads **while online** and no cached data is found, it triggers background pulls for `group`, `member`, `monthly_form`, and `member_record` models
+- This ensures the offline database is populated with the necessary data cache before the user goes offline
+- During hydration, the page displays "Syncing group data to cache for offline use..." toast
+- The monthly form table shows "Members are syncing..." until hydration completes
+
+### Context Persistence via localStorage
+
+Context variables (form_client_uuid, group_client_uuid, group_name, month, year, status) are persisted in localStorage with key `seepoOfflineMonthlyFormContextV1`:
+- When the offline form page loads, it reads context from: template variables → URL query parameters → localStorage (priority order)
+- If context is found via URL or template, it updates localStorage for future offline access
+- This ensures the page displays correctly even when the service worker serves the cached page without query parameters
+- The stored context includes only non-runtime data and expires when the user's offline session ends
+
+### Service Worker Behavior for Offline Forms
+
+The service worker (`sw.js`) uses `navigationNetworkFirst` strategy for the `/finance/forms/offline/` route:
+1. Attempts to fetch the page from the network first (preserving query parameters)
+2. On network failure, serves the cached page (which may lack query parameters in the URL)
+3. The offline form page's JavaScript compensates by reading context from localStorage or URL search params
+4. Query parameters are preserved in the browser's URL bar even when a cached fallback is served
+
+### Form Still Needs Context Even Offline
+
+If the user accesses the offline form without having visited it online first:
+- Context will be empty and the form will show "Connect once online to cache..."
+- This is expected behavior - users cannot create forms offline, only edit drafted data
+- The form becomes fully functional after caching data during an online session

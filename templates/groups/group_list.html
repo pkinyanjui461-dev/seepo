@@ -2,15 +2,105 @@
 {% block title %}Groups{% endblock %}
 {% block page_title %}Groups{% endblock %}
 
+{% block extra_css %}
+<style>
+    [data-offline-only="true"].d-none {
+        display: none !important;
+    }
+
+    .groups-mobile-list {
+        display: none;
+    }
+
+    .groups-mobile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        padding: 12px;
+    }
+
+    .groups-mobile-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .offline-workspace-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .offline-workspace-item {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+        background: var(--card-bg);
+    }
+
+    .offline-workspace-item-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .offline-workspace-item-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    .offline-workspace-chip {
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        background: var(--card-bg);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .offline-workspace-chip strong {
+        color: var(--text-main);
+    }
+
+    @media (max-width: 767.98px) {
+        .groups-table-wrap {
+            display: none;
+        }
+
+        .groups-mobile-list {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="fw-bold mb-0" style="color: var(--text-main);">Groups</h3>
     <a href="{% url 'group_create' %}" class="btn btn-primary px-4 py-2" style="border-radius: 8px; font-weight: 500;"><i class="fas fa-plus me-2"></i>New Group</a>
 </div>
 
+<div id="offline-pending-groups-wrap" class="card shadow-sm border-0 mb-4 d-none" style="border-radius: var(--border-radius-lg); overflow: hidden;">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold mb-0" style="color: var(--text-main);">Offline Pending Groups</h5>
+            <span id="offline-pending-groups-count" class="badge" style="background-color: #ECEBFA; color: var(--primary-color);">0</span>
+        </div>
+        <p class="text-muted small mb-3">Groups saved on this device and not synced yet. You can edit, add members, then sync when online.</p>
+        <div id="offline-pending-groups-list" class="d-flex flex-column gap-2"></div>
+    </div>
+</div>
+
 <div class="card shadow-sm border-0" style="border-radius: var(--border-radius-lg); overflow: hidden;">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive groups-table-wrap">
             <table class="table table-hover align-middle mb-0">
                 <thead style="background-color: #F8F9FA; border-bottom: 1px solid var(--border-color);">
                     <tr>
@@ -22,7 +112,7 @@
                         <th class="pe-4 py-3 text-end text-muted fw-bold border-0">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="group-table-body">
                     {% for group in groups %}
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td class="ps-4 fw-bold" style="color: var(--text-main);">{{ group.name }}</td>
@@ -35,15 +125,897 @@
                             </div>
                         </td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'group_detail' group.pk %}" class="btn btn-sm" style="background-color: #F3F4F6; color: var(--text-main); font-weight: 500; border-radius: 6px;"><i class="fas fa-folder-open me-2" style="color: var(--primary-color);"></i>Open Workspace</a>
+                            <a href="{% url 'group_detail' group.pk %}"
+                               class="btn btn-sm workspace-action-btn"
+                               data-open-workspace-link="true"
+                               data-group-client-uuid="{{ group.client_uuid }}"
+                               data-group-name="{{ group.name }}"><i class="fas fa-folder-open me-2"></i>Open Workspace</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-users-slash fs-3 mb-3 d-block opacity-50"></i>No groups created yet.</td></tr>
+                    <tr id="groups-empty-row"><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-users-slash fs-3 mb-3 d-block opacity-50"></i>No groups created yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <div id="groups-mobile-list" class="groups-mobile-list">
+            {% for group in groups %}
+            <div class="groups-mobile-card">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <div class="fw-bold" style="color: var(--text-main);">{{ group.name }}</div>
+                    <span class="badge" style="background-color:#ECEBFA;color:var(--primary-color);">{{ group.member_count }} members</span>
+                </div>
+                <div class="groups-mobile-meta mb-3">
+                    {{ group.location }} | {{ group.date_created|date:"d M Y" }} | {{ group.officer_name }}
+                </div>
+                     <a href="{% url 'group_detail' group.pk %}"
+                         class="btn btn-sm workspace-action-btn w-100"
+                         data-open-workspace-link="true"
+                         data-group-client-uuid="{{ group.client_uuid }}"
+                         data-group-name="{{ group.name }}"><i class="fas fa-folder-open me-2"></i>Open Workspace</a>
+            </div>
+            {% empty %}
+            <div id="groups-mobile-empty" class="text-center text-muted py-4">No groups created yet.</div>
+            {% endfor %}
+        </div>
     </div>
 </div>
+
+<div class="modal fade" id="offline-member-modal" tabindex="-1" aria-labelledby="offline-member-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-member-modal-title">Add Member (Offline Pending Group)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="offline-member-modal-group-name" class="small text-muted mb-3"></p>
+                <input type="hidden" id="offline-member-group-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-member-number" class="form-label fw-bold">Member Number (Optional)</label>
+                    <input id="offline-member-number" class="form-control" type="number" min="1" placeholder="e.g. 1">
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-name" class="form-label fw-bold">Member Name</label>
+                    <input id="offline-member-name" class="form-control" type="text" placeholder="Full Name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-member-phone" class="form-label fw-bold">Phone (Optional)</label>
+                    <input id="offline-member-phone" class="form-control" type="text" placeholder="+254...">
+                </div>
+                <div class="mb-0">
+                    <label for="offline-member-join-date" class="form-label fw-bold">Join Date</label>
+                    <input id="offline-member-join-date" class="form-control" type="date" required>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-member-btn" class="btn btn-primary">Save Member Offline</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="offline-group-edit-modal" tabindex="-1" aria-labelledby="offline-group-edit-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-main">
+            <div class="modal-header border-main">
+                <h5 class="modal-title" id="offline-group-edit-modal-title">Edit Pending Offline Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="offline-group-edit-client-uuid" value="">
+                <div class="mb-3">
+                    <label for="offline-group-edit-name" class="form-label fw-bold">Group Name</label>
+                    <input id="offline-group-edit-name" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-location" class="form-label fw-bold">Location</label>
+                    <input id="offline-group-edit-location" class="form-control" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-date" class="form-label fw-bold">Date Created</label>
+                    <input id="offline-group-edit-date" class="form-control" type="date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="offline-group-edit-officer" class="form-label fw-bold">Officer Name</label>
+                    <input id="offline-group-edit-officer" class="form-control" type="text" required>
+                </div>
+                <div class="mb-0">
+                    <label for="offline-group-edit-banking" class="form-label fw-bold">Banking Type</label>
+                    <select id="offline-group-edit-banking" class="form-select">
+                        <option value="office">Office Account</option>
+                        <option value="group">Group Account</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-main">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-offline-group-edit-btn" class="btn btn-primary">Save Offline Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const offlineWorkspaceRoute = "{% url 'offline_workspace' %}";
+    const pendingWrap = document.getElementById('offline-pending-groups-wrap');
+    const pendingList = document.getElementById('offline-pending-groups-list');
+    const pendingCount = document.getElementById('offline-pending-groups-count');
+    const groupTableBody = document.getElementById('group-table-body');
+    const groupMobileList = document.getElementById('groups-mobile-list');
+
+    const memberModalEl = document.getElementById('offline-member-modal');
+    const memberGroupClientUuid = document.getElementById('offline-member-group-client-uuid');
+    const memberModalGroupName = document.getElementById('offline-member-modal-group-name');
+    const memberNumberInput = document.getElementById('offline-member-number');
+    const memberNameInput = document.getElementById('offline-member-name');
+    const memberPhoneInput = document.getElementById('offline-member-phone');
+    const memberJoinDateInput = document.getElementById('offline-member-join-date');
+    const saveOfflineMemberBtn = document.getElementById('save-offline-member-btn');
+
+    const groupEditModalEl = document.getElementById('offline-group-edit-modal');
+    const groupEditClientUuidInput = document.getElementById('offline-group-edit-client-uuid');
+    const groupEditNameInput = document.getElementById('offline-group-edit-name');
+    const groupEditLocationInput = document.getElementById('offline-group-edit-location');
+    const groupEditDateInput = document.getElementById('offline-group-edit-date');
+    const groupEditOfficerInput = document.getElementById('offline-group-edit-officer');
+    const groupEditBankingInput = document.getElementById('offline-group-edit-banking');
+    const saveOfflineGroupEditBtn = document.getElementById('save-offline-group-edit-btn');
+
+    const offlineWorkspaceModalEl = document.getElementById('offline-workspace-modal');
+    const offlineWorkspaceSubtitle = document.getElementById('offline-workspace-modal-subtitle');
+    const offlineWorkspaceMembersCount = document.getElementById('offline-workspace-members-count');
+    const offlineWorkspaceFormsCount = document.getElementById('offline-workspace-forms-count');
+    const offlineWorkspaceMembersList = document.getElementById('offline-workspace-members-list');
+    const offlineWorkspaceFormsList = document.getElementById('offline-workspace-forms-list');
+    const offlineWorkspaceMembersEmpty = document.getElementById('offline-workspace-members-empty');
+    const offlineWorkspaceFormsEmpty = document.getElementById('offline-workspace-forms-empty');
+    const offlineWorkspaceAddMemberBtn = document.getElementById('offline-workspace-add-member-btn');
+    const offlineWorkspaceSyncBtn = document.getElementById('offline-workspace-sync-btn');
+
+    let memberModal = null;
+    let groupEditModal = null;
+    let activeWorkspaceGroup = null;
+
+    if (!pendingWrap || !pendingList || !pendingCount || !window.seepoOfflineDb) {
+        return;
+    }
+
+    function showToast(message) {
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.showToast === 'function') {
+            window.seepoOfflineSync.showToast(message);
+            return;
+        }
+
+        alert(message);
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return '-';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString();
+    }
+
+    function getMemberModal() {
+        if (!memberModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!memberModal) {
+            memberModal = window.bootstrap.Modal.getOrCreateInstance(memberModalEl);
+        }
+
+        return memberModal;
+    }
+
+    function getGroupEditModal() {
+        if (!groupEditModalEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return null;
+        }
+
+        if (!groupEditModal) {
+            groupEditModal = window.bootstrap.Modal.getOrCreateInstance(groupEditModalEl);
+        }
+
+        return groupEditModal;
+    }
+
+    function getWorkspaceModal() {
+        return null;
+    }
+
+    function pauseWorkspaceModalForChild() {}
+
+    function restoreWorkspaceModalAfterChild() {}
+
+    function refreshOfflineOnlyActions() {
+        const showOfflineActions = !navigator.onLine;
+        document.querySelectorAll('[data-offline-only="true"]').forEach(function (element) {
+            if (showOfflineActions) {
+                element.classList.remove('d-none');
+            } else {
+                element.classList.add('d-none');
+            }
+        });
+    }
+
+    async function getPendingGroups() {
+        const groupsTable = window.seepoOfflineDb.tableForModel('group');
+        const pendingGroups = await groupsTable.where('synced').equals(0).toArray();
+        pendingGroups.sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+        return pendingGroups;
+    }
+
+    async function countPendingMembers(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const members = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return members.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).length;
+    }
+
+    async function getPendingMembersForGroup(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const members = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return members.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    async function getPendingFormsForGroup(groupClientUuid) {
+        const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+        const forms = await formsTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+        return forms.filter(function (record) {
+            return Number(record.synced) === 0;
+        }).sort(function (a, b) {
+            const aTime = new Date(a.client_updated_at || 0).getTime();
+            const bTime = new Date(b.client_updated_at || 0).getTime();
+            return bTime - aTime;
+        });
+    }
+
+    function monthName(month) {
+        const names = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const idx = Number(month) - 1;
+        if (idx < 0 || idx >= names.length) {
+            return String(month || '?');
+        }
+        return names[idx];
+    }
+
+    async function renderWorkspaceContents() {
+        if (!activeWorkspaceGroup || !offlineWorkspaceMembersList || !offlineWorkspaceFormsList) {
+            return;
+        }
+
+        const members = await getPendingMembersForGroup(activeWorkspaceGroup.client_uuid);
+        const forms = await getPendingFormsForGroup(activeWorkspaceGroup.client_uuid);
+
+        if (offlineWorkspaceMembersCount) {
+            offlineWorkspaceMembersCount.textContent = String(members.length);
+        }
+        if (offlineWorkspaceFormsCount) {
+            offlineWorkspaceFormsCount.textContent = String(forms.length);
+        }
+
+        if (offlineWorkspaceMembersEmpty) {
+            offlineWorkspaceMembersEmpty.classList.toggle('d-none', members.length > 0);
+        }
+        if (offlineWorkspaceFormsEmpty) {
+            offlineWorkspaceFormsEmpty.classList.toggle('d-none', forms.length > 0);
+        }
+
+        offlineWorkspaceMembersList.innerHTML = members.map(function (member) {
+            const memberNumber = String(member.member_number || '').trim();
+            return (
+                '<div class="offline-workspace-item">' +
+                    '<div>' +
+                        '<div class="offline-workspace-item-title">' + htmlEscape(member.name || 'Member') + '</div>' +
+                        '<div class="offline-workspace-item-meta">' +
+                            (memberNumber ? ('#' + htmlEscape(memberNumber) + ' | ') : '') +
+                            htmlEscape(member.phone || '-') +
+                            ' | Joined ' + htmlEscape(formatDate(member.join_date)) +
+                        '</div>' +
+                    '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-workspace-action="remove-member" data-client-uuid="' + htmlEscape(member.client_uuid || '') + '">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>'
+            );
+        }).join('');
+
+        offlineWorkspaceFormsList.innerHTML = forms.map(function (form) {
+            return (
+                '<div class="offline-workspace-item">' +
+                    '<div>' +
+                        '<div class="offline-workspace-item-title">' + htmlEscape(monthName(form.month) + ' ' + String(form.year || '?')) + '</div>' +
+                        '<div class="offline-workspace-item-meta">Status: ' + htmlEscape(form.status || 'draft') + '</div>' +
+                    '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-workspace-action="remove-form" data-client-uuid="' + htmlEscape(form.client_uuid || '') + '">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>'
+            );
+        }).join('');
+    }
+
+    async function openOfflineWorkspace(groupClientUuid, groupName) {
+        if (!groupClientUuid) {
+            return;
+        }
+
+        const targetUuid = String(groupClientUuid || '').trim();
+        const targetName = String(groupName || 'Pending Group').trim() || 'Pending Group';
+
+        // Always navigate to the offline workspace page so it opens as a full page
+        // (not a modal), providing a consistent page-based experience like all other operations.
+        const targetUrl =
+            offlineWorkspaceRoute +
+            '?group_client_uuid=' + encodeURIComponent(targetUuid) +
+            '&group_name=' + encodeURIComponent(targetName);
+
+        window.location.href = targetUrl;
+    }
+
+    async function removePendingGroup(groupClientUuid) {
+        const membersTable = window.seepoOfflineDb.tableForModel('member');
+        const pendingMembers = await membersTable.where('group_client_uuid').equals(groupClientUuid).toArray();
+
+        for (const member of pendingMembers) {
+            if (Number(member.synced) === 0) {
+                await membersTable.delete(member._localId);
+            }
+        }
+
+        const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('group', groupClientUuid);
+        if (!deleted) {
+            showToast('This group is already synced. Delete it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        showToast('Removed pending offline group and its pending members.');
+        if (activeWorkspaceGroup && String(activeWorkspaceGroup.client_uuid) === String(groupClientUuid)) {
+            const modal = getWorkspaceModal();
+            if (modal) {
+                modal.hide();
+            }
+            activeWorkspaceGroup = null;
+        }
+        await renderPendingGroups();
+    }
+
+    async function openPendingGroupEditModal(groupClientUuid) {
+        if (!groupEditClientUuidInput || !window.seepoOfflineDb || typeof window.seepoOfflineDb.getPendingRecordByClientUuid !== 'function') {
+            showToast('Offline group editing is unavailable on this page.');
+            return;
+        }
+
+        const group = await window.seepoOfflineDb.getPendingRecordByClientUuid('group', groupClientUuid);
+        if (!group) {
+            showToast('This group is already synced. Edit it while online.');
+            return;
+        }
+
+        groupEditClientUuidInput.value = group.client_uuid || '';
+        groupEditNameInput.value = group.name || '';
+        groupEditLocationInput.value = group.location || '';
+        groupEditDateInput.value = group.date_created || '';
+        groupEditOfficerInput.value = group.officer_name || '';
+        groupEditBankingInput.value = group.banking_type || 'office';
+
+        const modal = getGroupEditModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function savePendingGroupEdit() {
+        const clientUuid = (groupEditClientUuidInput.value || '').trim();
+        if (!clientUuid) {
+            showToast('Pending group identifier is missing.');
+            return;
+        }
+
+        const payload = {
+            name: (groupEditNameInput.value || '').trim(),
+            location: (groupEditLocationInput.value || '').trim(),
+            date_created: (groupEditDateInput.value || '').trim(),
+            officer_name: (groupEditOfficerInput.value || '').trim(),
+            banking_type: (groupEditBankingInput.value || 'office').trim(),
+        };
+
+        if (!payload.name || !payload.location || !payload.date_created || !payload.officer_name) {
+            showToast('Group name, location, date, and officer are required.');
+            return;
+        }
+
+        if (!window.seepoOfflineDb || typeof window.seepoOfflineDb.updatePendingRecordByClientUuid !== 'function') {
+            showToast('Offline group editing is unavailable on this page.');
+            return;
+        }
+
+        const updated = await window.seepoOfflineDb.updatePendingRecordByClientUuid('group', clientUuid, payload);
+        if (!updated) {
+            showToast('This group is already synced. Edit it while online.');
+            return;
+        }
+
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getGroupEditModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Offline group updated locally.');
+        await renderPendingGroups();
+    }
+
+    function openOfflineMemberModal(groupClientUuid, groupName, options) {
+        if (!memberGroupClientUuid || !memberNameInput || !memberJoinDateInput) {
+            return;
+        }
+
+        const fromWorkspace = !!(options && options.fromWorkspace);
+        if (fromWorkspace) {
+            pauseWorkspaceModalForChild();
+        }
+
+        memberGroupClientUuid.value = groupClientUuid;
+        memberModalGroupName.textContent = 'Group: ' + groupName;
+        memberNumberInput.value = '';
+        memberNameInput.value = '';
+        memberPhoneInput.value = '';
+        memberJoinDateInput.value = new Date().toISOString().slice(0, 10);
+
+        const modal = getMemberModal();
+        if (modal) {
+            modal.show();
+        }
+    }
+
+    async function saveOfflineMember() {
+        const groupClientUuid = (memberGroupClientUuid.value || '').trim();
+        const memberName = (memberNameInput.value || '').trim();
+        const joinDate = (memberJoinDateInput.value || '').trim();
+
+        if (!groupClientUuid || !memberName || !joinDate) {
+            showToast('Member name and join date are required.');
+            return;
+        }
+
+        const memberPayload = {
+            group_client_uuid: groupClientUuid,
+            member_number: (memberNumberInput.value || '').trim(),
+            name: memberName,
+            phone: (memberPhoneInput.value || '').trim(),
+            join_date: joinDate,
+            is_active: true,
+        };
+
+        await window.seepoOfflineSync.saveOffline('member', memberPayload);
+        if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+            await window.seepoOfflineSync.refreshStatus();
+        }
+
+        const modal = getMemberModal();
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Member saved offline for this pending group.');
+        await renderPendingGroups();
+        await renderWorkspaceContents();
+    }
+
+    async function syncNow() {
+        if (!navigator.onLine) {
+            showToast('You are offline. Connect to internet to sync.');
+            return;
+        }
+
+        if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.syncNow !== 'function') {
+            showToast('Sync tools are unavailable on this page.');
+            return;
+        }
+
+        await window.seepoOfflineSync.syncNow();
+        await renderPendingGroups();
+        window.location.reload();
+    }
+
+    function renderPendingGroupsInTable(groups) {
+        if (!groupTableBody) {
+            return;
+        }
+
+        groupTableBody.querySelectorAll('tr[data-offline-pending-row="true"]').forEach(function (row) {
+            row.remove();
+        });
+
+        const emptyRow = document.getElementById('groups-empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const tableRows = groups.map(function (item) {
+            const group = item.group;
+            const memberCount = item.memberCount;
+
+            return (
+                '<tr data-offline-pending-row="true" style="border-bottom: 1px solid var(--border-color); background: #fff7e6;">' +
+                    '<td class="ps-4 fw-bold" style="color: var(--text-main);">' +
+                        htmlEscape(group.name || 'Unnamed Group') +
+                        ' <span class="badge ms-2" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</td>' +
+                    '<td class="text-muted">' + htmlEscape(group.location || '-') + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(formatDate(group.date_created)) + '</td>' +
+                    '<td class="text-muted">' + htmlEscape(group.officer_name || '-') + '</td>' +
+                    '<td>' +
+                        '<div class="d-inline-flex align-items-center justify-content-center fw-bold" style="background-color:#FFF3CD;color:#7C5400;border-radius:6px;padding:4px 10px;font-size:0.85rem;">' +
+                            String(memberCount) +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="text-end pe-4">' +
+                        '<div class="d-inline-flex gap-2 flex-wrap justify-content-end">' +
+                            '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }).join('');
+
+        groupTableBody.insertAdjacentHTML('afterbegin', tableRows);
+    }
+
+    function renderPendingGroupsInMobile(groups) {
+        if (!groupMobileList) {
+            return;
+        }
+
+        groupMobileList.querySelectorAll('[data-offline-mobile-card="true"]').forEach(function (card) {
+            card.remove();
+        });
+
+        const emptyMobile = document.getElementById('groups-mobile-empty');
+        if (emptyMobile) {
+            emptyMobile.style.display = groups.length ? 'none' : '';
+        }
+
+        if (!groups.length) {
+            return;
+        }
+
+        const cards = groups.map(function (item) {
+            const group = item.group;
+            const memberCount = item.memberCount;
+
+            return (
+                '<div class="groups-mobile-card" data-offline-mobile-card="true" style="background:#fff7e6;">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
+                        '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                        '<span class="badge" style="background-color:#f59e0b;color:#1f2937;">Offline Pending</span>' +
+                    '</div>' +
+                    '<div class="groups-mobile-meta mb-3">' +
+                        htmlEscape(group.location || '-') +
+                        ' | ' + htmlEscape(formatDate(group.date_created)) +
+                        ' | ' + htmlEscape(group.officer_name || '-') +
+                        ' | Members: ' + String(memberCount) +
+                    '</div>' +
+                    '<div class="d-grid gap-2">' +
+                        '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-pen me-1"></i>Edit Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-user-plus me-1"></i>Add Member Offline</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now"><i class="fas fa-rotate me-1"></i>Sync Now</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '"><i class="fas fa-trash me-1"></i>Remove Offline</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        groupMobileList.insertAdjacentHTML('afterbegin', cards);
+    }
+
+    async function handlePendingAction(button) {
+        const action = button.getAttribute('data-action');
+        const groupClientUuid = button.getAttribute('data-client-uuid') || '';
+        const groupName = button.getAttribute('data-group-name') || 'Pending Group';
+
+        if (action === 'open-workspace') {
+            await openOfflineWorkspace(groupClientUuid, groupName);
+            return;
+        }
+
+        if (action === 'edit-group') {
+            await openPendingGroupEditModal(groupClientUuid);
+            return;
+        }
+
+        if (action === 'add-member') {
+            openOfflineMemberModal(groupClientUuid, groupName);
+            return;
+        }
+
+        if (action === 'remove-group') {
+            await removePendingGroup(groupClientUuid);
+            return;
+        }
+
+        if (action === 'sync-now') {
+            await syncNow();
+        }
+    }
+
+    async function handleWorkspaceAction(button) {
+        const action = button.getAttribute('data-workspace-action');
+        const clientUuid = button.getAttribute('data-client-uuid') || '';
+        if (!action || !clientUuid) {
+            return;
+        }
+
+        if (action === 'remove-member') {
+            const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('member', clientUuid);
+            if (!deleted) {
+                showToast('This member is already synced.');
+                return;
+            }
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+                await window.seepoOfflineSync.refreshStatus();
+            }
+            showToast('Removed pending offline member.');
+            await renderPendingGroups();
+            await renderWorkspaceContents();
+            return;
+        }
+
+        if (action === 'remove-form') {
+            const deleted = await window.seepoOfflineDb.deletePendingRecordByClientUuid('monthly_form', clientUuid);
+            if (!deleted) {
+                showToast('This monthly form is already synced.');
+                return;
+            }
+            if (window.seepoOfflineSync && typeof window.seepoOfflineSync.refreshStatus === 'function') {
+                await window.seepoOfflineSync.refreshStatus();
+            }
+            showToast('Removed pending offline monthly form.');
+            await renderPendingGroups();
+            await renderWorkspaceContents();
+        }
+    }
+
+    async function renderPendingGroups() {
+        const groups = await getPendingGroups();
+
+        if (!groups.length) {
+            pendingWrap.classList.add('d-none');
+            pendingList.innerHTML = '';
+            pendingCount.textContent = '0';
+            renderPendingGroupsInTable([]);
+            renderPendingGroupsInMobile([]);
+            refreshOfflineOnlyActions();
+            return;
+        }
+
+        pendingWrap.classList.remove('d-none');
+        pendingCount.textContent = String(groups.length);
+
+        const fragments = [];
+        const groupsForTable = [];
+        for (const group of groups) {
+            const memberCount = await countPendingMembers(group.client_uuid);
+            groupsForTable.push({ group: group, memberCount: memberCount });
+            fragments.push(
+                '<div class="border rounded p-3" style="border-color: var(--border-color) !important;">' +
+                    '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
+                        '<div>' +
+                            '<div class="fw-bold" style="color: var(--text-main);">' + htmlEscape(group.name || 'Unnamed Group') + '</div>' +
+                            '<div class="text-muted small">' +
+                                'Location: ' + htmlEscape(group.location || '-') +
+                                ' | Created: ' + htmlEscape(formatDate(group.date_created)) +
+                                ' | Pending Members: ' + memberCount +
+                            '</div>' +
+                        '</div>' +
+                        '<span class="badge" style="background-color:#FFF3CD;color:#7C5400;">Pending Sync</span>' +
+                    '</div>' +
+                    '<div class="d-flex flex-wrap gap-2 mt-3">' +
+                        '<button type="button" class="btn btn-sm workspace-action-btn" data-action="open-workspace" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '"><i class="fas fa-folder-open me-1"></i>Open Workspace</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary" data-offline-only="true" data-action="add-member" data-client-uuid="' + htmlEscape(group.client_uuid) + '" data-group-name="' + htmlEscape(group.name || 'Unnamed Group') + '">' +
+                            '<i class="fas fa-user-plus me-1"></i>Add Member Offline' +
+                        '</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-success" data-action="sync-now">' +
+                            '<i class="fas fa-rotate me-1"></i>Sync Now' +
+                        '</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-group" data-client-uuid="' + htmlEscape(group.client_uuid) + '">' +
+                            '<i class="fas fa-trash me-1"></i>Remove Offline' +
+                        '</button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        pendingList.innerHTML = fragments.join('');
+        renderPendingGroupsInTable(groupsForTable);
+        renderPendingGroupsInMobile(groupsForTable);
+        if (activeWorkspaceGroup) {
+            await renderWorkspaceContents();
+        }
+        refreshOfflineOnlyActions();
+    }
+
+    pendingList.addEventListener('click', async function (event) {
+        const button = event.target.closest('button[data-action]');
+        if (!button) {
+            return;
+        }
+
+        await handlePendingAction(button);
+    });
+
+    if (groupTableBody) {
+        groupTableBody.addEventListener('click', async function (event) {
+            const link = event.target.closest('a[data-open-workspace-link="true"]');
+            if (!link || navigator.onLine) {
+                return;
+            }
+
+            event.preventDefault();
+            const groupClientUuid = link.getAttribute('data-group-client-uuid') || '';
+            const groupName = link.getAttribute('data-group-name') || 'Group';
+            await openOfflineWorkspace(groupClientUuid, groupName);
+        });
+
+        groupTableBody.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingAction(button);
+        });
+    }
+
+    if (groupMobileList) {
+        groupMobileList.addEventListener('click', async function (event) {
+            const link = event.target.closest('a[data-open-workspace-link="true"]');
+            if (!link || navigator.onLine) {
+                return;
+            }
+
+            event.preventDefault();
+            const groupClientUuid = link.getAttribute('data-group-client-uuid') || '';
+            const groupName = link.getAttribute('data-group-name') || 'Group';
+            await openOfflineWorkspace(groupClientUuid, groupName);
+        });
+
+        groupMobileList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button) {
+                return;
+            }
+
+            await handlePendingAction(button);
+        });
+    }
+
+    if (offlineWorkspaceMembersList) {
+        offlineWorkspaceMembersList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-workspace-action]');
+            if (!button) {
+                return;
+            }
+
+            await handleWorkspaceAction(button);
+        });
+    }
+
+    if (offlineWorkspaceFormsList) {
+        offlineWorkspaceFormsList.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-workspace-action]');
+            if (!button) {
+                return;
+            }
+
+            await handleWorkspaceAction(button);
+        });
+    }
+
+    if (saveOfflineMemberBtn) {
+        saveOfflineMemberBtn.addEventListener('click', async function () {
+            await saveOfflineMember();
+        });
+    }
+
+    if (offlineWorkspaceAddMemberBtn) {
+        offlineWorkspaceAddMemberBtn.addEventListener('click', function () {
+            if (!activeWorkspaceGroup) {
+                return;
+            }
+            openOfflineMemberModal(activeWorkspaceGroup.client_uuid, activeWorkspaceGroup.name, { fromWorkspace: true });
+        });
+    }
+
+    if (offlineWorkspaceSyncBtn) {
+        offlineWorkspaceSyncBtn.addEventListener('click', async function () {
+            await syncNow();
+        });
+    }
+
+    if (saveOfflineGroupEditBtn) {
+        saveOfflineGroupEditBtn.addEventListener('click', async function () {
+            await savePendingGroupEdit();
+        });
+    }
+
+    if (memberModalEl) {
+        memberModalEl.addEventListener('hidden.bs.modal', function () {
+            restoreWorkspaceModalAfterChild();
+        });
+    }
+
+    window.addEventListener('online', function () {
+        renderPendingGroups();
+        refreshOfflineOnlyActions();
+    });
+
+    window.addEventListener('offline', function () {
+        refreshOfflineOnlyActions();
+    });
+
+    window.addEventListener('seepo:queue-status', function () {
+        renderPendingGroups();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        refreshOfflineOnlyActions();
+        renderPendingGroups();
+    });
+})();
+</script>
 {% endblock %}

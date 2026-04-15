@@ -4,6 +4,8 @@ from finance import views
 urlpatterns = [
     path('group/<int:group_pk>/forms/', views.monthly_form_list, name='monthly_form_list'),
     path('group/<int:group_pk>/forms/create/', views.monthly_form_create, name='monthly_form_create'),
+    path('forms/offline/', views.monthly_form_detail_offline, name='monthly_form_detail_offline'),
+    path('forms/offline/sync-sheet/', views.sync_offline_monthly_form_sheet, name='sync_offline_monthly_form_sheet'),
     path('forms/<int:pk>/', views.monthly_form_detail, name='monthly_form_detail'),
     path('forms/<int:pk>/delete/', views.monthly_form_delete, name='monthly_form_delete'),
     path('record/<int:record_pk>/save/', views.save_member_record, name='save_member_record'),

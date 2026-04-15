@@ -7,7 +7,11 @@
     <div class="col-md-6">
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body p-4">
-                <form method="POST">
+                    <form method="POST"
+                        data-offline-form="true"
+                        data-offline-model="monthly_form"
+                        data-group-client-uuid="{{ group.client_uuid }}"
+                        data-offline-redirect-url="{% url 'monthly_form_list' group.pk %}">
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-3">

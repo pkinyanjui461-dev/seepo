@@ -10,12 +10,12 @@
                 <div class="d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px; background-color: #FFF0ED; color: #FF754C; border-radius: 50%;">
                     <i class="fas fa-exclamation-triangle fs-1"></i>
                 </div>
-                
+
                 <h3 class="fw-bold mb-3" style="color: var(--text-main);">Delete Group?</h3>
                 <p class="text-muted mb-4">
-                    You are about to delete <strong>{{ group.name }}</strong>. 
+                    You are about to delete <strong>{{ group.name }}</strong>.
                 </p>
-                
+
                 <div class="alert alert-danger border-0 mb-4" style="background-color: #FFF0ED; color: #842029; border-radius: 12px; text-align: left;">
                     <h6 class="fw-bold mb-2"><i class="fas fa-biohazard me-2"></i>Warning: This action is permanent!</h6>
                     <ul class="mb-0 small">
@@ -24,9 +24,15 @@
                         <li>All historical records and summaries will be lost forever.</li>
                     </ul>
                 </div>
-                
+
                 <div class="d-grid gap-2">
-                    <form method="POST">
+                      <form method="POST"
+                          data-online-required-message="Group deletion requires internet unless this group was created locally and is still pending sync."
+                          data-offline-delete-model="group"
+                          data-offline-delete-client-uuid="{{ group.client_uuid }}"
+                          data-offline-delete-redirect-url="{% url 'group_list' %}"
+                          data-offline-delete-success-message="Removed pending offline group from this device."
+                          data-offline-delete-denied-message="This group is already synced. Delete it while online.">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger w-100 py-3 mb-2" style="border-radius: 10px; font-weight: 600;">
                             <i class="fas fa-trash-alt me-2"></i>Yes, Delete Group & All Data

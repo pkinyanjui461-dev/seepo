@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
 
 jobs:
   deploy-staging:
@@ -34,6 +35,7 @@ jobs:
             git stash --include-untracked || true
             git fetch origin main
             git reset --hard origin/main
+            git clean -fd
 
             # Create .env file from secrets
             cat > .env << 'EOF'
@@ -59,15 +61,21 @@ jobs:
             # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
 
+            # Backup before migration (safety checkpoint)
+            python pgbackup.py backup --label before-feature-x
+
             # Run migrations
             python manage.py migrate --noinput
 
             # Collect static files
-            python manage.py collectstatic --noinput
+            python manage.py collectstatic --noinput --clear
 
             # Restart Passenger
             mkdir -p tmp
             touch tmp/restart.txt
+
+            # Deployment trace
+            echo "Deployed staging commit: $(git rev-parse --short HEAD)"
 
   deploy-production:
     if: github.ref == 'refs/heads/master'
@@ -96,6 +104,7 @@ jobs:
             git stash --include-untracked || true
             git fetch origin master
             git reset --hard origin/master
+            git clean -fd
 
             # Create .env file from secrets
             cat > .env << 'EOF'
@@ -121,12 +130,18 @@ jobs:
             # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
 
+            # Backup before migration (safety checkpoint)
+            python pgbackup.py backup --label before-feature-x
+
             # Run migrations
             python manage.py migrate --noinput
 
             # Collect static files
-            python manage.py collectstatic --noinput
+            python manage.py collectstatic --noinput --clear
 
             # Restart Passenger
             mkdir -p tmp
             touch tmp/restart.txt
+
+            # Deployment trace
+            echo "Deployed production commit: $(git rev-parse --short HEAD)"

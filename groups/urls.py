@@ -3,6 +3,7 @@ from groups import views
 
 urlpatterns = [
     path('', views.group_list, name='group_list'),
+    path('offline/workspace/', views.offline_workspace, name='offline_workspace'),
     path('diary/', views.diary_list, name='diary_list'),
     path('api/diary/<int:pk>/update/', views.api_diary_update, name='api_diary_update'),
     path('create/', views.group_create, name='group_create'),
