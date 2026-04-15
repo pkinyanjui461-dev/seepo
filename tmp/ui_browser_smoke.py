@@ -265,8 +265,23 @@ def run() -> Dict[str, Any]:
                     seeded["form_client_uuid"]
                 )
 
+                blank_when_zero_fields = {
+                    "savings_share_bf",
+                    "loan_balance_bf",
+                    "total_repaid",
+                    "principal",
+                    "withdrawals",
+                    "fines_charges",
+                }
+
+                def expected_display(field_name: str) -> str:
+                    expected = initial_values[f"{field_name}_expected"]
+                    if expected == "0" and field_name in blank_when_zero_fields:
+                        return ""
+                    return expected
+
                 initial_match = initial_values is not None and all(
-                    initial_values[f"{field}_expected"] == initial_values[f"{field}_actual"]
+                    expected_display(field) == initial_values[f"{field}_actual"]
                     for field in [
                         "savings_share_bf",
                         "loan_balance_bf",
@@ -289,6 +304,32 @@ def run() -> Dict[str, Any]:
 
                 if not initial_match:
                     raise RuntimeError("Offline form initial values do not match cached member records")
+
+                second_row = page.locator("#offline-finance-table-body tr.record-row").nth(1)
+                second_row_values = {
+                    "total_repaid": second_row.locator("input[data-field='total_repaid']").input_value(),
+                    "principal": second_row.locator("input[data-field='principal']").input_value(),
+                    "shares_this_month": second_row.locator("input[data-field='shares_this_month']").input_value(),
+                    "withdrawals": second_row.locator("input[data-field='withdrawals']").input_value(),
+                    "fines_charges": second_row.locator("input[data-field='fines_charges']").input_value(),
+                }
+
+                zero_display_matches = (
+                    second_row_values["total_repaid"] == ""
+                    and second_row_values["principal"] == ""
+                    and second_row_values["withdrawals"] == ""
+                    and second_row_values["fines_charges"] == ""
+                    and second_row_values["shares_this_month"] == "0"
+                )
+
+                record(
+                    "offline_form_zero_placeholders_hidden",
+                    zero_display_matches,
+                    json.dumps(second_row_values, sort_keys=True),
+                )
+
+                if not zero_display_matches:
+                    raise RuntimeError("Offline form still shows placeholder zero values")
 
                 # Edit transaction values to create drafts in Dexie
                 first_row.locator("input[data-field='savings_share_bf']").fill("1000")

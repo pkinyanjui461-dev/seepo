@@ -62,7 +62,7 @@ const APP_SHELL_URLS = [
   '{% static "js/offline-form-auto-persist.js" %}',
   '{% static "js/offline-global-state.js" %}?v=' + OFFLINE_GLOBAL_STATE_VERSION,
   '{% static "js/offline-global-state.js" %}',
-  '{% static "js/offline-monthly-form-detail.js" %}?v=8',
+  '{% static "js/offline-monthly-form-detail.js" %}?v=9',
   '{% static "js/offline-monthly-form-detail.js" %}',
   '{% static "js/sw-register.js" %}?v=' + SW_REGISTER_ASSET_VERSION,
   '{% static "js/sw-register.js" %}',

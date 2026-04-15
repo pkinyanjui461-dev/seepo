@@ -82,7 +82,7 @@ class MemberRecord(models.Model):
     def calculate(self):
         """Backend calculation mirror of JS logic."""
         from decimal import Decimal, ROUND_HALF_UP
-        
+
         # Round the user input values
         self.savings_share_bf = Decimal(str(self.savings_share_bf)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.loan_balance_bf = Decimal(str(self.loan_balance_bf)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
@@ -108,16 +108,16 @@ class MemberRecord(models.Model):
     def validate(self):
         """Returns dict of validation errors."""
         errors = {}
-        
+
         # Check for negatives
         loan_errors = []
         if self.loan_balance_bf < 0: loan_errors.append("Loan B/F cannot be negative.")
         if self.loan_balance_cf < 0: loan_errors.append("Loan C/F cannot be negative.")
-        
+
         # Loan balance rule: loan_balance_bf == principal + loan_balance_cf
         if self.loan_balance_bf != (self.principal + self.loan_balance_cf):
             loan_errors.append(f"Mismatch. Expected: {self.principal + self.loan_balance_cf}, Current: {self.loan_balance_bf}")
-            
+
         if loan_errors:
             errors['loan'] = loan_errors
 
@@ -128,10 +128,10 @@ class MemberRecord(models.Model):
         # Savings rule: savings_cf == savings_bf + shares - withdrawals
         if self.savings_share_cf != (self.savings_share_bf + self.shares_this_month - self.withdrawals):
             sav_errors.append(f"Mismatch. Expected: {self.savings_share_bf + self.shares_this_month - self.withdrawals}, Current: {self.savings_share_cf}")
-            
+
         if sav_errors:
             errors['savings'] = sav_errors
-            
+
         self.loan_valid = 'loan' not in errors
         self.savings_valid = 'savings' not in errors
         return errors
@@ -149,12 +149,12 @@ SECTION_CHOICES = [
 class GroupPerformanceForm(models.Model):
     monthly_form = models.OneToOneField(MonthlyForm, on_delete=models.CASCADE, related_name='performance_form')
     notes = models.TextField(blank=True)
-    
+
     # Next Meeting details
     next_meeting_date = models.DateField(null=True, blank=True)
     next_meeting_time = models.TimeField(null=True, blank=True)
     next_meeting_venue = models.CharField(max_length=255, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

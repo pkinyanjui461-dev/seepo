@@ -25,6 +25,7 @@ The browser is the offline write/read buffer, Django is the source of truth.
 - `static/js/offline-db.js`
 - `static/js/offline-sync.js`
 - `static/js/offline-form-handler.js`
+- `static/js/offline-monthly-form-detail.js`
 - `static/js/sw-register.js`
 - `templates/base.html`
 
@@ -38,6 +39,8 @@ Every model enabled for offline sync must have:
 - `updated_at` (server-side last update)
 
 If a model is missing these fields, do not add it to offline sync yet.
+
+Current sync-managed models include `member_record` for monthly form row data. It must keep the same sync metadata contract as the other models.
 
 ## Sync API Contract (Do Not Break)
 
@@ -66,6 +69,7 @@ Current object stores:
 - `groups`
 - `members`
 - `monthly_forms`
+- `member_records`
 - `expenses`
 - `sync_meta`
 
@@ -74,6 +78,8 @@ Required record fields for sync-managed stores:
 - `client_updated_at`
 - `synced` (0 or 1)
 - `server_id` (set after successful push)
+
+For `member_records`, the offline renderer depends on the `monthly_form_id` + `member_id` join so cached row data can be matched back to the visible member rows.
 
 Do not delete or rename stores without Dexie migration code.
 
@@ -131,6 +137,12 @@ When adding a new offline model:
 
 Do not add a model to only one layer.
 
+Monthly form row rendering is a special case:
+- `member_record` must be preloaded with `monthly_form`
+- The offline monthly form should render cached MemberRecord values on first load
+- Untouched zero-valued editable fields should stay blank if that matches the online form's original presentation
+- Computed read-only fields may still display `0` when the calculation result is zero
+
 ## Testing Requirements Before Merge
 
 Minimum required:
@@ -142,6 +154,8 @@ Manual protocol required for major offline changes:
 - offline form save verification in IndexedDB
 - reconnect replay verification to DB
 - debug endpoint verification
+- monthly form initial-value comparison against cached MemberRecord rows
+- verify blank-zero display rules on untouched editable fields
 
 ## Migration/Deployment Workflow Constraint
 
@@ -156,6 +170,12 @@ Repository enforces LF with `.gitattributes`.
 
 If line endings drift:
 - `git add --renormalize .`
+
+## Recent Offline Sync Updates
+
+- `member_record` is now part of the offline sync contract, Dexie cache, and monthly form preload order.
+- The offline monthly form now hydrates row values from cached MemberRecord data before any local edits are applied.
+- The browser smoke test asserts that rendered offline row values match cached MemberRecord values, and that untouched zero placeholders stay hidden on editable fields.
 
 ## Safe Change Process
 

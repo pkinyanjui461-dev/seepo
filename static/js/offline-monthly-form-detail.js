@@ -75,6 +75,24 @@
     return String(Math.round(number));
   }
 
+  function formatInitialNumericDisplay(value, keepZero) {
+    if (value === null || value === undefined || String(value).trim() === '') {
+      return '';
+    }
+
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return '';
+    }
+
+    const rounded = Math.round(number);
+    if (rounded === 0 && !keepZero) {
+      return '';
+    }
+
+    return String(rounded);
+  }
+
   function monthLabel(month) {
     const index = Number(month) - 1;
     if (index < 0 || index >= MONTH_NAMES.length) {
@@ -743,19 +761,20 @@
       const draft = getDraftForMember(draftMap, member) || {};
       const memberRecord = memberId > 0 ? state.memberRecords['member_id:' + memberId] : null;
       const touchedFields = parseTouchedFields(draft.touched_fields);
+      const touchedFieldSet = new Set(touchedFields);
       const touchedFieldsAttr = touchedFields.length ? ' data-touched-fields="' + htmlEscape(touchedFields.join(',')) + '"' : '';
 
       const values = {
-        savings_share_bf: integerString(resolveFieldValue('savings_share_bf', draft, memberRecord)),
-        loan_balance_bf: integerString(resolveFieldValue('loan_balance_bf', draft, memberRecord)),
-        total_repaid: integerString(resolveFieldValue('total_repaid', draft, memberRecord)),
-        principal: integerString(resolveFieldValue('principal', draft, memberRecord)),
-        loan_interest: integerString(resolveFieldValue('loan_interest', draft, memberRecord)),
-        shares_this_month: integerString(resolveFieldValue('shares_this_month', draft, memberRecord)),
-        withdrawals: integerString(resolveFieldValue('withdrawals', draft, memberRecord)),
-        fines_charges: integerString(resolveFieldValue('fines_charges', draft, memberRecord)),
-        savings_share_cf: integerString(resolveFieldValue('savings_share_cf', draft, memberRecord)),
-        loan_balance_cf: integerString(resolveFieldValue('loan_balance_cf', draft, memberRecord)),
+        savings_share_bf: formatInitialNumericDisplay(resolveFieldValue('savings_share_bf', draft, memberRecord), touchedFieldSet.has('savings_share_bf')),
+        loan_balance_bf: formatInitialNumericDisplay(resolveFieldValue('loan_balance_bf', draft, memberRecord), touchedFieldSet.has('loan_balance_bf')),
+        total_repaid: formatInitialNumericDisplay(resolveFieldValue('total_repaid', draft, memberRecord), touchedFieldSet.has('total_repaid')),
+        principal: formatInitialNumericDisplay(resolveFieldValue('principal', draft, memberRecord), touchedFieldSet.has('principal')),
+        loan_interest: formatInitialNumericDisplay(resolveFieldValue('loan_interest', draft, memberRecord), touchedFieldSet.has('loan_interest')),
+        shares_this_month: formatInitialNumericDisplay(resolveFieldValue('shares_this_month', draft, memberRecord), touchedFieldSet.has('shares_this_month')),
+        withdrawals: formatInitialNumericDisplay(resolveFieldValue('withdrawals', draft, memberRecord), touchedFieldSet.has('withdrawals')),
+        fines_charges: formatInitialNumericDisplay(resolveFieldValue('fines_charges', draft, memberRecord), touchedFieldSet.has('fines_charges')),
+        savings_share_cf: formatInitialNumericDisplay(resolveFieldValue('savings_share_cf', draft, memberRecord), touchedFieldSet.has('savings_share_cf')),
+        loan_balance_cf: formatInitialNumericDisplay(resolveFieldValue('loan_balance_cf', draft, memberRecord), touchedFieldSet.has('loan_balance_cf')),
       };
 
       return (
@@ -791,7 +810,7 @@
     }
 
     const rounded = Math.round(parseNumber(value));
-    input.value = rounded === 0 ? '' : String(rounded);
+    input.value = String(rounded);
 
     const td = input.closest('td');
     if (td) {
