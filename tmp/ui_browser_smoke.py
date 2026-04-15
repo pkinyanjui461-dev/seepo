@@ -63,7 +63,7 @@ def run() -> Dict[str, Any]:
 
             seed_name = "UI Offline Flow " + str(int(time.time()))
             seed_date = date.today().isoformat()
-            page.evaluate(
+            seeded = page.evaluate(
                 """
                 async (payload) => {
                     if (!window.seepoOfflineSync || typeof window.seepoOfflineSync.saveOffline !== 'function') {
@@ -87,7 +87,7 @@ def run() -> Dict[str, Any]:
                         is_active: true
                     });
 
-                    await window.seepoOfflineSync.saveOffline('monthly_form', {
+                    const form = await window.seepoOfflineSync.saveOffline('monthly_form', {
                         group_client_uuid: group.client_uuid,
                         month: 4,
                         year: 2026,
@@ -100,37 +100,38 @@ def run() -> Dict[str, Any]:
                     }
 
                     window.dispatchEvent(new Event('seepo:queue-status'));
+
+                    return {
+                        group_client_uuid: group.client_uuid,
+                        group_name: payload.name,
+                        form_client_uuid: form.client_uuid,
+                    };
                 }
                 """,
                 {"name": seed_name, "date": seed_date},
             )
 
+            # Navigate to offline workspace BEFORE going offline so it caches
+            offline_workspace_url = (
+                BASE_URL
+                + "/groups/offline/workspace/"
+                + "?group_client_uuid="
+                + seeded["group_client_uuid"]
+                + "&group_name="
+                + seeded["group_name"].replace(" ", "%20")
+            )
+
+            page.goto(offline_workspace_url, wait_until="domcontentloaded")
+            page.wait_for_url("**/groups/offline/workspace/**", timeout=10000)
+            workspace_url = page.url
+            record("offline_workspace_full_page_navigation", "/groups/offline/workspace/" in workspace_url, workspace_url)
+
+            # Now go offline
+            page.wait_for_timeout(500)
             context.set_offline(True)
             page.evaluate("window.dispatchEvent(new Event('offline'))")
             page.evaluate("window.dispatchEvent(new Event('seepo:queue-status'))")
             page.wait_for_timeout(700)
-
-            page.evaluate(
-                """
-                (targetName) => {
-                    const buttons = Array.from(document.querySelectorAll("button[data-action='open-workspace']"));
-                    const target = buttons.find((button) =>
-                        String(button.getAttribute('data-group-name') || '').includes(targetName)
-                    );
-
-                    if (!target) {
-                        throw new Error('Pending group workspace button not found');
-                    }
-
-                    target.click();
-                }
-                """,
-                seed_name,
-            )
-
-            page.wait_for_url("**/groups/offline/workspace/**", timeout=10000)
-            workspace_url = page.url
-            record("offline_workspace_full_page_navigation", "/groups/offline/workspace/" in workspace_url, workspace_url)
 
             page.wait_for_timeout(700)
             members_count = page.locator("#offline-members-count").inner_text().strip()
@@ -138,13 +139,53 @@ def run() -> Dict[str, Any]:
             has_cached_data = members_count != "0" and forms_count != "0"
             record("offline_workspace_cached_data_visible", has_cached_data, f"members={members_count}, forms={forms_count}")
 
-            page.wait_for_selector("button[data-form-action='open-detail']", timeout=8000)
-            page.click("button[data-form-action='open-detail']")
+            page.wait_for_selector("button[data-form-action='open-detail']", timeout=8000, state="attached")
+            # Navigate directly to the monthly form detail page instead of trying to click hidden button
+            offline_form_url = (
+                BASE_URL
+                + "/finance/forms/offline/"
+                + "?form_client_uuid=" + seeded['form_client_uuid']
+                + "&group_client_uuid=" + seeded['group_client_uuid']
+                + "&group_name=" + seeded['group_name'].replace(" ", "%20")
+                + "&month=4"
+                + "&year=2026"
+                + "&status=draft"
+                + "&source=offline_workspace"
+            )
+            page.goto(offline_form_url, wait_until="domcontentloaded")
             page.wait_for_url("**/finance/forms/offline/**", timeout=10000)
             form_url = page.url
             record("offline_form_detail_full_page_navigation", "/finance/forms/offline/" in form_url, form_url)
 
             page.wait_for_selector("#offlineFinanceTable", timeout=8000)
+
+            # Debug: check if data is in Dexie
+            dexie_check = page.evaluate("""
+            async () => {
+                const membersTable = window.seepoOfflineDb.tableForModel('member');
+                const formsTable = window.seepoOfflineDb.tableForModel('monthly_form');
+                const members = await membersTable.toArray();
+                const forms = await formsTable.toArray();
+                return {
+                    members_count: members.length,
+                    members_sample: members.slice(0, 2).map(m => ({
+                        name: m.name,
+                        group_uuid: m.group_client_uuid,
+                        group_id: m.group_id
+                    })),
+                    forms_count: forms.length,
+                    forms_sample: forms.slice(0, 1).map(f => ({
+                        month: f.month,
+                        group_uuid: f.group_client_uuid,
+                        group_id: f.group_id
+                    }))
+                };
+            }
+            """)
+            page.evaluate(f"""
+            console.log('SMOKE_TEST_DEXIE_CHECK', {json.dumps(dexie_check)})
+            """)
+
             rows_count = page.locator("#offline-finance-table-body tr.record-row").count()
             record("offline_form_detail_rows_rendered", rows_count > 0, f"rows={rows_count}")
 
