@@ -43,6 +43,7 @@
     group: null,
     form: null,
     members: [],
+    memberRecords: {},
     hydrationAttempted: false,
     autoSaveTimer: null,
     isSaving: false,
@@ -621,7 +622,44 @@
     return null;
   }
 
-  function renderRows() {
+  async function getMemberRecordsForCurrentForm() {
+    // Load MemberRecord data from Dexie cache for initial field values
+    if (!window.seepoOfflineDb || !state.form) {
+      return {};
+    }
+
+    try {
+      const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
+      if (!memberRecordsTable) {
+        return {};
+      }
+
+      const allRecords = await memberRecordsTable.toArray();
+      const formId = Number(state.form.server_id || 0);
+      
+      if (!formId || formId <= 0) {
+        return {};
+      }
+
+      const map = {};
+      allRecords.forEach(function (record) {
+        const recordFormId = Number(record.monthly_form_id || 0);
+        if (recordFormId === formId) {
+          const memberId = Number(record.member_id || 0);
+          if (memberId > 0) {
+            map['member_id:' + memberId] = record;
+          }
+        }
+      });
+
+      return map;
+    } catch (error) {
+      console.error('Failed to load member records:', error);
+      return {};
+    }
+  }
+
+  async function renderRows() {
     tableBody.querySelectorAll('tr[data-offline-row="true"]').forEach(function (row) {
       row.remove();
     });
@@ -637,22 +675,32 @@
     }
 
     const draftMap = getDraftMapForCurrentForm();
+    
+    // Load member records if not already loaded
+    if (!Object.keys(state.memberRecords).length) {
+      state.memberRecords = await getMemberRecordsForCurrentForm();
+    }
 
     const rowsHtml = state.members.map(function (member) {
       const memberNumber = String(member.member_number || '').trim();
+      const memberId = Number(member.server_id || 0);
+
+      // Priority 1: Use draft data (user edits)
+      // Priority 2: Use member record data (initial cached data)
       const draft = getDraftForMember(draftMap, member) || {};
+      const memberRecord = memberId > 0 ? state.memberRecords['member_id:' + memberId] : null;
 
       const values = {
-        savings_share_bf: integerString(draft.savings_share_bf),
-        loan_balance_bf: integerString(draft.loan_balance_bf),
-        total_repaid: integerString(draft.total_repaid),
-        principal: integerString(draft.principal),
-        loan_interest: integerString(draft.loan_interest),
-        shares_this_month: integerString(draft.shares_this_month),
-        withdrawals: integerString(draft.withdrawals),
-        fines_charges: integerString(draft.fines_charges),
-        savings_share_cf: integerString(draft.savings_share_cf),
-        loan_balance_cf: integerString(draft.loan_balance_cf),
+        savings_share_bf: integerString(draft.savings_share_bf || (memberRecord && memberRecord.savings_share_bf) || ''),
+        loan_balance_bf: integerString(draft.loan_balance_bf || (memberRecord && memberRecord.loan_balance_bf) || ''),
+        total_repaid: integerString(draft.total_repaid || (memberRecord && memberRecord.total_repaid) || ''),
+        principal: integerString(draft.principal || (memberRecord && memberRecord.principal) || ''),
+        loan_interest: integerString(draft.loan_interest || (memberRecord && memberRecord.loan_interest) || ''),
+        shares_this_month: integerString(draft.shares_this_month || (memberRecord && memberRecord.shares_this_month) || ''),
+        withdrawals: integerString(draft.withdrawals || (memberRecord && memberRecord.withdrawals) || ''),
+        fines_charges: integerString(draft.fines_charges || (memberRecord && memberRecord.fines_charges) || ''),
+        savings_share_cf: integerString(draft.savings_share_cf || (memberRecord && memberRecord.savings_share_cf) || ''),
+        loan_balance_cf: integerString(draft.loan_balance_cf || (memberRecord && memberRecord.loan_balance_cf) || ''),
       };
 
       return (
@@ -954,7 +1002,7 @@
     }
 
     updateHeaderAndActions();
-    renderRows();
+    await renderRows();
 
     tableBody.querySelectorAll('tr.record-row').forEach(function (row) {
       performRowCalculations(row);

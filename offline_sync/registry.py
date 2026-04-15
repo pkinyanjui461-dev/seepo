@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
 from accounts.models import User
-from finance.models import Expense, MonthlyForm
+from finance.models import Expense, MonthlyForm, MemberRecord
 from groups.models import Group
 from members.models import Member
 
@@ -55,6 +55,25 @@ def _parse_decimal(value: Any, field_name: str) -> Decimal:
         return Decimal(str(value if value is not None else '0'))
     except (InvalidOperation, TypeError, ValueError):
         raise ValueError(f'{field_name} is invalid.')
+
+
+def _parse_required_int(value: Any, field_name: str) -> int:
+    try:
+        result = int(str(value or '').strip())
+        if result <= 0:
+            raise ValueError()
+        return result
+    except (TypeError, ValueError):
+        raise ValueError(f'{field_name} is required and must be a positive integer.')
+
+
+def _parse_int(value: Any, field_name: str, default: int = 0) -> int:
+    try:
+        if value is None or str(value).strip() == '':
+            return default
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
 
 
 def _to_bool(value: Any) -> bool:
@@ -259,6 +278,50 @@ def _serialize_user(user: User) -> dict[str, Any]:
     }
 
 
+def _serialize_member_record(member_record: MemberRecord) -> dict[str, Any]:
+    return {
+        'server_id': member_record.pk,
+        'monthly_form_id': member_record.monthly_form.pk,
+        'member_id': member_record.member.pk,
+        'order': member_record.order,
+        'savings_share_bf': str(member_record.savings_share_bf),
+        'loan_balance_bf': str(member_record.loan_balance_bf),
+        'total_repaid': str(member_record.total_repaid),
+        'principal': str(member_record.principal),
+        'loan_interest': str(member_record.loan_interest),
+        'shares_this_month': str(member_record.shares_this_month),
+        'withdrawals': str(member_record.withdrawals),
+        'fines_charges': str(member_record.fines_charges),
+        'savings_share_cf': str(member_record.savings_share_cf),
+        'loan_balance_cf': str(member_record.loan_balance_cf),
+        'savings_valid': member_record.savings_valid,
+        'loan_valid': member_record.loan_valid,
+    }
+
+
+def _apply_member_record(payload: dict[str, Any], request) -> dict[str, Any]:
+    monthly_form_id = _parse_required_int(payload.get('monthly_form_id'), 'monthly_form_id')
+    member_id = _parse_required_int(payload.get('member_id'), 'member_id')
+
+    return {
+        'monthly_form_id': monthly_form_id,
+        'member_id': member_id,
+        'order': _parse_int(payload.get('order'), 'order', 0),
+        'savings_share_bf': _parse_decimal(payload.get('savings_share_bf'), 'savings_share_bf'),
+        'loan_balance_bf': _parse_decimal(payload.get('loan_balance_bf'), 'loan_balance_bf'),
+        'total_repaid': _parse_decimal(payload.get('total_repaid'), 'total_repaid'),
+        'principal': _parse_decimal(payload.get('principal'), 'principal'),
+        'loan_interest': _parse_decimal(payload.get('loan_interest'), 'loan_interest'),
+        'shares_this_month': _parse_decimal(payload.get('shares_this_month'), 'shares_this_month'),
+        'withdrawals': _parse_decimal(payload.get('withdrawals'), 'withdrawals'),
+        'fines_charges': _parse_decimal(payload.get('fines_charges'), 'fines_charges'),
+        'savings_share_cf': _parse_decimal(payload.get('savings_share_cf'), 'savings_share_cf'),
+        'loan_balance_cf': _parse_decimal(payload.get('loan_balance_cf'), 'loan_balance_cf'),
+        'savings_valid': bool(payload.get('savings_valid', True)),
+        'loan_valid': bool(payload.get('loan_valid', True)),
+    }
+
+
 def _apply_user(payload: dict[str, Any], request) -> dict[str, Any]:
     if not request.user.is_authenticated or not (
         request.user.is_superuser or request.user.role in ('admin', 'ict')
@@ -319,15 +382,21 @@ def register_models() -> None:
                 serialize=_serialize_monthly_form,
                 apply_payload=_apply_monthly_form,
             ),
+            'member_record': SyncModelSpec(
+                model=MemberRecord,
+                order=4,
+                serialize=_serialize_member_record,
+                apply_payload=_apply_member_record,
+            ),
             'expense': SyncModelSpec(
                 model=Expense,
-                order=4,
+                order=5,
                 serialize=_serialize_expense,
                 apply_payload=_apply_expense,
             ),
             'user': SyncModelSpec(
                 model=User,
-                order=5,
+                order=6,
                 serialize=_serialize_user,
                 apply_payload=_apply_user,
             ),
