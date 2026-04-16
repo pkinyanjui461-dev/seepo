@@ -816,15 +816,17 @@
         const formMonth = Number(form.month || 0);
         const formYear = Number(form.year || 0);
         const groupUuid = String(form.group_client_uuid || '').trim();
-
-        if (groupUuid === state.groupClientUuid) {
+        const formServerId = Number(form.server_id || 0);
+        
+        // Only use synced forms (must have server_id) because member records reference server_id
+        if (groupUuid === state.groupClientUuid && formServerId > 0) {
           // Check if this is the previous month
           const isPrevious = (formYear < currentYear) ||
                             (formYear === currentYear && formMonth < currentMonth);
-
+          
           if (isPrevious) {
-            if (!previousForm ||
-                formYear > previousForm.year ||
+            if (!previousForm || 
+                formYear > previousForm.year || 
                 (formYear === previousForm.year && formMonth > previousForm.month)) {
               previousForm = form;
             }
@@ -839,37 +841,9 @@
       // Load member records from previous month
       const allRecords = await memberRecordsTable.toArray();
       const previousFormId = Number(previousForm.server_id || 0);
-
+      
       if (!previousFormId || previousFormId <= 0) {
         return {};
-      }
-
-      const map = {};
-      allRecords.forEach(function (record) {
-        const recordFormId = Number(record.monthly_form_id || 0);
-        if (recordFormId === previousFormId) {
-          const memberId = Number(record.member_id || 0);
-          if (memberId > 0) {
-            // Use C/F (closing balance) as B/F (opening balance) for next month
-            map['member_id:' + memberId] = {
-              savings_share_bf: record.savings_share_cf,
-              loan_balance_bf: record.loan_balance_cf,
-            };
-          }
-        }
-      });
-
-      return map;
-    } catch (error) {
-      console.error('Failed to load carry-over records:', error);
-      return {};
-    }
-  }
-
-  async function renderRows() {
-    tableBody.querySelectorAll('tr[data-offline-row="true"]').forEach(function (row) {
-      row.remove();
-    });
 
     if (!state.members.length) {
       updateEmptyStateMessage();
