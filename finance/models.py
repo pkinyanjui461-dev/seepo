@@ -1,10 +1,10 @@
 import uuid
+from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
 from groups.models import Group
 from members.models import Member
-import uuid
 
 
 class MonthlyForm(models.Model):
@@ -51,16 +51,16 @@ class MemberRecord(models.Model):
     order = models.PositiveSmallIntegerField(default=0)
 
     # Financial columns
-    savings_share_bf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_balance_bf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total_repaid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    principal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_interest = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    shares_this_month = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    withdrawals = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    fines_charges = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    savings_share_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_balance_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    savings_share_bf = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    loan_balance_bf = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    total_repaid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    principal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    loan_interest = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    shares_this_month = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    withdrawals = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    fines_charges = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    savings_share_cf = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    loan_balance_cf = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
 
     # Validation flags
     savings_valid = models.BooleanField(default=True)
@@ -148,6 +148,8 @@ SECTION_CHOICES = [
 
 
 class GroupPerformanceForm(models.Model):
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     monthly_form = models.OneToOneField(MonthlyForm, on_delete=models.CASCADE, related_name='performance_form')
     notes = models.TextField(blank=True)
 
@@ -162,15 +164,24 @@ class GroupPerformanceForm(models.Model):
     def __str__(self):
         return f"Performance – {self.monthly_form}"
 
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            kwargs['update_fields'] = set(update_fields) | {'client_updated_at'}
+        self.client_updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
 
 class PerformanceEntry(models.Model):
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     performance_form = models.ForeignKey(GroupPerformanceForm, on_delete=models.CASCADE, related_name='entries')
     section = models.CharField(max_length=1, choices=SECTION_CHOICES)
     description = models.CharField(max_length=300)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
     is_paid = models.BooleanField(default=False)
-    secondary_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    tertiary_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    secondary_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    tertiary_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -178,6 +189,13 @@ class PerformanceEntry(models.Model):
 
     def __str__(self):
         return f"{self.get_section_display()} – {self.description}"
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            kwargs['update_fields'] = set(update_fields) | {'client_updated_at'}
+        self.client_updated_at = timezone.now()
+        super().save(*args, **kwargs)
 
     def get_section_display(self):
         return dict(SECTION_CHOICES).get(self.section, self.section)

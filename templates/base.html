@@ -479,7 +479,7 @@
         })();
     </script>
 </head>
-<body class="bg-app" data-offline-models="{% if user.role == 'admin' or user.role == 'ict' or user.is_superuser %}group,member,monthly_form,member_record,expense,user{% else %}group,member,monthly_form,member_record,expense{% endif %}">
+<body class="bg-app" data-offline-models="{% if user.role == 'admin' or user.role == 'ict' or user.is_superuser %}group,member,monthly_form,group_performance_form,member_record,performance_entry,expense,user{% else %}group,member,monthly_form,group_performance_form,member_record,performance_entry,expense{% endif %}">
 
 <div class="d-flex" id="wrapper">
     <!-- ── Sidebar ── -->
@@ -823,14 +823,14 @@
 <!-- Sidebar Toggle JS -->
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script src="{% static 'js/dev-log-tools.js' %}?v=3"></script>
-<script src="{% static 'js/offline-db.js' %}?v=5"></script>
-<script src="{% static 'js/offline-sync.js' %}?v=11"></script>
+<script src="{% static 'js/offline-db.js' %}?v=6"></script>
+<script src="{% static 'js/offline-sync.js' %}?v=12"></script>
 <script src="{% static 'js/offline-diary-sync.js' %}"></script>
 <script src="{% static 'js/offline-draft-queue.js' %}"></script>
 <script src="{% static 'js/offline-form-handler.js' %}"></script>
 <script src="{% static 'js/offline-form-auto-persist.js' %}"></script>
 <script src="{% static 'js/offline-global-state.js' %}?v=4"></script>
-<script src="{% static 'js/sw-register.js' %}?v=39"></script>
+<script src="{% static 'js/sw-register.js' %}?v=40"></script>
 <script>
     (function () {
         const fab = document.getElementById('sw-tools-fab');
