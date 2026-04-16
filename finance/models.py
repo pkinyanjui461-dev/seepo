@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 from groups.models import Group
 from members.models import Member
+import uuid
 
 
 class MonthlyForm(models.Model):
