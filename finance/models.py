@@ -65,6 +65,10 @@ class MemberRecord(models.Model):
     savings_valid = models.BooleanField(default=True)
     loan_valid = models.BooleanField(default=True)
 
+    # Override flags
+    savings_bf_overridden = models.BooleanField(default=False)
+    loan_bf_overridden = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['order', 'member__name']
         unique_together = ('monthly_form', 'member')
@@ -88,6 +92,7 @@ class MemberRecord(models.Model):
         self.loan_balance_bf = Decimal(str(self.loan_balance_bf)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.principal = Decimal(str(self.principal)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.total_repaid = Decimal(str(self.total_repaid)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        self.withdrawals = Decimal(str(self.withdrawals)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.fines_charges = Decimal(str(self.fines_charges)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
         # Calculated fields
@@ -102,8 +107,8 @@ class MemberRecord(models.Model):
             # Deduct principal and interest, but don't let shares go negative
             calc_shares = self.total_repaid - (self.principal + self.loan_interest)
             self.shares_this_month = max(Decimal('0'), calc_shares)
-        self.savings_share_cf = self.savings_share_bf + self.shares_this_month - self.withdrawals
-        self.loan_balance_cf = self.loan_balance_bf - self.principal
+        self.savings_share_cf = (self.savings_share_bf + self.shares_this_month - self.withdrawals).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        self.loan_balance_cf = (self.loan_balance_bf - self.principal).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
     def validate(self):
         """Returns dict of validation errors."""
