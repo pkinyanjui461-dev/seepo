@@ -94,7 +94,6 @@ def diary_list(request):
     return render(request, 'groups/diary_list.html', {'diaries': diaries})
 
 
-@csrf_exempt
 @require_POST
 @login_required
 def api_diary_update(request, pk):

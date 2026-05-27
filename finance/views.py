@@ -954,10 +954,11 @@ from finance.forms import ExpenseForm
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 @login_required
 def expense_list(request):
-    today = datetime.date.today()
+    today = timezone.localdate()
     selected_month = int(request.GET.get('month', today.month))
     selected_year = int(request.GET.get('year', today.year))
 
