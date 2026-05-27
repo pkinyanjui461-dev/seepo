@@ -66,6 +66,10 @@ class MemberRecord(models.Model):
     savings_valid = models.BooleanField(default=True)
     loan_valid = models.BooleanField(default=True)
 
+    # Override flags
+    savings_bf_overridden = models.BooleanField(default=False)
+    loan_bf_overridden = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['order', 'member__name']
         unique_together = ('monthly_form', 'member')
@@ -89,10 +93,12 @@ class MemberRecord(models.Model):
         self.loan_balance_bf = Decimal(str(self.loan_balance_bf)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.principal = Decimal(str(self.principal)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.total_repaid = Decimal(str(self.total_repaid)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        self.withdrawals = Decimal(str(self.withdrawals)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         self.fines_charges = Decimal(str(self.fines_charges)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
         # Calculated fields
         self.loan_interest = (self.loan_balance_bf * Decimal('0.015')).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+<<<<<<< HEAD
         # If total repaid is 0, shares this month is 0.
         # If principal is 0 OR there are withdrawals, interest/principal is NOT deducted from repaid.
         if self.total_repaid <= 0:
@@ -103,8 +109,12 @@ class MemberRecord(models.Model):
             # Deduct principal and interest, but don't let shares go negative
             calc_shares = self.total_repaid - (self.principal + self.loan_interest)
             self.shares_this_month = max(Decimal('0'), calc_shares)
-        self.savings_share_cf = self.savings_share_bf + self.shares_this_month - self.withdrawals
-        self.loan_balance_cf = self.loan_balance_bf - self.principal
+        self.savings_share_cf = (self.savings_share_bf + self.shares_this_month - self.withdrawals).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+=======
+        self.shares_this_month = (self.total_repaid - (self.principal + self.loan_interest)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        self.savings_share_cf = (self.savings_share_bf + self.shares_this_month).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+>>>>>>> a971ac4 (test changes)
+        self.loan_balance_cf = (self.loan_balance_bf - self.principal).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
     def validate(self):
         """Returns dict of validation errors."""

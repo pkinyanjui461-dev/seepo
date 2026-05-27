@@ -10,7 +10,7 @@ from groups.models import Group
 @login_required
 def member_list(request, group_pk):
     group = get_object_or_404(Group, pk=group_pk)
-    members = group.member_set.all()
+    members = group.member_set.filter(is_active=True)
     return render(request, 'members/member_list.html', {'group': group, 'members': members})
 
 

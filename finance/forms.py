@@ -2,12 +2,13 @@ from django import forms
 from finance.models import MonthlyForm
 import datetime
 
+from django.utils import timezone
 
 class MonthlyFormForm(forms.ModelForm):
     MONTH_CHOICES = [(i, datetime.date(2000, i, 1).strftime('%B')) for i in range(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
     year = forms.IntegerField(
-        initial=datetime.date.today().year,
+        initial=timezone.localdate().year,
         widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 2020, 'max': 2099})
     )
 

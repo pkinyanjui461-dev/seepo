@@ -163,23 +163,27 @@ def monthly_form_detail(request, pk):
 
     records = _ordered_member_records_queryset(mform)
     # Self-healing: Ensure all records are recalculated to fix any stale data from logic updates.
-    # New: Also dynamically synchronize carry-forward values if the previous month was updated.
+    # New: Also dynamically synchronize carry-forward values if the previous month was updated and not manually overridden.
     for r in records:
         if previous_form and r.member_id in prev_records:
             prev_r = prev_records[r.member_id]
-            r.savings_share_bf = prev_r.savings_share_cf
-            r.loan_balance_bf = prev_r.loan_balance_cf
+            
+            if not r.savings_bf_overridden:
+                r.savings_share_bf = prev_r.savings_share_cf
+                
+            if not r.loan_bf_overridden:
+                r.loan_balance_bf = prev_r.loan_balance_cf
 
-            # Add new loans taken in Section B of the previous month
-            if hasattr(previous_form, 'performance_form'):
-                # Look at the member's number first, then fallback to name matching
-                member_num = str(r.member.member_number)
-                name = r.member.name.strip()
-                p_entry = previous_form.performance_form.entries.filter(
-                    Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
-                ).first()
-                if p_entry:
-                    r.loan_balance_bf += p_entry.secondary_amount
+                # Add new loans taken in Section B of the previous month
+                if hasattr(previous_form, 'performance_form'):
+                    # Look at the member's number first, then fallback to name matching
+                    member_num = str(r.member.member_number)
+                    name = r.member.name.strip()
+                    p_entry = previous_form.performance_form.entries.filter(
+                        Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
+                    ).first()
+                    if p_entry:
+                        r.loan_balance_bf += p_entry.secondary_amount
 
         r.calculate()
         r.save()
@@ -326,9 +330,44 @@ def sync_offline_monthly_form_sheet(request):
             defaults=defaults,
         )
 
+        # Get previous month's form and record to determine if this is an override
+        previous_form = mform.group.monthly_forms.filter(
+            Q(year__lt=mform.year) | Q(year=mform.year, month__lt=mform.month)
+        ).order_by('-year', '-month').first()
+        
+        prev_savings_cf = Decimal('0')
+        prev_loan_cf = Decimal('0')
+        if previous_form:
+            prev_r = previous_form.member_records.filter(member=record.member).first()
+            if prev_r:
+                prev_savings_cf = prev_r.savings_share_cf.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+                prev_loan_cf = prev_r.loan_balance_cf.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+                
+                # Add previous month's Section B loan
+                if hasattr(previous_form, 'performance_form'):
+                    member_num = str(record.member.member_number)
+                    name = record.member.name.strip()
+                    p_entry = previous_form.performance_form.entries.filter(
+                        Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
+                    ).first()
+                    if p_entry:
+                        prev_loan_cf += p_entry.secondary_amount.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+
         for field_name in editable_fields:
             if field_name in row:
                 setattr(record, field_name, _coerce_sheet_decimal(row.get(field_name)))
+
+        if 'savings_share_bf' in row:
+            if record.savings_share_bf != prev_savings_cf:
+                record.savings_bf_overridden = True
+            else:
+                record.savings_bf_overridden = False
+
+        if 'loan_balance_bf' in row:
+            if record.loan_balance_bf != prev_loan_cf:
+                record.loan_bf_overridden = True
+            else:
+                record.loan_bf_overridden = False
 
         record.calculate()
         record.save()
@@ -349,14 +388,52 @@ def save_member_record(request, record_pk):
     record = get_object_or_404(MemberRecord, pk=record_pk)
     try:
         data = json.loads(request.body)
+        
+        # Get the previous month's form and record to determine if this is an override
+        previous_form = record.monthly_form.group.monthly_forms.filter(
+            Q(year__lt=record.monthly_form.year) | Q(year=record.monthly_form.year, month__lt=record.monthly_form.month)
+        ).order_by('-year', '-month').first()
+        
+        prev_savings_cf = Decimal('0')
+        prev_loan_cf = Decimal('0')
+        if previous_form:
+            prev_r = previous_form.member_records.filter(member=record.member).first()
+            if prev_r:
+                prev_savings_cf = prev_r.savings_share_cf.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+                prev_loan_cf = prev_r.loan_balance_cf.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+                
+                # Add previous month's Section B loan
+                if hasattr(previous_form, 'performance_form'):
+                    member_num = str(record.member.member_number)
+                    name = record.member.name.strip()
+                    p_entry = previous_form.performance_form.entries.filter(
+                        Q(section='B') & (Q(description=member_num) | Q(description__iexact=name))
+                    ).first()
+                    if p_entry:
+                        prev_loan_cf += p_entry.secondary_amount.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+
         fields = ['savings_share_bf', 'loan_balance_bf', 'total_repaid', 'principal',
                   'loan_interest', 'shares_this_month', 'withdrawals', 'fines_charges', 'savings_share_cf', 'loan_balance_cf']
         for f in fields:
             if f in data:
                 try:
-                    setattr(record, f, Decimal(str(data[f])))
+                    val = Decimal(str(data[f])).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
                 except (InvalidOperation, TypeError):
-                    setattr(record, f, Decimal('0'))
+                    val = Decimal('0')
+                setattr(record, f, val)
+
+        if 'savings_share_bf' in data:
+            if record.savings_share_bf != prev_savings_cf:
+                record.savings_bf_overridden = True
+            else:
+                record.savings_bf_overridden = False
+
+        if 'loan_balance_bf' in data:
+            if record.loan_balance_bf != prev_loan_cf:
+                record.loan_bf_overridden = True
+            else:
+                record.loan_bf_overridden = False
+
         record.calculate()
         errors = record.validate()
         record.save()
@@ -504,6 +581,22 @@ def performance_form_view(request, mform_pk):
             'tertiary_total': tertiary_total
         }
 
+    section_member_entries = {'A': {}, 'B': {}}
+    for sec_code in ['A', 'B']:
+        sec_entries = perf_form.entries.filter(section=sec_code)
+        for entry in sec_entries:
+            desc = entry.description.strip()
+            matched_member = None
+            if desc.isdigit():
+                matched_member = mform.group.member_set.filter(id=int(desc)).first()
+            if not matched_member and desc.isdigit():
+                matched_member = mform.group.member_set.filter(member_number=int(desc)).first()
+            if not matched_member:
+                matched_member = mform.group.member_set.filter(name__iexact=desc).first()
+            
+            if matched_member:
+                section_member_entries[sec_code][matched_member.id] = entry
+
     from django.db.models import Sum, Q
     accounting_totals = mform.member_records.aggregate(
         total_repaid=Sum('total_repaid'),
@@ -520,6 +613,7 @@ def performance_form_view(request, mform_pk):
         'mform': mform,
         'perf_form': perf_form,
         'entries_by_section': entries_by_section,
+        'section_member_entries': section_member_entries,
         'section_choices': SECTION_CHOICES,
         'members': members,
         'accounting_total_repaid': accounting_total_repaid,
@@ -740,14 +834,14 @@ def performance_form_pdf(request, pk):
     filename = slugify(f"performance_form_{mform.group.name}_{mform.get_month_name()}_{mform.year}") + ".pdf"
     inline = request.GET.get('inline') == '1'
 
-    # Build a name -> member_number lookup for the PDF template
-    # Build a lookup for the PDF template (handles both old name-based and new number-based descriptions)
+    # Build a lookup for the PDF template (handles name, number, and ID based descriptions)
     member_num_map = {}
     for m in Member.objects.filter(group=mform.group):
+        mno = str(m.member_number) if m.member_number is not None else "-"
+        member_num_map[m.name] = mno
+        member_num_map[str(m.id)] = mno
         if m.member_number is not None:
-            mno = str(m.member_number)
-            member_num_map[m.name] = mno
-            member_num_map[mno] = mno
+            member_num_map[str(m.member_number)] = mno
 
     return generate_pdf_response('pdf/performance_form_pdf.html', {
         'mform': mform,
@@ -831,13 +925,14 @@ def combined_monthly_report_pdf(request, pk):
     adv_total = sum(e.amount for e in sections['A'] if e.is_paid)
     perf_summary = _get_perf_summary(mform, totals, sections)
 
-    # Build a lookup for the PDF template
+    # Build a lookup for the PDF template (handles name, number, and ID based descriptions)
     member_num_map = {}
     for m in Member.objects.filter(group=mform.group):
+        mno = str(m.member_number) if m.member_number is not None else "-"
+        member_num_map[m.name] = mno
+        member_num_map[str(m.id)] = mno
         if m.member_number is not None:
-            mno = str(m.member_number)
-            member_num_map[m.name] = mno
-            member_num_map[mno] = mno
+            member_num_map[str(m.member_number)] = mno
 
     performance_pdf = render_performance_form_reportlab({
         'mform': mform, 'perf_form': perf_form, 'records': records, 'totals': totals,
@@ -859,10 +954,11 @@ from finance.forms import ExpenseForm
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 @login_required
 def expense_list(request):
-    today = datetime.date.today()
+    today = timezone.localdate()
     selected_month = int(request.GET.get('month', today.month))
     selected_year = int(request.GET.get('year', today.year))
 
