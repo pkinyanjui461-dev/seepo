@@ -306,23 +306,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function roundHalfUp(val) {
-        const sign = Math.sign(val);
-        const absVal = Math.abs(val);
-        return sign * Math.floor(absVal + 0.5);
-    }
-
     function performRowCalculations(tr) {
-        // Fetch raw values, parse to float, then round to nearest whole number using ROUND_HALF_UP
-        const savBf    = roundHalfUp(getVal(tr, 'savings_share_bf'));
-        const loanBf   = roundHalfUp(getVal(tr, 'loan_balance_bf'));
-        const principal = roundHalfUp(getVal(tr, 'principal'));
-        const repaid   = roundHalfUp(getVal(tr, 'total_repaid'));
-        const withdrawals = roundHalfUp(getVal(tr, 'withdrawals'));
-        const fines    = roundHalfUp(getVal(tr, 'fines_charges'));
+        // Fetch raw values, parse to float, then round to nearest whole number
+        const savBf    = Math.round(getVal(tr, 'savings_share_bf'));
+        const loanBf   = Math.round(getVal(tr, 'loan_balance_bf'));
+        const principal = Math.round(getVal(tr, 'principal'));
+        const repaid   = Math.round(getVal(tr, 'total_repaid'));
+        const withdrawals = Math.round(getVal(tr, 'withdrawals'));
+        const fines    = Math.round(getVal(tr, 'fines_charges'));
 
         // Calculated fields
-        const loanInterest = roundHalfUp(loanBf * 0.015);
+        const loanInterest = Math.round(loanBf * 0.015);
 
         // NEW LOGIC: If total repaid is 0, shares this month is 0.
         // If principal is 0 OR there are withdrawals, interest/principal is NOT deducted from repaid.

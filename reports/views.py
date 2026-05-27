@@ -8,32 +8,19 @@ from finance.models import MonthlyForm, GroupPerformanceForm, PerformanceEntry
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 
-from django.utils import timezone
-from django.db.models import Sum, Q, Prefetch
-
 def is_management_or_ict(user):
     return user.is_authenticated and user.role in ['ict', 'management', 'admin']
+
 
 @login_required
 @user_passes_test(is_management_or_ict)
 def reports_overview(request):
-    today = timezone.localdate()
+    groups = Group.objects.all().order_by('name')
+    
+    # Filtering setup
+    today = datetime.date.today()
     selected_month = int(request.GET.get('month', today.month))
     selected_year = int(request.GET.get('year', today.year))
-    
-    mforms_prefetch = Prefetch(
-        'monthly_forms',
-        queryset=MonthlyForm.objects.filter(month=selected_month, year=selected_year).select_related('performance_form').prefetch_related(
-            Prefetch(
-                'performance_form__entries',
-                queryset=PerformanceEntry.objects.filter(section='E', description__in=['Total Banking', 'Total Debt']),
-                to_attr='relevant_entries'
-            )
-        ),
-        to_attr='current_mforms'
-    )
-    
-    groups = Group.objects.all().order_by('name').prefetch_related(mforms_prefetch)
     
     report_data = []
     total_office_account_all = 0
@@ -41,22 +28,27 @@ def reports_overview(request):
     total_office_debt_all = 0
     
     for g in groups:
+        # Get form for specific month/year
+        mform = g.monthly_forms.filter(month=selected_month, year=selected_year).first()
+        
         office_account = 0
         group_account = 0
         office_debt = 0
         
-        mform = g.current_mforms[0] if g.current_mforms else None
-        
-        if mform and hasattr(mform, 'performance_form') and mform.performance_form:
-            for entry in getattr(mform.performance_form, 'relevant_entries', []):
-                if entry.description == 'Total Banking':
-                    if g.banking_type == 'group':
-                        group_account = entry.amount
-                    else:
-                        office_account = entry.amount
-                elif entry.description == 'Total Debt':
-                    office_debt = entry.amount
-                    
+        if mform and hasattr(mform, 'performance_form'):
+            perf_form = mform.performance_form
+            
+            b_entry = perf_form.entries.filter(section='E', description='Total Banking').first()
+            if b_entry:
+                if g.banking_type == 'group':
+                    group_account = b_entry.amount
+                else:
+                    office_account = b_entry.amount
+                
+            d_entry = perf_form.entries.filter(section='E', description='Total Debt').first()
+            if d_entry:
+                office_debt = d_entry.amount
+                
         report_data.append({
             'group_name': g.name,
             'office_account': office_account,
@@ -68,6 +60,7 @@ def reports_overview(request):
         total_group_account_all += group_account
         total_office_debt_all += office_debt
         
+    # Generate list of years and months for the filter dropdowns
     available_years = list(range(today.year - 5, today.year + 2))
     months = [
         (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
@@ -92,30 +85,12 @@ def reports_overview(request):
 @login_required
 @user_passes_test(is_management_or_ict)
 def entities_report(request):
-    today = timezone.localdate()
+    groups = Group.objects.all().order_by('name')
+    
+    # Filtering setup
+    today = datetime.date.today()
     selected_month = int(request.GET.get('month', today.month))
     selected_year = int(request.GET.get('year', today.year))
-    
-    mforms_prefetch = Prefetch(
-        'monthly_forms',
-        queryset=MonthlyForm.objects.filter(
-            month=selected_month, year=selected_year
-        ).annotate(
-            risk_fund_total=Sum('member_records__fines_charges')
-        ).select_related('performance_form').prefetch_related(
-            Prefetch(
-                'performance_form__entries',
-                queryset=PerformanceEntry.objects.filter(
-                    Q(section='D', description__in=['Service Fee', 'Loan Forms', 'Mpesa Charges']) |
-                    Q(section='C', description='Pass Book')
-                ),
-                to_attr='relevant_entries'
-            )
-        ),
-        to_attr='current_mforms'
-    )
-    
-    groups = Group.objects.all().order_by('name').prefetch_related(mforms_prefetch)
     
     report_data = []
     total_service_fee_all = 0
@@ -126,24 +101,35 @@ def entities_report(request):
     total_risk_fund_all = 0
     
     for g in groups:
+        mform = g.monthly_forms.filter(month=selected_month, year=selected_year).first()
+        
         service_fee = 0
         passbook = 0
         loan_form = 0
         mpesa = 0
         risk_fund = 0
         
-        mform = g.current_mforms[0] if g.current_mforms else None
-        
-        if mform and hasattr(mform, 'performance_form') and mform.performance_form:
-            for entry in getattr(mform.performance_form, 'relevant_entries', []):
-                if entry.section == 'D' and entry.description == 'Service Fee': service_fee = entry.amount
-                elif entry.section == 'D' and entry.description == 'Loan Forms': loan_form = entry.amount
-                elif entry.section == 'D' and entry.description == 'Mpesa Charges': mpesa = entry.amount
-                elif entry.section == 'C' and entry.description == 'Pass Book': passbook = entry.amount
+        if mform and hasattr(mform, 'performance_form'):
+            perf_form = mform.performance_form
+            
+            # Extract from Section D (Expenses)
+            sf_entry = perf_form.entries.filter(section='D', description='Service Fee').first()
+            if sf_entry: service_fee = sf_entry.amount
+                
+            lf_entry = perf_form.entries.filter(section='D', description='Loan Forms').first()
+            if lf_entry: loan_form = lf_entry.amount
+                
+            mp_entry = perf_form.entries.filter(section='D', description='Mpesa Charges').first()
+            if mp_entry: mpesa = mp_entry.amount
+
+            # Extract from Section C (Income)
+            pb_entry = perf_form.entries.filter(section='C', description='Pass Book').first()
+            if pb_entry: passbook = pb_entry.amount
                 
         if mform:
-            risk_fund = getattr(mform, 'risk_fund_total', 0) or 0
-            
+            # Risk Fund is calculated from fines_charges
+            rf_total = mform.member_records.aggregate(total=Sum('fines_charges'))['total'] or 0
+            risk_fund = rf_total
         totals_entities = service_fee + passbook + loan_form + mpesa
         
         report_data.append({
