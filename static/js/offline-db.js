@@ -15,11 +15,25 @@
     sync_meta: '&model,last_pull_ts'
   });
 
+  db.version(4).stores({
+    groups: '++_localId,&client_uuid,synced,client_updated_at,name',
+    members: '++_localId,&client_uuid,synced,client_updated_at,group_client_uuid,name,member_number',
+    monthly_forms: '++_localId,&client_uuid,synced,client_updated_at,group_client_uuid,year,month',
+    group_performance_forms: '++_localId,&client_uuid,synced,client_updated_at,monthly_form_id',
+    member_records: '++_localId,&client_uuid,synced,client_updated_at,monthly_form_id,member_id,order',
+    performance_entries: '++_localId,&client_uuid,synced,client_updated_at,performance_form_id,section,order',
+    expenses: '++_localId,&client_uuid,synced,client_updated_at,date,name',
+    users: '++_localId,&client_uuid,synced,client_updated_at,username,phone_number,role',
+    sync_meta: '&model,last_pull_ts'
+  });
+
   const modelTableMap = {
     group: 'groups',
     member: 'members',
     monthly_form: 'monthly_forms',
+    group_performance_form: 'group_performance_forms',
     member_record: 'member_records',
+    performance_entry: 'performance_entries',
     expense: 'expenses',
     user: 'users'
   };

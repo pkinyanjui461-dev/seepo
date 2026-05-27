@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
 from accounts.models import User
-from finance.models import Expense, MonthlyForm, MemberRecord
+from finance.models import Expense, GroupPerformanceForm, MemberRecord, MonthlyForm, PerformanceEntry, SECTION_CHOICES
 from groups.models import Group
 from members.models import Member
 
@@ -50,6 +50,27 @@ def _parse_required_date(value: Any, field_name: str):
     return parsed
 
 
+def _parse_optional_date(value: Any, field_name: str):
+    raw = str(value or '').strip()
+    if not raw:
+        return None
+    return _parse_required_date(raw, field_name)
+
+
+def _parse_optional_time(value: Any, field_name: str):
+    raw = str(value or '').strip()
+    if not raw:
+        return None
+
+    for time_format in ('%H:%M:%S', '%H:%M'):
+        try:
+            return datetime.strptime(raw, time_format).time()
+        except ValueError:
+            continue
+
+    raise ValueError(f'{field_name} must be HH:MM or HH:MM:SS.')
+
+
 def _parse_decimal(value: Any, field_name: str) -> Decimal:
     try:
         return Decimal(str(value if value is not None else '0'))
@@ -86,6 +107,12 @@ def _resolve_group(group_client_uuid: str) -> Group:
     if not group_client_uuid:
         raise ValueError('group_client_uuid is required.')
     return Group.objects.get(client_uuid=group_client_uuid)
+
+
+def _resolve_monthly_form(monthly_form_id: Any) -> MonthlyForm:
+    if monthly_form_id in (None, ''):
+        raise ValueError('monthly_form_id is required.')
+    return MonthlyForm.objects.get(pk=_parse_required_int(monthly_form_id, 'monthly_form_id'))
 
 
 def _serialize_group(group: Group) -> dict[str, Any]:
@@ -302,6 +329,87 @@ def _serialize_member_record(member_record: MemberRecord) -> dict[str, Any]:
     }
 
 
+def _serialize_group_performance_form(performance_form: GroupPerformanceForm) -> dict[str, Any]:
+    return {
+        'server_id': performance_form.pk,
+        'client_uuid': str(performance_form.client_uuid),
+        'client_updated_at': performance_form.client_updated_at.isoformat(),
+        'updated_at': performance_form.updated_at.isoformat(),
+        'monthly_form_id': performance_form.monthly_form.pk,
+        'notes': performance_form.notes,
+        'next_meeting_date': performance_form.next_meeting_date.isoformat() if performance_form.next_meeting_date else None,
+        'next_meeting_time': performance_form.next_meeting_time.isoformat() if performance_form.next_meeting_time else None,
+        'next_meeting_venue': performance_form.next_meeting_venue,
+    }
+
+
+def _apply_group_performance_form(payload: dict[str, Any], request) -> dict[str, Any]:
+    monthly_form = _resolve_monthly_form(payload.get('monthly_form_id'))
+
+    return {
+        'monthly_form': monthly_form,
+        'notes': str(payload.get('notes', '')).strip(),
+        'next_meeting_date': _parse_optional_date(payload.get('next_meeting_date'), 'next_meeting_date'),
+        'next_meeting_time': _parse_optional_time(payload.get('next_meeting_time'), 'next_meeting_time'),
+        'next_meeting_venue': str(payload.get('next_meeting_venue', '')).strip(),
+        'client_updated_at': _parse_client_updated_at(payload.get('client_updated_at')),
+    }
+
+
+def _serialize_performance_entry(performance_entry: PerformanceEntry) -> dict[str, Any]:
+    return {
+        'server_id': performance_entry.pk,
+        'client_uuid': str(performance_entry.client_uuid),
+        'client_updated_at': performance_entry.client_updated_at.isoformat(),
+        'performance_form_id': performance_entry.performance_form.pk,
+        'monthly_form_id': performance_entry.performance_form.monthly_form.pk,
+        'section': performance_entry.section,
+        'description': performance_entry.description,
+        'amount': str(performance_entry.amount),
+        'is_paid': performance_entry.is_paid,
+        'secondary_amount': str(performance_entry.secondary_amount),
+        'tertiary_amount': str(performance_entry.tertiary_amount),
+        'order': performance_entry.order,
+    }
+
+
+def _apply_performance_entry(payload: dict[str, Any], request) -> dict[str, Any]:
+    section = str(payload.get('section', '')).strip().upper()
+    section_choices = {choice[0] for choice in SECTION_CHOICES}
+    if section not in section_choices:
+        raise ValueError('section is invalid.')
+
+    description = str(payload.get('description', '')).strip()
+    if not description:
+        raise ValueError('description is required.')
+
+    performance_form_id = payload.get('performance_form_id')
+    monthly_form_id = payload.get('monthly_form_id')
+
+    performance_form = None
+    if performance_form_id not in (None, ''):
+        performance_form = GroupPerformanceForm.objects.get(
+            pk=_parse_required_int(performance_form_id, 'performance_form_id')
+        )
+    elif monthly_form_id not in (None, ''):
+        monthly_form = _resolve_monthly_form(monthly_form_id)
+        performance_form = GroupPerformanceForm.objects.get(monthly_form=monthly_form)
+    else:
+        raise ValueError('performance_form_id is required.')
+
+    return {
+        'performance_form': performance_form,
+        'section': section,
+        'description': description,
+        'amount': _parse_decimal(payload.get('amount'), 'amount'),
+        'is_paid': _to_bool(payload.get('is_paid', False)),
+        'secondary_amount': _parse_decimal(payload.get('secondary_amount'), 'secondary_amount'),
+        'tertiary_amount': _parse_decimal(payload.get('tertiary_amount'), 'tertiary_amount'),
+        'order': _parse_int(payload.get('order'), 'order', 0),
+        'client_updated_at': _parse_client_updated_at(payload.get('client_updated_at')),
+    }
+
+
 def _apply_member_record(payload: dict[str, Any], request) -> dict[str, Any]:
     monthly_form_id = _parse_required_int(payload.get('monthly_form_id'), 'monthly_form_id')
     member_id = _parse_required_int(payload.get('member_id'), 'member_id')
@@ -386,21 +494,33 @@ def register_models() -> None:
                 serialize=_serialize_monthly_form,
                 apply_payload=_apply_monthly_form,
             ),
+            'group_performance_form': SyncModelSpec(
+                model=GroupPerformanceForm,
+                order=4,
+                serialize=_serialize_group_performance_form,
+                apply_payload=_apply_group_performance_form,
+            ),
             'member_record': SyncModelSpec(
                 model=MemberRecord,
-                order=4,
+                order=5,
                 serialize=_serialize_member_record,
                 apply_payload=_apply_member_record,
             ),
+            'performance_entry': SyncModelSpec(
+                model=PerformanceEntry,
+                order=6,
+                serialize=_serialize_performance_entry,
+                apply_payload=_apply_performance_entry,
+            ),
             'expense': SyncModelSpec(
                 model=Expense,
-                order=5,
+                order=7,
                 serialize=_serialize_expense,
                 apply_payload=_apply_expense,
             ),
             'user': SyncModelSpec(
                 model=User,
-                order=6,
+                order=8,
                 serialize=_serialize_user,
                 apply_payload=_apply_user,
             ),

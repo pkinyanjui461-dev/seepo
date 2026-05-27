@@ -3,7 +3,7 @@
     return;
   }
 
-  const DEFAULT_MODEL_ORDER = ['group', 'member', 'monthly_form', 'member_record', 'expense'];
+  const DEFAULT_MODEL_ORDER = ['group', 'member', 'monthly_form', 'group_performance_form', 'member_record', 'performance_entry', 'expense'];
 
   function resolveModelOrder() {
     const body = document.body;
@@ -72,7 +72,9 @@
         group: 'Groups',
         member: 'Members',
         monthly_form: 'Monthly Forms',
+        group_performance_form: 'Performance Forms',
         member_record: 'Monthly Rows',
+        performance_entry: 'Performance Rows',
         monthly_sheet: 'Sheet Drafts',
         expense: 'Expenses',
         user: 'Users',
@@ -265,7 +267,7 @@
 
       let totalSize = 0;
       try {
-        const tables = ['group', 'member', 'monthly_form', 'member_record', 'expense'];
+        const tables = ['group', 'member', 'monthly_form', 'group_performance_form', 'member_record', 'performance_entry', 'expense'];
         for (const tableName of tables) {
           const table = window.seepoOfflineDb.tableForModel(tableName);
           if (!table) continue;

@@ -106,6 +106,7 @@
     form: null,
     members: [],
     memberRecords: {},
+    performanceCarryoverAdjustments: {},
     hydrationAttempted: false,
     autoSaveTimer: null,
     isSaving: false,
@@ -650,7 +651,7 @@
       return false;
     }
 
-    const models = ['group', 'member', 'monthly_form', 'member_record'];
+    const models = ['group', 'member', 'monthly_form', 'group_performance_form', 'member_record', 'performance_entry'];
     let pulledAny = false;
 
     for (const modelName of models) {
@@ -792,21 +793,17 @@
     }
   }
 
-  async function getCarryoverRecordsFromPreviousMonth() {
-    // Load MemberRecord data from previous month for carry-over initialization
+  async function getPreviousSyncedMonthlyForm() {
     if (!window.seepoOfflineDb || !state.form || !state.groupClientUuid) {
-      return {};
+      return null;
     }
 
     try {
-      const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
       const monthlyFormsTable = window.seepoOfflineDb.tableForModel('monthly_form');
-
-      if (!memberRecordsTable || !monthlyFormsTable) {
-        return {};
+      if (!monthlyFormsTable) {
+        return null;
       }
 
-      // Find previous month's form
       const allForms = await monthlyFormsTable.toArray();
       const currentMonth = Number(context.month || 0);
       const currentYear = Number(context.year || 0);
@@ -816,21 +813,39 @@
         const formMonth = Number(form.month || 0);
         const formYear = Number(form.year || 0);
         const groupUuid = String(form.group_client_uuid || '').trim();
+        const formServerId = Number(form.server_id || 0);
 
-        if (groupUuid === state.groupClientUuid) {
-          // Check if this is the previous month
-          const isPrevious = (formYear < currentYear) ||
-                            (formYear === currentYear && formMonth < currentMonth);
+        if (groupUuid === state.groupClientUuid && formServerId > 0) {
+          const isPrevious = (formYear < currentYear) || (formYear === currentYear && formMonth < currentMonth);
 
           if (isPrevious) {
-            if (!previousForm ||
-                formYear > previousForm.year ||
-                (formYear === previousForm.year && formMonth > previousForm.month)) {
+            if (!previousForm || formYear > previousForm.year || (formYear === previousForm.year && formMonth > previousForm.month)) {
               previousForm = form;
             }
           }
         }
       });
+
+      return previousForm;
+    } catch (error) {
+      console.error('Failed to resolve previous monthly form:', error);
+      return null;
+    }
+  }
+
+  async function getCarryoverRecordsFromPreviousMonth() {
+    // Load MemberRecord data from previous month for carry-over initialization
+    if (!window.seepoOfflineDb || !state.form || !state.groupClientUuid) {
+      return {};
+    }
+
+    try {
+      const memberRecordsTable = window.seepoOfflineDb.tableForModel('member_record');
+      if (!memberRecordsTable) {
+        return {};
+      }
+
+      const previousForm = await getPreviousSyncedMonthlyForm();
 
       if (!previousForm) {
         return {};
@@ -866,11 +881,100 @@
     }
   }
 
-  async function renderRows() {
-    tableBody.querySelectorAll('tr[data-offline-row="true"]').forEach(function (row) {
-      row.remove();
-    });
+  async function getSectionBCarryoverAdjustmentsFromPreviousMonth() {
+    if (!window.seepoOfflineDb || !state.form || !state.groupClientUuid) {
+      return {};
+    }
 
+    try {
+      const performanceFormsTable = window.seepoOfflineDb.tableForModel('group_performance_form');
+      const performanceEntriesTable = window.seepoOfflineDb.tableForModel('performance_entry');
+
+      if (!performanceFormsTable || !performanceEntriesTable) {
+        return {};
+      }
+
+      const previousForm = await getPreviousSyncedMonthlyForm();
+      if (!previousForm) {
+        return {};
+      }
+
+      const previousFormId = Number(previousForm.server_id || 0);
+      if (!previousFormId || previousFormId <= 0) {
+        return {};
+      }
+
+      const previousPerformanceForm = await performanceFormsTable
+        .where('monthly_form_id')
+        .equals(previousFormId)
+        .first();
+
+      if (!previousPerformanceForm) {
+        return {};
+      }
+
+      const performanceFormId = Number(previousPerformanceForm.server_id || 0);
+      if (!performanceFormId || performanceFormId <= 0) {
+        return {};
+      }
+
+      const allEntries = await performanceEntriesTable.toArray();
+      const adjustments = {};
+
+      allEntries.forEach(function (entry) {
+        const entryFormId = Number(entry.performance_form_id || 0);
+        if (entryFormId !== performanceFormId || String(entry.section || '').toUpperCase() !== 'B') {
+          return;
+        }
+
+        const descriptionKey = normalizeText(entry.description).toLowerCase();
+        if (!descriptionKey) {
+          return;
+        }
+
+        const amount = parseNumber(entry.secondary_amount || 0);
+        if (amount <= 0) {
+          return;
+        }
+
+        adjustments[descriptionKey] = (adjustments[descriptionKey] || 0) + amount;
+      });
+
+      return adjustments;
+    } catch (error) {
+      console.error('Failed to load Section B carry-over adjustments:', error);
+      return {};
+    }
+  }
+
+  function getSectionBCarryoverAmountForMember(member, adjustments) {
+    if (!member || !adjustments) {
+      return 0;
+    }
+
+    const keys = [];
+    const memberNumber = normalizeText(member.member_number).toLowerCase();
+    const memberName = normalizeText(member.name).toLowerCase();
+
+    if (memberNumber) {
+      keys.push(memberNumber);
+    }
+
+    if (memberName && keys.indexOf(memberName) === -1) {
+      keys.push(memberName);
+    }
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const amount = parseNumber(adjustments[keys[i]] || 0);
+      if (amount > 0) {
+        return amount;
+      }
+    }
+
+    return 0;
+  }
+
+  async function renderRows() {
     if (!state.members.length) {
       updateEmptyStateMessage();
       updateRowPendingState();
@@ -890,7 +994,29 @@
       // If no current form records, load carry-over from previous month
       if (!Object.keys(state.memberRecords).length) {
         state.memberRecords = await getCarryoverRecordsFromPreviousMonth();
+        state.performanceCarryoverAdjustments = await getSectionBCarryoverAdjustmentsFromPreviousMonth();
+
+        state.members.forEach(function (member) {
+          const memberId = Number(member.server_id || 0);
+          const recordKey = 'member_id:' + memberId;
+          const record = state.memberRecords[recordKey];
+          if (!record) {
+            return;
+          }
+
+          const sectionBCarryover = getSectionBCarryoverAmountForMember(member, state.performanceCarryoverAdjustments);
+          if (sectionBCarryover > 0) {
+            state.memberRecords[recordKey] = {
+              ...record,
+              loan_balance_bf: parseNumber(record.loan_balance_bf) + sectionBCarryover,
+            };
+          }
+        });
+      } else {
+        state.performanceCarryoverAdjustments = {};
       }
+    } else {
+      state.performanceCarryoverAdjustments = {};
     }
 
     const rowsHtml = state.members.map(function (member) {
@@ -1414,7 +1540,7 @@
           // Trigger background data pull for this context
           (async function () {
             try {
-              const models = ['group', 'member', 'monthly_form', 'member_record'];
+              const models = ['group', 'member', 'monthly_form', 'group_performance_form', 'member_record', 'performance_entry'];
               for (const modelName of models) {
                 try {
                   await window.seepoOfflineSync.pullModel(modelName, { forceFull: false });
