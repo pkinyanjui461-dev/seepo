@@ -271,7 +271,6 @@
             <input type="hidden" name="description" value="{{ member_rec.member.id }}">
           </td>
           <td>
-<<<<<<< HEAD
             <input type="number" step="1" name="amount" class="amt-input amount-A sec-a-amt"
                    value="{% with e=section_member_entries.A|get_item:member_rec.member.id %}{% if e and e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endwith %}">
           </td>
@@ -280,25 +279,12 @@
             <input type="hidden" name="is_paid" value="False" class="hidden-paid" {% if e and e.is_paid %}disabled{% endif %}>
             <input type="checkbox" name="is_paid" value="True" class="form-check-input sec-a-check"
                    {% if e and e.is_paid %}checked{% endif %}
-=======
-            <input type="number" step="1" name="amount" class="amt-input amount-A sec-a-amt" 
-                   value="{% for e in entries_by_section.A.entries %}{% if e.description == member_rec.member.name %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
-          </td>
-          <td class="text-center pt-2">
-            <input type="hidden" name="is_paid" value="False" class="hidden-paid" {% for e in entries_by_section.A.entries %}{% if e.description == member_rec.member.name and e.is_paid %}disabled{% endif %}{% endfor %}>
-            <input type="checkbox" name="is_paid" value="True" class="form-check-input sec-a-check"
-                   {% for e in entries_by_section.A.entries %}{% if e.description == member_rec.member.name and e.is_paid %}checked{% endif %}{% endfor %}
->>>>>>> a971ac4 (test changes)
                    onchange="this.previousElementSibling.disabled = this.checked; updateTotal('A');">
+            {% endwith %}
           </td>
           <td>
-<<<<<<< HEAD
             <input type="number" step="1" name="secondary_amount" class="amt-input amount-A-fine"
                    value="{% with e=section_member_entries.A|get_item:member_rec.member.id %}{% if e and e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endwith %}">
-=======
-            <input type="number" step="1" name="secondary_amount" class="amt-input amount-A-fine" 
-                   value="{% for e in entries_by_section.A.entries %}{% if e.description == member_rec.member.name %}{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
->>>>>>> a971ac4 (test changes)
           </td>
         </tr>
         {% endfor %}
@@ -344,7 +330,6 @@
             <input type="hidden" name="description" value="{{ member_rec.member.id }}">
           </td>
           <td>
-<<<<<<< HEAD
             <input type="number" step="1" name="amount" class="amt-input amount-B"
                    value="{% with e=section_member_entries.B|get_item:member_rec.member.id %}{% if e and e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endwith %}">
           </td>
@@ -355,18 +340,6 @@
           <td>
             <input type="number" step="1" name="tertiary_amount" class="amt-input amount-B-adv"
                    value="{% with e=section_member_entries.B|get_item:member_rec.member.id %}{% if e and e.tertiary_amount %}{{ e.tertiary_amount|floatformat:0 }}{% endif %}{% endwith %}">
-=======
-            <input type="number" step="1" name="amount" class="amt-input amount-B" 
-                   value="{% for e in entries_by_section.B.entries %}{% if e.description == member_rec.member.name %}{% if e.amount %}{{ e.amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
-          </td>
-          <td>
-            <input type="number" step="1" name="secondary_amount" class="amt-input amount-B-loan"
-                   value="{% for e in entries_by_section.B.entries %}{% if e.description == member_rec.member.name %}{% if e.secondary_amount %}{{ e.secondary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
-          </td>
-          <td>
-            <input type="number" step="1" name="tertiary_amount" class="amt-input amount-B-adv"
-                   value="{% for e in entries_by_section.B.entries %}{% if e.description == member_rec.member.name %}{% if e.tertiary_amount %}{{ e.tertiary_amount|floatformat:0 }}{% endif %}{% endif %}{% endfor %}">
->>>>>>> a971ac4 (test changes)
           </td>
         </tr>
         {% endfor %}

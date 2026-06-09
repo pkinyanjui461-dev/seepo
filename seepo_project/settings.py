@@ -1,7 +1,5 @@
 import os
 from pathlib import Path
-<<<<<<< HEAD
-import os
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,17 +19,6 @@ _allowed_hosts = os.getenv('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()]
 # Always include these hosts
 ALLOWED_HOSTS.extend(['seepo.co.ke', 'www.seepo.co.ke', 'staging.seepo.co.ke'])
-=======
-from dotenv import load_dotenv
-
-load_dotenv()
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-dev-key')
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
->>>>>>> a971ac4 (test changes)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
