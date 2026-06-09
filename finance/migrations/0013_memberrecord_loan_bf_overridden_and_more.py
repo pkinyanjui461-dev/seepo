@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('finance', '0011_memberrecord_sync_fields'),
+        ('finance', '0012_groupperformanceform_and_performanceentry_sync_fields'),
     ]
 
     operations = [
