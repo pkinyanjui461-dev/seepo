@@ -526,6 +526,10 @@
                     <i data-lucide="receipt" class="sidebar-icon"></i>
                     <span class="sidebar-text">Office Expenses</span>
                 </a>
+                <a href="{% url 'cash_receipt_list' %}" class="sidebar-link {% if 'cash_receipt' in request.resolver_match.url_name %}active{% endif %}">
+                    <i data-lucide="wallet-cards" class="sidebar-icon"></i>
+                    <span class="sidebar-text">Cash Receipts</span>
+                </a>
                 {% endif %}
                 {% if user.role == 'admin' or user.role == 'ict' or user.is_superuser %}
                 <a href="{% url 'user_list' %}" class="sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">

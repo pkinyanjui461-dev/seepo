@@ -2,7 +2,7 @@ import json
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.db.models import Q, Sum, Case, When, Value, IntegerField
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -10,12 +10,48 @@ from django.views.decorators.csrf import csrf_exempt
 from groups.models import Group
 from members.models import Member
 from finance.models import (
-    MonthlyForm, MemberRecord, GroupPerformanceForm, PerformanceEntry, SECTION_CHOICES
+    CashReceipt, CashReceiptExpense, MonthlyForm, MemberRecord, GroupPerformanceForm, PerformanceEntry, SECTION_CHOICES
 )
 from finance.forms import MonthlyFormForm
 from finance.utils import generate_pdf_response
 from django.conf import settings
 import calendar
+
+
+def _is_cash_receipt_admin(user):
+    return user.is_authenticated and (user.is_superuser or user.role in ['admin', 'ict'])
+
+
+def _diary_day_matches(value, day):
+    import re
+    raw = str(value or '').strip().lower()
+    if not raw:
+        return False
+
+    numbers = [int(match) for match in re.findall(r'\d+', raw)]
+    if day in numbers:
+        return True
+
+    ranges = re.findall(r'(\d+)\s*[-/to]+\s*(\d+)', raw)
+    for start, end in ranges:
+        start_day = int(start)
+        end_day = int(end)
+        if start_day <= day <= end_day:
+            return True
+    return False
+
+
+def get_groups_for_receipt_date(receipt_date):
+    month_field = receipt_date.strftime('%B').lower()
+    day = receipt_date.day
+    from groups.models import DiaryEntry
+
+    diary_entries = DiaryEntry.objects.select_related('group').exclude(**{month_field: None})
+    matched = []
+    for diary in diary_entries:
+        if _diary_day_matches(getattr(diary, month_field, ''), day):
+            matched.append(diary.group)
+    return matched
 
 
 def _ordered_active_group_members(group):
@@ -950,11 +986,215 @@ def combined_monthly_report_pdf(request, pk):
     return generate_pdf_response(None, {}, filename, inline=inline, pdf_content=merged_pdf)
 
 from finance.models import Expense
-from finance.forms import ExpenseForm
+from finance.forms import CashReceiptForm, ExpenseForm
 import datetime
 
 from django.db import models
 from django.utils import timezone
+
+
+@login_required
+@user_passes_test(_is_cash_receipt_admin)
+def cash_receipt_list(request):
+    today = timezone.localdate()
+    selected_date = request.GET.get('date') or today.isoformat()
+    selected_month = int(request.GET.get('month', today.month))
+    selected_year = int(request.GET.get('year', today.year))
+    selected_officer = request.GET.get('officer', '')
+    selected_group = request.GET.get('group', '')
+    selected_status = request.GET.get('status', '')
+
+    try:
+        from datetime import datetime as dt
+        receipt_date = dt.strptime(selected_date, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        receipt_date = today
+        selected_date = receipt_date.isoformat()
+
+    if request.method == 'POST':
+        saved_count = 0
+        manual_group_id = request.POST.get('manual_group_id')
+        if manual_group_id:
+            manual_group = Group.objects.filter(pk=manual_group_id).first()
+            receipt_number = request.POST.get('manual_receipt_number', '').strip()
+            if manual_group and receipt_number:
+                try:
+                    from decimal import Decimal, InvalidOperation
+                    receipt_amount = Decimal(str(request.POST.get('manual_receipt_amount', '0') or '0'))
+                    transport = Decimal(str(request.POST.get('manual_transport', '0') or '0'))
+                    other_expense = Decimal(str(request.POST.get('manual_other_expense', '0') or '0'))
+                    amount_deposited = Decimal(str(request.POST.get('manual_amount_deposited', '0') or '0'))
+                except (InvalidOperation, TypeError, ValueError):
+                    messages.error(request, 'Invalid amount entered for the manual receipt.')
+                    return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
+                if CashReceipt.objects.filter(receipt_date=receipt_date, group=manual_group).exists():
+                    messages.warning(request, f'Receipt for {manual_group.name} on {receipt_date:%b %d, %Y} already exists.')
+                elif CashReceipt.objects.filter(receipt_number=receipt_number).exists():
+                    messages.error(request, f'Receipt number {receipt_number} already exists.')
+                else:
+                    receipt = CashReceipt.objects.create(
+                        receipt_number=receipt_number,
+                        receipt_date=receipt_date,
+                        officer_name=manual_group.officer_name,
+                        group=manual_group,
+                        receipt_amount=receipt_amount,
+                        total_expenses=transport + other_expense,
+                        amount_deposited=amount_deposited,
+                        notes=request.POST.get('manual_notes', '').strip(),
+                        created_by=request.user,
+                    )
+                    if transport > 0:
+                        CashReceiptExpense.objects.create(cash_receipt=receipt, name='Transport', amount=transport)
+                    if other_expense > 0:
+                        CashReceiptExpense.objects.create(
+                            cash_receipt=receipt,
+                            name=request.POST.get('manual_other_expense_name', '').strip() or 'Other',
+                            amount=other_expense
+                        )
+                    receipt.save()
+                    saved_count += 1
+
+        group_ids = request.POST.getlist('group_id')
+        for group_id in group_ids:
+            group = Group.objects.filter(pk=group_id).first()
+            if not group:
+                continue
+
+            row_key = str(group_id)
+            receipt_number = request.POST.get(f'receipt_number_{row_key}', '').strip()
+            receipt_amount = request.POST.get(f'receipt_amount_{row_key}', '0') or '0'
+            transport = request.POST.get(f'transport_{row_key}', '0') or '0'
+            other_expense_name = request.POST.get(f'other_expense_name_{row_key}', '').strip()
+            other_expense = request.POST.get(f'other_expense_{row_key}', '0') or '0'
+            amount_deposited = request.POST.get(f'amount_deposited_{row_key}', '0') or '0'
+            notes = request.POST.get(f'notes_{row_key}', '').strip()
+
+            if not receipt_number:
+                continue
+
+            try:
+                from decimal import Decimal, InvalidOperation
+                receipt_amount = Decimal(str(receipt_amount))
+                transport = Decimal(str(transport))
+                other_expense = Decimal(str(other_expense))
+                amount_deposited = Decimal(str(amount_deposited))
+            except (InvalidOperation, TypeError, ValueError):
+                messages.error(request, f'Invalid amount entered for {group.name}.')
+                continue
+
+            if CashReceipt.objects.filter(receipt_date=receipt_date, group=group).exists():
+                messages.warning(request, f'Receipt for {group.name} on {receipt_date:%b %d, %Y} already exists.')
+                continue
+
+            if CashReceipt.objects.filter(receipt_number=receipt_number).exists():
+                messages.error(request, f'Receipt number {receipt_number} already exists.')
+                continue
+
+            total_expenses = transport + other_expense
+            receipt = CashReceipt.objects.create(
+                receipt_number=receipt_number,
+                receipt_date=receipt_date,
+                officer_name=group.officer_name,
+                group=group,
+                receipt_amount=receipt_amount,
+                total_expenses=total_expenses,
+                amount_deposited=amount_deposited,
+                notes=notes,
+                created_by=request.user,
+            )
+            if transport > 0:
+                CashReceiptExpense.objects.create(cash_receipt=receipt, name='Transport', amount=transport)
+            if other_expense > 0:
+                CashReceiptExpense.objects.create(cash_receipt=receipt, name=other_expense_name or 'Other', amount=other_expense)
+            receipt.save()
+            saved_count += 1
+
+        if saved_count:
+            messages.success(request, f'{saved_count} cash receipt(s) recorded successfully.')
+        return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
+    diary_groups = get_groups_for_receipt_date(receipt_date)
+    existing_by_group = {
+        receipt.group_id: receipt
+        for receipt in CashReceipt.objects.filter(receipt_date=receipt_date, group__in=diary_groups)
+    }
+    suggested_rows = []
+    for group in diary_groups:
+        suggested_rows.append({
+            'group': group,
+            'existing': existing_by_group.get(group.pk),
+            'receipt_number': f"CR-{receipt_date.strftime('%Y%m%d')}-{group.pk}",
+        })
+
+    receipts = CashReceipt.objects.select_related('group', 'officer').filter(
+        receipt_date__month=selected_month,
+        receipt_date__year=selected_year,
+    )
+    if selected_officer:
+        receipts = receipts.filter(officer_name=selected_officer)
+    if selected_group:
+        receipts = receipts.filter(group_id=selected_group)
+    if selected_status == 'balanced':
+        receipts = receipts.filter(missing_amount=0, excess_amount=0)
+    elif selected_status == 'short':
+        receipts = receipts.filter(missing_amount__gt=0)
+    elif selected_status == 'over':
+        receipts = receipts.filter(excess_amount__gt=0)
+
+    officer_report = receipts.values('officer_name').annotate(
+        receipt_count=models.Count('id'),
+        total_receipt_amount=models.Sum('receipt_amount'),
+        total_expenses=models.Sum('total_expenses'),
+        total_expected=models.Sum('expected_amount'),
+        total_deposited=models.Sum('amount_deposited'),
+        total_missing=models.Sum('missing_amount'),
+        total_excess=models.Sum('excess_amount'),
+    ).order_by('officer_name')
+
+    grand_totals = receipts.aggregate(
+        total_receipt_amount=models.Sum('receipt_amount'),
+        total_expenses=models.Sum('total_expenses'),
+        total_expected=models.Sum('expected_amount'),
+        total_deposited=models.Sum('amount_deposited'),
+        total_missing=models.Sum('missing_amount'),
+        total_excess=models.Sum('excess_amount'),
+    )
+
+    months = [
+        (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
+        (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
+        (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
+    ]
+    available_years = list(range(today.year - 5, today.year + 2))
+    officer_names = CashReceipt.objects.values_list('officer_name', flat=True).distinct().order_by('officer_name')
+
+    return render(request, 'finance/cash_receipt_list.html', {
+        'selected_date': selected_date,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'selected_officer': selected_officer,
+        'selected_group': selected_group,
+        'selected_status': selected_status,
+        'suggested_rows': suggested_rows,
+        'receipts': receipts,
+        'officer_report': officer_report,
+        'grand_totals': grand_totals,
+        'months': months,
+        'available_years': available_years,
+        'officer_names': officer_names,
+        'groups': Group.objects.all(),
+    })
+
+
+@login_required
+@require_POST
+@user_passes_test(_is_cash_receipt_admin)
+def cash_receipt_delete(request, pk):
+    receipt = get_object_or_404(CashReceipt, pk=pk)
+    receipt.delete()
+    messages.success(request, 'Cash receipt deleted successfully.')
+    return redirect(request.META.get('HTTP_REFERER', 'cash_receipt_list'))
 
 @login_required
 def expense_list(request):

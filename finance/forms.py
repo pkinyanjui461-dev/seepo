@@ -19,7 +19,7 @@ class MonthlyFormForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
-from finance.models import Expense
+from finance.models import CashReceipt, Expense
 
 class ExpenseForm(forms.ModelForm):
     class Meta:
@@ -31,3 +31,33 @@ class ExpenseForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Optional details'}),
         }
+
+
+class CashReceiptForm(forms.ModelForm):
+    class Meta:
+        model = CashReceipt
+        fields = [
+            'receipt_number', 'receipt_date', 'officer', 'officer_name', 'group',
+            'receipt_amount', 'amount_deposited', 'notes'
+        ]
+        widgets = {
+            'receipt_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Receipt number'}),
+            'receipt_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'officer': forms.Select(attrs={'class': 'form-select'}),
+            'officer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Officer name'}),
+            'group': forms.Select(attrs={'class': 'form-select'}),
+            'receipt_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'amount_deposited': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Optional notes'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            from accounts.models import User
+            self.fields['officer'].queryset = User.objects.filter(
+                role__in=['officer', 'admin', 'ict']
+            ).order_by('first_name', 'last_name', 'username')
+        except Exception:
+            pass
+        self.fields['officer'].required = False

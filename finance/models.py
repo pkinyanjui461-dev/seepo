@@ -224,3 +224,72 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.amount}"
+
+
+class CashReceipt(models.Model):
+    receipt_number = models.CharField(max_length=80, unique=True)
+    receipt_date = models.DateField(default=datetime.date.today)
+    officer = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='cash_receipts')
+    officer_name = models.CharField(max_length=200)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='cash_receipts')
+    receipt_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    total_expenses = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    expected_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    amount_deposited = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    missing_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    excess_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    notes = models.TextField(blank=True)
+    client_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    client_updated_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_cash_receipts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-receipt_date', 'group__name']
+        unique_together = ('receipt_date', 'group')
+
+    def __str__(self):
+        return f"{self.receipt_number} - {self.group.name}"
+
+    @property
+    def status(self):
+        if self.missing_amount > 0:
+            return 'short'
+        if self.excess_amount > 0:
+            return 'over'
+        return 'balanced'
+
+    def calculate(self):
+        self.total_expenses = sum((expense.amount for expense in self.expenses.all()), Decimal('0'))
+        self.expected_amount = max(self.receipt_amount - self.total_expenses, Decimal('0'))
+        self.missing_amount = max(self.expected_amount - self.amount_deposited, Decimal('0'))
+        self.excess_amount = max(self.amount_deposited - self.expected_amount, Decimal('0'))
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            kwargs['update_fields'] = set(update_fields) | {'client_updated_at'}
+        self.client_updated_at = timezone.now()
+        if self.pk:
+            self.calculate()
+        else:
+            self.total_expenses = self.total_expenses or Decimal('0')
+            self.expected_amount = max(self.receipt_amount - self.total_expenses, Decimal('0'))
+            self.missing_amount = max(self.expected_amount - self.amount_deposited, Decimal('0'))
+            self.excess_amount = max(self.amount_deposited - self.expected_amount, Decimal('0'))
+        super().save(*args, **kwargs)
+
+
+class CashReceiptExpense(models.Model):
+    cash_receipt = models.ForeignKey(CashReceipt, on_delete=models.CASCADE, related_name='expenses')
+    name = models.CharField(max_length=160)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0'))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+
+    def __str__(self):
+        return f"{self.name} - {self.amount}"

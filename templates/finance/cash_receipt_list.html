@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Cash Receipts | SEEPO Accounting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .receipt-table input,
+    .receipt-table textarea {
+        min-width: 110px;
+    }
+
+    .receipt-status {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .receipt-balanced { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+    .receipt-short { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+    .receipt-over { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-lg-5">
+            <h2 class="h3 mb-0 text-gray-800 font-weight-bold">Cash Receipts</h2>
+            <p class="text-muted mb-0">Record officer deposits from groups expected in the diary.</p>
+        </div>
+        <div class="col-lg-7 mt-3 mt-lg-0">
+            <form method="GET" class="d-flex flex-wrap justify-content-lg-end gap-2">
+                <input type="date" name="date" value="{{ selected_date }}" class="form-control w-auto" onchange="this.form.submit()">
+                <select name="month" class="form-select w-auto" onchange="this.form.submit()">
+                    {% for m_num, m_name in months %}
+                        <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="year" class="form-select w-auto" onchange="this.form.submit()">
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+                <select name="officer" class="form-select w-auto" onchange="this.form.submit()">
+                    <option value="">All officers</option>
+                    {% for officer in officer_names %}
+                        <option value="{{ officer }}" {% if officer == selected_officer %}selected{% endif %}>{{ officer }}</option>
+                    {% endfor %}
+                </select>
+                <select name="group" class="form-select w-auto" onchange="this.form.submit()">
+                    <option value="">All groups</option>
+                    {% for group in groups %}
+                        <option value="{{ group.pk }}" {% if group.pk|stringformat:"s" == selected_group %}selected{% endif %}>{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="status" class="form-select w-auto" onchange="this.form.submit()">
+                    <option value="">All statuses</option>
+                    <option value="balanced" {% if selected_status == 'balanced' %}selected{% endif %}>Balanced</option>
+                    <option value="short" {% if selected_status == 'short' %}selected{% endif %}>Short</option>
+                    <option value="over" {% if selected_status == 'over' %}selected{% endif %}>Over</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-receipt me-1"></i> Diary Groups for Selected Date</h6>
+            <span class="badge bg-primary">{{ suggested_rows|length }} found</span>
+        </div>
+        <div class="card-body p-0">
+            <form method="POST" id="receipt-entry-form">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle receipt-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Group</th>
+                                <th>Officer</th>
+                                <th>Receipt No.</th>
+                                <th>Receipt Amount</th>
+                                <th>Transport</th>
+                                <th>Other Expense</th>
+                                <th>Expected</th>
+                                <th>Deposited</th>
+                                <th>Missing</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in suggested_rows %}
+                            <tr data-receipt-row>
+                                <td>
+                                    <input type="hidden" name="group_id" value="{{ row.group.pk }}">
+                                    <div class="fw-bold">{{ row.group.name }}</div>
+                                    {% if row.existing %}
+                                        <span class="badge bg-success">Recorded {{ row.existing.receipt_number }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ row.group.officer_name }}</td>
+                                <td><input name="receipt_number_{{ row.group.pk }}" value="{{ row.receipt_number }}" class="form-control" {% if row.existing %}disabled{% endif %}></td>
+                                <td><input name="receipt_amount_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-receipt-amount" {% if row.existing %}disabled{% endif %}></td>
+                                <td><input name="transport_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}></td>
+                                <td>
+                                    <input name="other_expense_name_{{ row.group.pk }}" placeholder="Name" class="form-control mb-1" {% if row.existing %}disabled{% endif %}>
+                                    <input name="other_expense_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                                <td class="fw-bold js-expected">0</td>
+                                <td><input name="amount_deposited_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-deposited" {% if row.existing %}disabled{% endif %}></td>
+                                <td class="fw-bold text-danger js-missing">0</td>
+                                <td><textarea name="notes_{{ row.group.pk }}" rows="2" class="form-control" {% if row.existing %}disabled{% endif %}></textarea></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4 text-muted">No diary groups found for this date.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if suggested_rows %}
+                <div class="p-3 text-end">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Receipts</button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-light">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-plus-circle me-1"></i> Manual Receipt Override</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row g-3 align-items-end" data-receipt-row>
+                {% csrf_token %}
+                <div class="col-lg-3">
+                    <label class="form-label fw-bold">Group</label>
+                    <select name="manual_group_id" class="form-select" required>
+                        <option value="">Select group</option>
+                        {% for group in groups %}
+                            <option value="{{ group.pk }}">{{ group.name }} - {{ group.officer_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Receipt No.</label>
+                    <input name="manual_receipt_number" class="form-control" required>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Receipt Amount</label>
+                    <input name="manual_receipt_amount" type="number" step="0.01" min="0" class="form-control js-receipt-amount" required>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Transport</label>
+                    <input name="manual_transport" type="number" step="0.01" min="0" value="0" class="form-control js-expense">
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label fw-bold">Other Expense</label>
+                    <div class="input-group">
+                        <input name="manual_other_expense_name" class="form-control" placeholder="Name">
+                        <input name="manual_other_expense" type="number" step="0.01" min="0" value="0" class="form-control js-expense">
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Expected</label>
+                    <div class="form-control bg-light fw-bold js-expected">0</div>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Deposited</label>
+                    <input name="manual_amount_deposited" type="number" step="0.01" min="0" class="form-control js-deposited" required>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label fw-bold">Missing</label>
+                    <div class="form-control bg-light fw-bold text-danger js-missing">0</div>
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label fw-bold">Notes</label>
+                    <input name="manual_notes" class="form-control">
+                </div>
+                <div class="col-lg-2">
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-save me-1"></i> Save Manual</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Deposited</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_deposited|default_if_none:0|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Missing</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_missing|default_if_none:0|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Expected Deposit</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_expected|default_if_none:0|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-light">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie me-1"></i> Monthly Officer Report</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Officer</th>
+                        <th>Receipts</th>
+                        <th>Receipt Amount</th>
+                        <th>Expenses</th>
+                        <th>Expected</th>
+                        <th>Deposited</th>
+                        <th>Missing</th>
+                        <th>Excess</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in officer_report %}
+                    <tr>
+                        <td class="fw-bold">{{ row.officer_name }}</td>
+                        <td>{{ row.receipt_count }}</td>
+                        <td>{{ row.total_receipt_amount|default_if_none:0|intcomma }}</td>
+                        <td>{{ row.total_expenses|default_if_none:0|intcomma }}</td>
+                        <td>{{ row.total_expected|default_if_none:0|intcomma }}</td>
+                        <td>{{ row.total_deposited|default_if_none:0|intcomma }}</td>
+                        <td class="text-danger fw-bold">{{ row.total_missing|default_if_none:0|intcomma }}</td>
+                        <td class="text-primary fw-bold">{{ row.total_excess|default_if_none:0|intcomma }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No receipt report data for this period.</td></tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td>Totals</td>
+                        <td></td>
+                        <td>{{ grand_totals.total_receipt_amount|default_if_none:0|intcomma }}</td>
+                        <td>{{ grand_totals.total_expenses|default_if_none:0|intcomma }}</td>
+                        <td>{{ grand_totals.total_expected|default_if_none:0|intcomma }}</td>
+                        <td>{{ grand_totals.total_deposited|default_if_none:0|intcomma }}</td>
+                        <td class="text-danger">{{ grand_totals.total_missing|default_if_none:0|intcomma }}</td>
+                        <td class="text-primary">{{ grand_totals.total_excess|default_if_none:0|intcomma }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header py-3 bg-light">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-1"></i> Recorded Receipts</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Receipt No.</th>
+                        <th>Date</th>
+                        <th>Officer</th>
+                        <th>Group</th>
+                        <th>Receipt</th>
+                        <th>Expenses</th>
+                        <th>Expected</th>
+                        <th>Deposited</th>
+                        <th>Missing</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                    <tr>
+                        <td class="fw-bold">{{ receipt.receipt_number }}</td>
+                        <td>{{ receipt.receipt_date|date:"M d, Y" }}</td>
+                        <td>{{ receipt.officer_name }}</td>
+                        <td>{{ receipt.group.name }}</td>
+                        <td>{{ receipt.receipt_amount|intcomma }}</td>
+                        <td>{{ receipt.total_expenses|intcomma }}</td>
+                        <td>{{ receipt.expected_amount|intcomma }}</td>
+                        <td>{{ receipt.amount_deposited|intcomma }}</td>
+                        <td class="text-danger fw-bold">{{ receipt.missing_amount|intcomma }}</td>
+                        <td><span class="receipt-status receipt-{{ receipt.status }}">{{ receipt.status }}</span></td>
+                        <td class="text-end">
+                            <form method="POST" action="{% url 'cash_receipt_delete' receipt.pk %}" onsubmit="return confirm('Delete this receipt?');">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="11" class="text-center py-4 text-muted">No receipts recorded for this period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function toNumber(input) {
+            const value = parseFloat(input && input.value ? input.value : '0');
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        function recalculate(row) {
+            const receipt = toNumber(row.querySelector('.js-receipt-amount'));
+            const deposited = toNumber(row.querySelector('.js-deposited'));
+            let expenses = 0;
+            row.querySelectorAll('.js-expense').forEach(function (input) {
+                expenses += toNumber(input);
+            });
+            const expected = Math.max(receipt - expenses, 0);
+            const missing = Math.max(expected - deposited, 0);
+            row.querySelector('.js-expected').textContent = expected.toLocaleString();
+            row.querySelector('.js-missing').textContent = missing.toLocaleString();
+        }
+
+        document.querySelectorAll('[data-receipt-row]').forEach(function (row) {
+            row.querySelectorAll('input').forEach(function (input) {
+                input.addEventListener('input', function () { recalculate(row); });
+            });
+            recalculate(row);
+        });
+    })();
+</script>
+{% endblock %}
