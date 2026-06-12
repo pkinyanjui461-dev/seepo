@@ -14,11 +14,22 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 
-# Build ALLOWED_HOSTS from env
+# Build ALLOWED_HOSTS from env. Django expects bare hostnames here, not URLs.
 _allowed_hosts = os.getenv('ALLOWED_HOSTS', '*')
-ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()]
+ALLOWED_HOSTS = []
+for host in _allowed_hosts.split(','):
+    normalized = host.strip()
+    if not normalized:
+        continue
+    if '://' in normalized:
+        normalized = normalized.split('://', 1)[1]
+    normalized = normalized.split('/', 1)[0].split(':', 1)[0]
+    if normalized and normalized not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(normalized)
 # Always include these hosts
-ALLOWED_HOSTS.extend(['seepo.co.ke', 'www.seepo.co.ke', 'staging.seepo.co.ke'])
+for host in ['seepo.co.ke', 'www.seepo.co.ke', 'staging.seepo.co.ke', 'www.staging.seepo.co.ke']:
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
