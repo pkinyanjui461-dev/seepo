@@ -1033,10 +1033,11 @@ def cash_receipt_list(request):
                 elif CashReceipt.objects.filter(receipt_number=receipt_number).exists():
                     messages.error(request, f'Receipt number {receipt_number} already exists.')
                 else:
+                    manual_officer_name = request.POST.get('manual_officer_name', '').strip() or manual_group.officer_name
                     receipt = CashReceipt.objects.create(
                         receipt_number=receipt_number,
                         receipt_date=receipt_date,
-                        officer_name=manual_group.officer_name,
+                        officer_name=manual_officer_name,
                         group=manual_group,
                         receipt_amount=receipt_amount,
                         total_expenses=transport + other_expense,
@@ -1068,6 +1069,7 @@ def cash_receipt_list(request):
             other_expense_name = request.POST.get(f'other_expense_name_{row_key}', '').strip()
             other_expense = request.POST.get(f'other_expense_{row_key}', '0') or '0'
             amount_deposited = request.POST.get(f'amount_deposited_{row_key}', '0') or '0'
+            officer_name = request.POST.get(f'officer_name_{row_key}', '').strip() or group.officer_name
             notes = request.POST.get(f'notes_{row_key}', '').strip()
 
             if not receipt_number:
@@ -1095,7 +1097,7 @@ def cash_receipt_list(request):
             receipt = CashReceipt.objects.create(
                 receipt_number=receipt_number,
                 receipt_date=receipt_date,
-                officer_name=group.officer_name,
+                officer_name=officer_name,
                 group=group,
                 receipt_amount=receipt_amount,
                 total_expenses=total_expenses,
