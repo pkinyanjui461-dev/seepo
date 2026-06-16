@@ -1019,7 +1019,6 @@ def cash_receipt_list(request):
             receipt_number = request.POST.get('manual_receipt_number', '').strip()
             if manual_group and receipt_number:
                 try:
-                    from decimal import Decimal, InvalidOperation
                     receipt_amount = Decimal(str(request.POST.get('manual_receipt_amount', '0') or '0'))
                     transport = Decimal(str(request.POST.get('manual_transport', '0') or '0'))
                     other_expense = Decimal(str(request.POST.get('manual_other_expense', '0') or '0'))
@@ -1076,7 +1075,6 @@ def cash_receipt_list(request):
                 continue
 
             try:
-                from decimal import Decimal, InvalidOperation
                 receipt_amount = Decimal(str(receipt_amount))
                 transport = Decimal(str(transport))
                 other_expense = Decimal(str(other_expense))
