@@ -1148,6 +1148,13 @@ def cash_receipt_list(request):
         receipt_count=models.Count('id'),
         total_receipt_amount=models.Sum('receipt_amount'),
         total_expenses=models.Sum('total_expenses'),
+        total_refund=models.Sum(
+            models.Case(
+                models.When(receipt_amount=0, then=models.F('total_expenses')),
+                default=Decimal('0'),
+                output_field=models.DecimalField()
+            )
+        ),
         total_expected=models.Sum('expected_amount'),
         total_deposited=models.Sum('amount_deposited'),
         total_missing=models.Sum('missing_amount'),
@@ -1157,6 +1164,13 @@ def cash_receipt_list(request):
     grand_totals = receipts.aggregate(
         total_receipt_amount=models.Sum('receipt_amount'),
         total_expenses=models.Sum('total_expenses'),
+        total_refund=models.Sum(
+            models.Case(
+                models.When(receipt_amount=0, then=models.F('total_expenses')),
+                default=Decimal('0'),
+                output_field=models.DecimalField()
+            )
+        ),
         total_expected=models.Sum('expected_amount'),
         total_deposited=models.Sum('amount_deposited'),
         total_missing=models.Sum('missing_amount'),
