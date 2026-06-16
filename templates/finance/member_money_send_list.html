@@ -20,7 +20,7 @@
     }
 
     .send-entry-grid {
-        grid-template-columns: 150px minmax(180px, 1.2fr) minmax(180px, 1fr) 150px minmax(160px, 1fr) 120px;
+        grid-template-columns: 140px minmax(170px, 1.1fr) minmax(150px, 0.9fr) minmax(170px, 1fr) 140px minmax(150px, 1fr) 110px;
         align-items: end;
     }
 
@@ -129,7 +129,7 @@
 
     @media (max-width: 1199.98px) {
         .send-entry-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
     }
 
@@ -217,6 +217,10 @@
                     {{ form.member_name }}
                 </div>
                 <div>
+                    <label class="form-label fw-bold">Phone Number</label>
+                    {{ form.phone_number }}
+                </div>
+                <div>
                     <label class="form-label fw-bold">Group</label>
                     {{ form.group }}
                 </div>
@@ -253,8 +257,9 @@
                         <colgroup>
                             <col style="width: 48px;">
                             <col style="width: 120px;">
-                            <col style="width: 230px;">
                             <col style="width: 220px;">
+                            <col style="width: 150px;">
+                            <col style="width: 210px;">
                             <col style="width: 130px;">
                             <col style="width: 110px;">
                             <col style="width: 140px;">
@@ -266,6 +271,7 @@
                                 <th>#</th>
                                 <th>Date</th>
                                 <th>Member</th>
+                                <th>Phone</th>
                                 <th>Group</th>
                                 <th class="text-end">Amount</th>
                                 <th>Sent</th>
@@ -283,6 +289,7 @@
                                     {{ row.send_date|date:"M d, Y" }}
                                 </td>
                                 <td class="fw-bold">{{ row.member_name }}</td>
+                                <td>{{ row.phone_number|default:"-" }}</td>
                                 <td>{{ row.group.name }}</td>
                                 <td class="text-end fw-bold">{{ row.amount|intcomma }}</td>
                                 <td class="send-check-cell">
@@ -302,7 +309,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-muted">No members added for this date.</td>
+                                <td colspan="10" class="text-center py-4 text-muted">No members added for this date.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

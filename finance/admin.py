@@ -25,6 +25,6 @@ admin.site.register(Expense)
 
 @admin.register(MemberMoneySend)
 class MemberMoneySendAdmin(admin.ModelAdmin):
-    list_display = ('send_date', 'member_name', 'group', 'amount', 'is_sent', 'sent_at')
+    list_display = ('send_date', 'member_name', 'phone_number', 'group', 'amount', 'is_sent', 'sent_at')
     list_filter = ('send_date', 'is_sent', 'group')
-    search_fields = ('member_name', 'group__name')
+    search_fields = ('member_name', 'phone_number', 'group__name')

@@ -298,6 +298,7 @@ class CashReceiptExpense(models.Model):
 class MemberMoneySend(models.Model):
     send_date = models.DateField(default=datetime.date.today, db_index=True)
     member_name = models.CharField(max_length=200)
+    phone_number = models.CharField(max_length=30, blank=True)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='member_money_sends')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     is_sent = models.BooleanField(default=False, db_index=True)
