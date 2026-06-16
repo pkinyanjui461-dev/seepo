@@ -1218,16 +1218,19 @@ def cash_receipt_delete(request, pk):
 @user_passes_test(_is_cash_receipt_admin)
 def member_money_send_list(request):
     today = timezone.localdate()
-    selected_date = request.GET.get('date') or today.isoformat()
+    try:
+        selected_month = int(request.GET.get('month', today.month))
+    except (TypeError, ValueError):
+        selected_month = today.month
+    try:
+        selected_year = int(request.GET.get('year', today.year))
+    except (TypeError, ValueError):
+        selected_year = today.year
     selected_group = request.GET.get('group', '')
     selected_status = request.GET.get('status', '')
 
-    try:
-        from datetime import datetime as dt
-        send_date = dt.strptime(selected_date, '%Y-%m-%d').date()
-    except (TypeError, ValueError):
-        send_date = today
-        selected_date = send_date.isoformat()
+    if selected_month < 1 or selected_month > 12:
+        selected_month = today.month
 
     if request.method == 'POST':
         action = request.POST.get('action', 'create')
@@ -1247,7 +1250,7 @@ def member_money_send_list(request):
                 messages.success(request, f'{updated_count} money send status update(s) saved.')
             else:
                 messages.info(request, 'No status changes to save.')
-            return redirect(f"{request.path}?date={selected_date}&group={selected_group}&status={selected_status}")
+            return redirect(f"{request.path}?month={selected_month}&year={selected_year}&group={selected_group}&status={selected_status}")
 
         form = MemberMoneySendForm(request.POST)
         if form.is_valid():
@@ -1257,11 +1260,14 @@ def member_money_send_list(request):
                 money_send.sent_at = timezone.now()
             money_send.save()
             messages.success(request, f'{money_send.member_name} added to the money send list.')
-            return redirect(f"{request.path}?date={money_send.send_date.isoformat()}&group={selected_group}&status={selected_status}")
+            return redirect(f"{request.path}?month={money_send.send_date.month}&year={money_send.send_date.year}&group={selected_group}&status={selected_status}")
     else:
-        form = MemberMoneySendForm(initial={'send_date': send_date})
+        form = MemberMoneySendForm(initial={'send_date': today})
 
-    rows = MemberMoneySend.objects.select_related('group').filter(send_date=send_date)
+    rows = MemberMoneySend.objects.select_related('group').filter(
+        send_date__month=selected_month,
+        send_date__year=selected_year,
+    )
     if selected_group:
         rows = rows.filter(group_id=selected_group)
     if selected_status == 'sent':
@@ -1278,9 +1284,16 @@ def member_money_send_list(request):
         'form': form,
         'rows': summary_rows,
         'groups': Group.objects.all(),
-        'selected_date': selected_date,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
         'selected_group': selected_group,
         'selected_status': selected_status,
+        'months': [
+            (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
+            (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
+            (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
+        ],
+        'available_years': list(range(today.year - 5, today.year + 2)),
         'total_amount': total_amount,
         'sent_amount': sent_amount,
         'pending_amount': pending_amount,
