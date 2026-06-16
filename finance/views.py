@@ -1146,34 +1146,31 @@ def cash_receipt_list(request):
         receipt_count=models.Count('id'),
         total_receipt_amount=models.Sum('receipt_amount'),
         total_expenses=models.Sum('total_expenses'),
-        total_refund=models.Sum(
-            models.Case(
-                models.When(receipt_amount=0, then=models.F('total_expenses')),
-                default=Decimal('0'),
-                output_field=models.DecimalField()
-            )
-        ),
         total_expected=models.Sum('expected_amount'),
         total_deposited=models.Sum('amount_deposited'),
         total_missing=models.Sum('missing_amount'),
         total_excess=models.Sum('excess_amount'),
     ).order_by('officer_name')
 
+    # Calculate refund separately for each officer
+    for row in officer_report:
+        refund_amount = receipts.filter(
+            officer_name=row['officer_name'],
+            receipt_amount=0
+        ).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
+        row['total_refund'] = refund_amount
+
     grand_totals = receipts.aggregate(
         total_receipt_amount=models.Sum('receipt_amount'),
         total_expenses=models.Sum('total_expenses'),
-        total_refund=models.Sum(
-            models.Case(
-                models.When(receipt_amount=0, then=models.F('total_expenses')),
-                default=Decimal('0'),
-                output_field=models.DecimalField()
-            )
-        ),
         total_expected=models.Sum('expected_amount'),
         total_deposited=models.Sum('amount_deposited'),
         total_missing=models.Sum('missing_amount'),
         total_excess=models.Sum('excess_amount'),
     )
+    # Calculate total refund separately
+    total_refund = receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
+    grand_totals['total_refund'] = total_refund
 
     months = [
         (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
