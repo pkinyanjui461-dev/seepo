@@ -293,3 +293,22 @@ class CashReceiptExpense(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.amount}"
+
+
+class MemberMoneySend(models.Model):
+    send_date = models.DateField(default=datetime.date.today, db_index=True)
+    member_name = models.CharField(max_length=200)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='member_money_sends')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    is_sent = models.BooleanField(default=False, db_index=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_member_money_sends')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['send_date', 'group__name', 'member_name']
+
+    def __str__(self):
+        return f"{self.member_name} - {self.group.name} - {self.amount}"

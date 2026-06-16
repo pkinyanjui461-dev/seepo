@@ -19,7 +19,7 @@ class MonthlyFormForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
-from finance.models import CashReceipt, Expense
+from finance.models import CashReceipt, Expense, MemberMoneySend
 
 class ExpenseForm(forms.ModelForm):
     class Meta:
@@ -61,3 +61,17 @@ class CashReceiptForm(forms.ModelForm):
         except Exception:
             pass
         self.fields['officer'].required = False
+
+
+class MemberMoneySendForm(forms.ModelForm):
+    class Meta:
+        model = MemberMoneySend
+        fields = ['send_date', 'member_name', 'group', 'amount', 'is_sent', 'notes']
+        widgets = {
+            'send_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'member_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Member name', 'autocomplete': 'off'}),
+            'group': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'is_sent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'notes': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional notes'}),
+        }

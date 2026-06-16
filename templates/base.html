@@ -532,6 +532,10 @@
                 </a>
                 {% endif %}
                 {% if user.role == 'admin' or user.role == 'ict' or user.is_superuser %}
+                <a href="{% url 'member_money_send_list' %}" class="sidebar-link {% if 'member_money_send' in request.resolver_match.url_name %}active{% endif %}">
+                    <i data-lucide="send" class="sidebar-icon"></i>
+                    <span class="sidebar-text">Money Send List</span>
+                </a>
                 <a href="{% url 'user_list' %}" class="sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
                     <i data-lucide="shield-check" class="sidebar-icon"></i>
                     <span class="sidebar-text">Users</span>

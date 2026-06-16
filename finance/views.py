@@ -10,9 +10,9 @@ from django.views.decorators.csrf import csrf_exempt
 from groups.models import Group
 from members.models import Member
 from finance.models import (
-    CashReceipt, CashReceiptExpense, MonthlyForm, MemberRecord, GroupPerformanceForm, PerformanceEntry, SECTION_CHOICES
+    CashReceipt, CashReceiptExpense, MemberMoneySend, MonthlyForm, MemberRecord, GroupPerformanceForm, PerformanceEntry, SECTION_CHOICES
 )
-from finance.forms import MonthlyFormForm
+from finance.forms import MemberMoneySendForm, MonthlyFormForm
 from finance.utils import generate_pdf_response
 from django.conf import settings
 import calendar
@@ -1212,6 +1212,92 @@ def cash_receipt_delete(request, pk):
     receipt.delete()
     messages.success(request, 'Cash receipt deleted successfully.')
     return redirect(request.META.get('HTTP_REFERER', 'cash_receipt_list'))
+
+
+@login_required
+@user_passes_test(_is_cash_receipt_admin)
+def member_money_send_list(request):
+    today = timezone.localdate()
+    selected_date = request.GET.get('date') or today.isoformat()
+    selected_group = request.GET.get('group', '')
+    selected_status = request.GET.get('status', '')
+
+    try:
+        from datetime import datetime as dt
+        send_date = dt.strptime(selected_date, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        send_date = today
+        selected_date = send_date.isoformat()
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'create')
+        if action == 'update_status':
+            row_ids = request.POST.getlist('row_id')
+            sent_ids = set(request.POST.getlist('sent_id'))
+            updated_count = 0
+            rows = MemberMoneySend.objects.filter(pk__in=row_ids)
+            for row in rows:
+                should_be_sent = str(row.pk) in sent_ids
+                if row.is_sent != should_be_sent:
+                    row.is_sent = should_be_sent
+                    row.sent_at = timezone.now() if should_be_sent else None
+                    row.save(update_fields=['is_sent', 'sent_at', 'updated_at'])
+                    updated_count += 1
+            if updated_count:
+                messages.success(request, f'{updated_count} money send status update(s) saved.')
+            else:
+                messages.info(request, 'No status changes to save.')
+            return redirect(f"{request.path}?date={selected_date}&group={selected_group}&status={selected_status}")
+
+        form = MemberMoneySendForm(request.POST)
+        if form.is_valid():
+            money_send = form.save(commit=False)
+            money_send.created_by = request.user
+            if money_send.is_sent and not money_send.sent_at:
+                money_send.sent_at = timezone.now()
+            money_send.save()
+            messages.success(request, f'{money_send.member_name} added to the money send list.')
+            return redirect(f"{request.path}?date={money_send.send_date.isoformat()}&group={selected_group}&status={selected_status}")
+    else:
+        form = MemberMoneySendForm(initial={'send_date': send_date})
+
+    rows = MemberMoneySend.objects.select_related('group').filter(send_date=send_date)
+    if selected_group:
+        rows = rows.filter(group_id=selected_group)
+    if selected_status == 'sent':
+        rows = rows.filter(is_sent=True)
+    elif selected_status == 'pending':
+        rows = rows.filter(is_sent=False)
+
+    summary_rows = list(rows)
+    total_amount = sum((row.amount for row in summary_rows), Decimal('0'))
+    sent_amount = sum((row.amount for row in summary_rows if row.is_sent), Decimal('0'))
+    pending_amount = total_amount - sent_amount
+
+    context = {
+        'form': form,
+        'rows': summary_rows,
+        'groups': Group.objects.all(),
+        'selected_date': selected_date,
+        'selected_group': selected_group,
+        'selected_status': selected_status,
+        'total_amount': total_amount,
+        'sent_amount': sent_amount,
+        'pending_amount': pending_amount,
+        'sent_count': sum(1 for row in summary_rows if row.is_sent),
+        'pending_count': sum(1 for row in summary_rows if not row.is_sent),
+    }
+    return render(request, 'finance/member_money_send_list.html', context)
+
+
+@login_required
+@require_POST
+@user_passes_test(_is_cash_receipt_admin)
+def member_money_send_delete(request, pk):
+    row = get_object_or_404(MemberMoneySend, pk=pk)
+    row.delete()
+    messages.success(request, 'Money send row deleted.')
+    return redirect(request.META.get('HTTP_REFERER', 'member_money_send_list'))
 
 @login_required
 def expense_list(request):

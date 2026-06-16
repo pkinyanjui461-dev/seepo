@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Money Send List | SEEPO Accounting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .send-page {
+        max-width: 100%;
+    }
+
+    .send-filter-bar,
+    .send-entry-grid {
+        display: grid;
+        gap: 10px;
+    }
+
+    .send-filter-bar {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .send-entry-grid {
+        grid-template-columns: 150px minmax(180px, 1.2fr) minmax(180px, 1fr) 150px minmax(160px, 1fr) 120px;
+        align-items: end;
+    }
+
+    .send-entry-grid .form-control,
+    .send-entry-grid .form-select,
+    .send-filter-bar .form-control,
+    .send-filter-bar .form-select {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .send-summary-card {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .send-sheet-wrap {
+        max-height: 62vh;
+        overflow: auto;
+        border-top: 1px solid #b7c9da;
+        background: #f3f7fb;
+    }
+
+    .send-sheet-table {
+        min-width: 980px;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        background: #ffffff;
+        font-size: 0.86rem;
+    }
+
+    .send-sheet-table th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: linear-gradient(#e8f0f8, #d8e6f3);
+        border-right: 1px solid #b7c9da;
+        border-bottom: 1px solid #9fb8cf;
+        color: #1f2937;
+        padding: 8px;
+        text-transform: uppercase;
+        font-size: 0.74rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .send-sheet-table td {
+        height: 44px;
+        border-right: 1px solid #d7e0ea;
+        border-bottom: 1px solid #d7e0ea;
+        padding: 8px;
+        vertical-align: middle;
+        background: #ffffff;
+    }
+
+    .send-sheet-table tbody tr:nth-child(even) td {
+        background: #fbfdff;
+    }
+
+    .send-sheet-table tbody tr:hover td {
+        background: #edf7ff;
+    }
+
+    .send-row-number {
+        width: 48px;
+        text-align: center;
+        font-weight: 800;
+        color: #496175;
+        background: #edf4fb !important;
+    }
+
+    .send-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .send-status.sent {
+        background: rgba(22, 163, 74, 0.12);
+        color: #15803d;
+    }
+
+    .send-status.pending {
+        background: rgba(220, 38, 38, 0.12);
+        color: #b91c1c;
+    }
+
+    .send-check-cell {
+        text-align: center;
+    }
+
+    .send-check-cell .form-check-input {
+        width: 1.15rem;
+        height: 1.15rem;
+        cursor: pointer;
+    }
+
+    @media (max-width: 1199.98px) {
+        .send-entry-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .send-entry-grid,
+        .send-filter-bar {
+            grid-template-columns: 1fr;
+        }
+
+        .send-sheet-table {
+            min-width: 860px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 send-page">
+    <div class="row mb-4 align-items-center">
+        <div class="col-lg-5">
+            <h2 class="h3 mb-0 text-gray-800 font-weight-bold">Money Send List</h2>
+            <p class="text-muted mb-0">Track group members who should receive money and mark sent payments.</p>
+        </div>
+        <div class="col-lg-7 mt-3 mt-lg-0">
+            <form method="GET" class="send-filter-bar">
+                <input type="date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()">
+                <select name="group" class="form-select" onchange="this.form.submit()">
+                    <option value="">All groups</option>
+                    {% for group in groups %}
+                        <option value="{{ group.pk }}" {% if group.pk|stringformat:"s" == selected_group %}selected{% endif %}>{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All statuses</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="sent" {% if selected_status == 'sent' %}selected{% endif %}>Sent</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="send-summary-card h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total To Send</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_amount|default_if_none:0|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="send-summary-card h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Sent</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ sent_amount|default_if_none:0|intcomma }}</div>
+                    <div class="small text-muted">{{ sent_count }} member{{ sent_count|pluralize }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="send-summary-card h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Pending</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_amount|default_if_none:0|intcomma }}</div>
+                    <div class="small text-muted">{{ pending_count }} member{{ pending_count|pluralize }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-light">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-plus-circle me-1"></i> Add Member To Send Money</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="send-entry-grid">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <div>
+                    <label class="form-label fw-bold">Date</label>
+                    {{ form.send_date }}
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Member Name</label>
+                    {{ form.member_name }}
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Group</label>
+                    {{ form.group }}
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Amount</label>
+                    {{ form.amount }}
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Notes</label>
+                    {{ form.notes }}
+                </div>
+                <div>
+                    <div class="form-check mb-2">
+                        {{ form.is_sent }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_sent.id_for_label }}">Sent</label>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit"><i class="fas fa-save me-1"></i> Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-paper-plane me-1"></i> Members To Send Money</h6>
+            <span class="badge bg-primary">{{ rows|length }} row{{ rows|length|pluralize }}</span>
+        </div>
+        <div class="card-body p-0">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_status">
+                <div class="send-sheet-wrap">
+                    <table class="send-sheet-table">
+                        <colgroup>
+                            <col style="width: 48px;">
+                            <col style="width: 120px;">
+                            <col style="width: 230px;">
+                            <col style="width: 220px;">
+                            <col style="width: 130px;">
+                            <col style="width: 110px;">
+                            <col style="width: 140px;">
+                            <col style="width: 180px;">
+                            <col style="width: 90px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Member</th>
+                                <th>Group</th>
+                                <th class="text-end">Amount</th>
+                                <th>Sent</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                <td class="send-row-number">{{ forloop.counter }}</td>
+                                <td>
+                                    <input type="hidden" name="row_id" value="{{ row.pk }}">
+                                    {{ row.send_date|date:"M d, Y" }}
+                                </td>
+                                <td class="fw-bold">{{ row.member_name }}</td>
+                                <td>{{ row.group.name }}</td>
+                                <td class="text-end fw-bold">{{ row.amount|intcomma }}</td>
+                                <td class="send-check-cell">
+                                    <input class="form-check-input" type="checkbox" name="sent_id" value="{{ row.pk }}" {% if row.is_sent %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    {% if row.is_sent %}
+                                        <span class="send-status sent">Sent</span>
+                                    {% else %}
+                                        <span class="send-status pending">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ row.notes|default:"-" }}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit" form="delete-send-{{ row.pk }}"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">No members added for this date.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if rows %}
+                <div class="p-3 text-end">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-check me-1"></i> Save Sent Status</button>
+                </div>
+                {% endif %}
+            </form>
+            {% for row in rows %}
+            <form id="delete-send-{{ row.pk }}" method="POST" action="{% url 'member_money_send_delete' row.pk %}" onsubmit="return confirm('Delete this money send row?');">
+                {% csrf_token %}
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
