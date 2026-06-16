@@ -28,99 +28,177 @@
     }
 
     .receipt-entry-list {
-        overflow-x: auto;
+        max-height: 62vh;
+        overflow: auto;
+        border-top: 1px solid #b7c9da;
+        background: #f3f7fb;
     }
 
     .receipt-entry-table {
+        min-width: 1280px;
         width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
-        background: white;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        font-size: 0.82rem;
+        background: #ffffff;
     }
 
-    .receipt-entry-table thead {
+    .receipt-entry-table thead th {
         position: sticky;
         top: 0;
-        background: #f8f9fa;
-        z-index: 10;
+        z-index: 12;
+        background: linear-gradient(#e8f0f8, #d8e6f3);
+        border-right: 1px solid #b7c9da;
+        border-bottom: 1px solid #9fb8cf;
+        padding: 0;
+        color: #1f2937;
+        text-align: center;
+        white-space: nowrap;
     }
 
-    .receipt-entry-table th {
-        background: #e9ecef;
-        border: 1px solid #dee2e6;
-        padding: 8px 10px;
-        text-align: left;
-        font-weight: 700;
-        font-size: 0.75rem;
+    .sheet-column-letter {
+        display: block;
+        padding: 3px 8px;
+        background: #d2e3f3;
+        border-bottom: 1px solid #a9c2d9;
+        color: #38546d;
+        font-size: 0.68rem;
+        font-weight: 800;
+    }
+
+    .sheet-column-label {
+        display: block;
+        padding: 7px 8px;
+        font-size: 0.74rem;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        color: #495057;
+    }
+
+    .receipt-entry-table .sheet-corner,
+    .receipt-entry-table .sheet-row-number {
+        left: 0;
+        width: 48px;
+        min-width: 48px;
+        max-width: 48px;
+        text-align: center;
+    }
+
+    .receipt-entry-table .sheet-corner {
+        z-index: 15;
+        background: #c6d9eb;
+    }
+
+    .receipt-entry-table .sheet-row-number {
+        position: sticky;
+        left: 0;
+        z-index: 8;
+        background: #edf4fb;
+        border-right: 1px solid #a9c2d9;
+        color: #496175;
+        font-weight: 800;
     }
 
     .receipt-entry-table td {
-        border: 1px solid #dee2e6;
-        padding: 6px 8px;
+        height: 42px;
+        border-right: 1px solid #d7e0ea;
+        border-bottom: 1px solid #d7e0ea;
+        padding: 0;
         vertical-align: middle;
-        background: white;
+        background: #ffffff;
     }
 
-    .receipt-entry-table tbody tr:hover {
-        background: #f8f9fa;
+    .receipt-entry-table tbody tr:nth-child(even) td {
+        background: #fbfdff;
     }
 
-    .receipt-entry-table tbody tr:nth-child(even) {
-        background: #fafbfc;
+    .receipt-entry-table tbody tr:hover td,
+    .receipt-entry-table tbody tr:hover .sheet-row-number {
+        background: #edf7ff;
     }
 
-    .receipt-entry-table tbody tr:nth-child(even):hover {
-        background: #f0f1f2;
+    .receipt-entry-table td:focus-within {
+        outline: 2px solid #107c41;
+        outline-offset: -2px;
+        background: #ffffff !important;
     }
 
     .receipt-entry-table .form-control,
     .receipt-entry-table .form-select {
-        font-size: 0.85rem;
-        padding: 4px 8px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        min-width: 80px;
+        width: 100%;
+        height: 41px;
+        min-width: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        font-size: 0.82rem;
+        padding: 6px 8px;
+        box-shadow: none;
     }
 
     .receipt-entry-table .form-control:focus,
     .receipt-entry-table .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+        box-shadow: none;
+        background: #ffffff;
     }
 
     .receipt-group-title {
         font-weight: 700;
         color: #212529;
+        padding: 6px 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .receipt-calc-box {
-        min-height: 28px;
+        min-height: 41px;
         display: flex;
         align-items: center;
-        padding: 4px 8px;
-        background: #e9ecef;
-        border-radius: 4px;
+        justify-content: flex-end;
+        padding: 6px 8px;
+        background: #f8fafc;
+        border-radius: 0;
         font-weight: 700;
         font-size: 0.85rem;
     }
 
     .receipt-entry-table .input-group {
         display: flex;
-        gap: 4px;
+        gap: 0;
+        height: 41px;
     }
 
     .receipt-entry-table .input-group .form-control:first-child {
-        width: 100px;
+        width: 45%;
         flex-shrink: 0;
+        border-right: 1px solid #d7e0ea;
     }
 
     .receipt-entry-table .input-group .form-control:last-child {
         flex: 1;
-        min-width: 80px;
+        min-width: 0;
+    }
+
+    .receipt-sheet-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid #d7e0ea;
+        background: #f8fbfe;
+        color: #52677a;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .receipt-sheet-pill {
+        border: 1px solid #c9d8e6;
+        background: #ffffff;
+        color: #38546d;
+        padding: 3px 8px;
+        font-size: 0.72rem;
+        font-weight: 800;
     }
 
     .manual-receipt-grid {
@@ -243,60 +321,95 @@
         <div class="card-body p-0">
             <form method="POST" id="receipt-entry-form">
                 {% csrf_token %}
-                <div class="p-3 receipt-entry-list">
-                    {% for row in suggested_rows %}
-                    <div class="receipt-entry-row" data-receipt-row>
-                        <div class="receipt-field">
-                            <input type="hidden" name="group_id" value="{{ row.group.pk }}">
-                            <label>Group</label>
-                            <div class="receipt-group-title">{{ row.group.name }}</div>
-                            {% if row.existing %}
-                                <span class="badge bg-success mt-2">Recorded {{ row.existing.receipt_number }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="receipt-field">
-                            <label>Officer</label>
-                            <input name="officer_name_{{ row.group.pk }}" value="{{ row.group.officer_name }}" class="form-control" {% if row.existing %}disabled{% endif %}>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Receipt No.</label>
-                            <input name="receipt_number_{{ row.group.pk }}" value="{{ row.receipt_number }}" class="form-control" {% if row.existing %}disabled{% endif %}>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Receipt Amount</label>
-                            <input name="receipt_amount_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-receipt-amount" {% if row.existing %}disabled{% endif %}>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Deposited</label>
-                            <input name="amount_deposited_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-deposited" {% if row.existing %}disabled{% endif %}>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Transport</label>
-                            <input name="transport_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Other Expense</label>
-                            <div class="input-group">
-                                <input name="other_expense_name_{{ row.group.pk }}" placeholder="Name" class="form-control" {% if row.existing %}disabled{% endif %}>
-                                <input name="other_expense_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}>
-                            </div>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Expected</label>
-                            <div class="receipt-calc-box js-expected">0</div>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Missing</label>
-                            <div class="receipt-calc-box text-danger js-missing">0</div>
-                        </div>
-                        <div class="receipt-field">
-                            <label>Notes</label>
-                            <textarea name="notes_{{ row.group.pk }}" rows="1" class="form-control" {% if row.existing %}disabled{% endif %}></textarea>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="text-center py-4 text-muted">No diary groups found for this date.</div>
-                    {% endfor %}
+                <div class="receipt-sheet-toolbar">
+                    <span class="receipt-sheet-pill">Sheet view</span>
+                    <span>{{ selected_date }}</span>
+                    <span class="text-muted">Use the officer cells as dropdowns and enter receipt values across the row.</span>
+                </div>
+                <div class="receipt-entry-list">
+                    <table class="receipt-entry-table">
+                        <colgroup>
+                            <col style="width: 48px;">
+                            <col style="width: 210px;">
+                            <col style="width: 180px;">
+                            <col style="width: 150px;">
+                            <col style="width: 145px;">
+                            <col style="width: 145px;">
+                            <col style="width: 125px;">
+                            <col style="width: 210px;">
+                            <col style="width: 130px;">
+                            <col style="width: 130px;">
+                            <col style="width: 180px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="sheet-corner"><span class="sheet-column-letter">#</span><span class="sheet-column-label">Row</span></th>
+                                <th><span class="sheet-column-letter">A</span><span class="sheet-column-label">Group</span></th>
+                                <th><span class="sheet-column-letter">B</span><span class="sheet-column-label">Officer</span></th>
+                                <th><span class="sheet-column-letter">C</span><span class="sheet-column-label">Receipt No.</span></th>
+                                <th><span class="sheet-column-letter">D</span><span class="sheet-column-label">Receipt Amount</span></th>
+                                <th><span class="sheet-column-letter">E</span><span class="sheet-column-label">Deposited</span></th>
+                                <th><span class="sheet-column-letter">F</span><span class="sheet-column-label">Transport</span></th>
+                                <th><span class="sheet-column-letter">G</span><span class="sheet-column-label">Other Expense</span></th>
+                                <th><span class="sheet-column-letter">H</span><span class="sheet-column-label">Expected</span></th>
+                                <th><span class="sheet-column-letter">I</span><span class="sheet-column-label">Missing</span></th>
+                                <th><span class="sheet-column-letter">J</span><span class="sheet-column-label">Notes</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in suggested_rows %}
+                            <tr data-receipt-row>
+                                <td class="sheet-row-number">{{ forloop.counter }}</td>
+                                <td>
+                                    <input type="hidden" name="group_id" value="{{ row.group.pk }}">
+                                    <div class="receipt-group-title">{{ row.group.name }}</div>
+                                    {% if row.existing %}
+                                        <span class="badge bg-success mt-1">Recorded {{ row.existing.receipt_number }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <select name="officer_name_{{ row.group.pk }}" class="form-select" {% if row.existing %}disabled{% endif %}>
+                                        <option value="">Select officer</option>
+                                        {% for officer in officer_names %}
+                                            <option value="{{ officer }}" {% if officer == row.group.officer_name %}selected{% endif %}>{{ officer }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input name="receipt_number_{{ row.group.pk }}" value="{{ row.receipt_number }}" class="form-control" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <input name="receipt_amount_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-receipt-amount" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <input name="amount_deposited_{{ row.group.pk }}" type="number" step="0.01" min="0" class="form-control js-deposited" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <input name="transport_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        <input name="other_expense_name_{{ row.group.pk }}" placeholder="Name" class="form-control" {% if row.existing %}disabled{% endif %}>
+                                        <input name="other_expense_{{ row.group.pk }}" type="number" step="0.01" min="0" value="0" class="form-control js-expense" {% if row.existing %}disabled{% endif %}>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="receipt-calc-box js-expected">0</div>
+                                </td>
+                                <td>
+                                    <div class="receipt-calc-box text-danger js-missing">0</div>
+                                </td>
+                                <td>
+                                    <input name="notes_{{ row.group.pk }}" rows="1" class="form-control" {% if row.existing %}disabled{% endif %}>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="11" class="text-center py-4 text-muted">No diary groups found for this date.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 {% if suggested_rows %}
                 <div class="p-3 text-end">
@@ -325,7 +438,12 @@
                 </div>
                 <div>
                     <label class="form-label fw-bold">Officer Name</label>
-                    <input name="manual_officer_name" class="form-control" placeholder="Type officer name">
+                    <select name="manual_officer_name" class="form-select">
+                        <option value="">Use group officer</option>
+                        {% for officer in officer_names %}
+                            <option value="{{ officer }}">{{ officer }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
                     <label class="form-label fw-bold">Receipt No.</label>
@@ -520,8 +638,9 @@
         }
 
         document.querySelectorAll('[data-receipt-row]').forEach(function (row) {
-            row.querySelectorAll('input').forEach(function (input) {
+            row.querySelectorAll('input, select').forEach(function (input) {
                 input.addEventListener('input', function () { recalculate(row); });
+                input.addEventListener('change', function () { recalculate(row); });
             });
             recalculate(row);
         });

@@ -1178,7 +1178,13 @@ def cash_receipt_list(request):
         (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
     ]
     available_years = list(range(today.year - 5, today.year + 2))
-    officer_names = CashReceipt.objects.values_list('officer_name', flat=True).distinct().order_by('officer_name')
+    receipt_officers = CashReceipt.objects.values_list('officer_name', flat=True)
+    group_officers = Group.objects.values_list('officer_name', flat=True)
+    officer_names = sorted({
+        name.strip()
+        for name in list(receipt_officers) + list(group_officers)
+        if name and name.strip()
+    })
 
     return render(request, 'finance/cash_receipt_list.html', {
         'selected_date': selected_date,
