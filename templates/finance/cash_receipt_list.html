@@ -28,50 +28,99 @@
     }
 
     .receipt-entry-list {
-        display: grid;
-        gap: 12px;
+        overflow-x: auto;
     }
 
-    .receipt-entry-row {
-        display: grid;
-        grid-template-columns: minmax(180px, 1.2fr) repeat(4, minmax(110px, 1fr)) minmax(150px, 1.1fr);
-        gap: 10px;
-        align-items: end;
-        padding: 14px;
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        background: var(--card-bg);
+    .receipt-entry-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        background: white;
     }
 
-    .receipt-entry-grid {
-        display: contents;
+    .receipt-entry-table thead {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
     }
 
-    .receipt-field label,
-    .manual-receipt-grid label {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--text-muted);
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
+    .receipt-entry-table th {
+        background: #e9ecef;
+        border: 1px solid #dee2e6;
+        padding: 8px 10px;
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.75rem;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        color: #495057;
+    }
+
+    .receipt-entry-table td {
+        border: 1px solid #dee2e6;
+        padding: 6px 8px;
+        vertical-align: middle;
+        background: white;
+    }
+
+    .receipt-entry-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .receipt-entry-table tbody tr:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .receipt-entry-table tbody tr:nth-child(even):hover {
+        background: #f0f1f2;
+    }
+
+    .receipt-entry-table .form-control,
+    .receipt-entry-table .form-select {
+        font-size: 0.85rem;
+        padding: 4px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        min-width: 80px;
+    }
+
+    .receipt-entry-table .form-control:focus,
+    .receipt-entry-table .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
     }
 
     .receipt-group-title {
-        color: var(--text-main);
-        font-weight: 800;
-        line-height: 1.2;
+        font-weight: 700;
+        color: #212529;
     }
 
     .receipt-calc-box {
-        min-height: 38px;
+        min-height: 28px;
         display: flex;
         align-items: center;
-        border-radius: 8px;
-        padding: 8px 10px;
-        background: var(--muted-surface);
-        font-weight: 800;
+        padding: 4px 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    .receipt-entry-table .input-group {
+        display: flex;
+        gap: 4px;
+    }
+
+    .receipt-entry-table .input-group .form-control:first-child {
+        width: 100px;
+        flex-shrink: 0;
+    }
+
+    .receipt-entry-table .input-group .form-control:last-child {
+        flex: 1;
+        min-width: 80px;
     }
 
     .manual-receipt-grid {
