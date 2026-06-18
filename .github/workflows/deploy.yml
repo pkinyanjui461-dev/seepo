@@ -17,27 +17,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Staging via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy to Staging via SSH (attempt 1)
+        id: deploy_staging_1
+        uses: appleboy/ssh-action@v1.2.2
+        continue-on-error: true
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
           port: ${{ secrets.SSH_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          request_pty: true
           script: |
+            set -euo pipefail
             cd /home1/seepocok/staging_seepo/seepo-main
 
-            # Ensure remote is set correctly
             git remote set-url origin https://github.com/pkinyanjui461-dev/seepo.git 2>/dev/null || git remote add origin https://github.com/pkinyanjui461-dev/seepo.git
 
-            # Stash any local changes and sync with remote
             git stash --include-untracked || true
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
 
-            # Create .env file from secrets
             cat > .env << 'EOF'
             DEBUG=${{ secrets.STAGING_DEBUG }}
             SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
@@ -51,31 +54,138 @@ jobs:
             ENVIRONMENT=staging
             EOF
 
-            # Use cPanel's virtualenv
             VENV_PATH="/home1/seepocok/virtualenv/staging_seepo/seepo-main/3.13"
             source "$VENV_PATH/bin/activate"
 
-            # Install dependencies (pinned versions to avoid pycairo/meson issues)
             pip install -r requirements.txt
-
-            # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
 
-            # Backup before migration (safety checkpoint)
-            python pgbackup.py backup --label before-feature-x
+            python pgbackup.py backup --label before-deploy || echo "Warning: backup failed, continuing deploy"
 
-            # Run migrations
             python manage.py migrate --noinput
-
-            # Collect static files
             python manage.py collectstatic --noinput --clear
 
-            # Restart Passenger
             mkdir -p tmp
             touch tmp/restart.txt
 
-            # Deployment trace
             echo "Deployed staging commit: $(git rev-parse --short HEAD)"
+
+      - name: Deploy to Staging via SSH (attempt 2)
+        id: deploy_staging_2
+        if: steps.deploy_staging_1.outcome == 'failure'
+        uses: appleboy/ssh-action@v1.2.2
+        continue-on-error: true
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          request_pty: true
+          script: |
+            set -euo pipefail
+            cd /home1/seepocok/staging_seepo/seepo-main
+
+            git remote set-url origin https://github.com/pkinyanjui461-dev/seepo.git 2>/dev/null || git remote add origin https://github.com/pkinyanjui461-dev/seepo.git
+
+            git stash --include-untracked || true
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
+
+            cat > .env << 'EOF'
+            DEBUG=${{ secrets.STAGING_DEBUG }}
+            SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+            ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
+            DB_ENGINE=django.db.backends.postgresql
+            DB_NAME=${{ secrets.STAGING_DB_NAME }}
+            DB_USER=${{ secrets.STAGING_DB_USER }}
+            DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+            DB_HOST=${{ secrets.STAGING_DB_HOST }}
+            DB_PORT=${{ secrets.STAGING_DB_PORT }}
+            ENVIRONMENT=staging
+            EOF
+
+            VENV_PATH="/home1/seepocok/virtualenv/staging_seepo/seepo-main/3.13"
+            source "$VENV_PATH/bin/activate"
+
+            pip install -r requirements.txt
+            pip install xhtml2pdf==0.2.15 --no-deps
+
+            python pgbackup.py backup --label before-deploy || echo "Warning: backup failed, continuing deploy"
+
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput --clear
+
+            mkdir -p tmp
+            touch tmp/restart.txt
+
+            echo "Deployed staging commit: $(git rev-parse --short HEAD)"
+
+      - name: Deploy to Staging via SSH (attempt 3)
+        id: deploy_staging_3
+        if: steps.deploy_staging_1.outcome == 'failure' && steps.deploy_staging_2.outcome == 'failure'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          request_pty: true
+          script: |
+            set -euo pipefail
+            cd /home1/seepocok/staging_seepo/seepo-main
+
+            git remote set-url origin https://github.com/pkinyanjui461-dev/seepo.git 2>/dev/null || git remote add origin https://github.com/pkinyanjui461-dev/seepo.git
+
+            git stash --include-untracked || true
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
+
+            cat > .env << 'EOF'
+            DEBUG=${{ secrets.STAGING_DEBUG }}
+            SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+            ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
+            DB_ENGINE=django.db.backends.postgresql
+            DB_NAME=${{ secrets.STAGING_DB_NAME }}
+            DB_USER=${{ secrets.STAGING_DB_USER }}
+            DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+            DB_HOST=${{ secrets.STAGING_DB_HOST }}
+            DB_PORT=${{ secrets.STAGING_DB_PORT }}
+            ENVIRONMENT=staging
+            EOF
+
+            VENV_PATH="/home1/seepocok/virtualenv/staging_seepo/seepo-main/3.13"
+            source "$VENV_PATH/bin/activate"
+
+            pip install -r requirements.txt
+            pip install xhtml2pdf==0.2.15 --no-deps
+
+            python pgbackup.py backup --label before-deploy || echo "Warning: backup failed, continuing deploy"
+
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput --clear
+
+            mkdir -p tmp
+            touch tmp/restart.txt
+
+            echo "Deployed staging commit: $(git rev-parse --short HEAD)"
+
+      - name: Verify staging deploy succeeded
+        if: >-
+          steps.deploy_staging_1.outcome == 'failure' &&
+          steps.deploy_staging_2.outcome == 'failure' &&
+          steps.deploy_staging_3.outcome == 'failure'
+        run: |
+          echo "All SSH deploy attempts failed. This is usually a transient cPanel SSH issue."
+          echo "Re-run the workflow or check cPanel SSH access from GitHub Actions IPs."
+          exit 1
 
   deploy-production:
     if: github.ref == 'refs/heads/master'
@@ -87,26 +197,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Production via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY_RSA }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSH }}
           port: ${{ secrets.SSH_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          request_pty: true
           script: |
+            set -euo pipefail
             cd /home1/seepocok/public_html/seepo-main
 
-            # Ensure remote is set correctly
             git remote set-url origin https://github.com/pkinyanjui461-dev/seepo.git 2>/dev/null || git remote add origin https://github.com/pkinyanjui461-dev/seepo.git
 
-            # Stash any local changes and sync with remote
             git stash --include-untracked || true
             git fetch origin master
             git reset --hard origin/master
             git clean -fd
 
-            # Create .env file from secrets
             cat > .env << 'EOF'
             DEBUG=${{ secrets.PROD_DEBUG }}
             SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
@@ -120,28 +231,18 @@ jobs:
             ENVIRONMENT=production
             EOF
 
-            # Use cPanel's virtualenv
             VENV_PATH="/home1/seepocok/virtualenv/public_html/seepo-main/3.13"
             source "$VENV_PATH/bin/activate"
 
-            # Install dependencies (pinned versions to avoid pycairo/meson issues)
             pip install -r requirements.txt
-
-            # Install xhtml2pdf with --no-deps to prevent svglib upgrade
             pip install xhtml2pdf==0.2.15 --no-deps
 
-            # Backup before migration (safety checkpoint)
-            python pgbackup.py backup --label before-feature-x
+            python pgbackup.py backup --label before-deploy || echo "Warning: backup failed, continuing deploy"
 
-            # Run migrations
             python manage.py migrate --noinput
-
-            # Collect static files
             python manage.py collectstatic --noinput --clear
 
-            # Restart Passenger
             mkdir -p tmp
             touch tmp/restart.txt
 
-            # Deployment trace
             echo "Deployed production commit: $(git rev-parse --short HEAD)"
