@@ -989,6 +989,7 @@ from finance.models import Expense
 from finance.forms import CashReceiptForm, ExpenseForm
 import calendar
 import datetime
+import json
 
 from django.db import models
 from django.utils import timezone
@@ -1216,6 +1217,62 @@ def cash_receipt_list(request):
     )
     report_totals['total_refund'] = report_receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
 
+    chart_month = report_date.month if report_date else selected_month
+    chart_year = report_date.year if report_date else selected_year
+    _, chart_days_in_month = calendar.monthrange(chart_year, chart_month)
+    chart_labels = [str(day) for day in range(1, chart_days_in_month + 1)]
+    chart_receipts = CashReceipt.objects.filter(
+        receipt_date__month=chart_month,
+        receipt_date__year=chart_year,
+    )
+    if selected_officer:
+        chart_receipts = chart_receipts.filter(officer_name=selected_officer)
+    if selected_group:
+        chart_receipts = chart_receipts.filter(group_id=selected_group)
+    if selected_status == 'balanced':
+        chart_receipts = chart_receipts.filter(missing_amount=0, excess_amount=0)
+    elif selected_status == 'short':
+        chart_receipts = chart_receipts.filter(missing_amount__gt=0)
+    elif selected_status == 'over':
+        chart_receipts = chart_receipts.filter(excess_amount__gt=0)
+
+    daily_officer_deposits = chart_receipts.values(
+        'receipt_date__day',
+        'officer_name',
+    ).annotate(total_deposited=models.Sum('amount_deposited')).order_by('officer_name', 'receipt_date__day')
+    chart_officers = sorted({
+        row['officer_name']
+        for row in daily_officer_deposits
+        if row['officer_name']
+    })
+    chart_totals_by_officer = {
+        officer: [0.0 for _ in chart_labels]
+        for officer in chart_officers
+    }
+    for row in daily_officer_deposits:
+        officer = row['officer_name']
+        day = row['receipt_date__day']
+        if officer and day:
+            chart_totals_by_officer[officer][day - 1] = float(row['total_deposited'] or 0)
+
+    chart_colors = [
+        '#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c',
+        '#0891b2', '#be123c', '#4f46e5', '#65a30d', '#0f766e',
+    ]
+    officer_daily_deposit_chart = {
+        'labels': chart_labels,
+        'datasets': [
+            {
+                'label': officer,
+                'data': chart_totals_by_officer[officer],
+                'backgroundColor': chart_colors[index % len(chart_colors)],
+                'borderColor': chart_colors[index % len(chart_colors)],
+                'borderWidth': 1,
+            }
+            for index, officer in enumerate(chart_officers)
+        ],
+    }
+
     months = [
         (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
         (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
@@ -1256,6 +1313,7 @@ def cash_receipt_list(request):
         'report_period_label': report_period_label,
         'report_title': report_title,
         'deposit_total_heading': deposit_total_heading,
+        'officer_daily_deposit_chart_json': json.dumps(officer_daily_deposit_chart),
         'available_years': available_years,
         'officer_names': officer_names,
         'groups': Group.objects.all(),

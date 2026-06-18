@@ -216,6 +216,17 @@
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
     }
 
+    .officer-deposit-chart-wrap {
+        height: 360px;
+        min-height: 360px;
+        padding: 16px;
+    }
+
+    .officer-deposit-chart-wrap canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
     .receipt-table-wrap {
         max-width: 100%;
         overflow-x: auto;
@@ -267,6 +278,11 @@
 
         .receipt-compact-table {
             min-width: 680px;
+        }
+
+        .officer-deposit-chart-wrap {
+            height: 300px;
+            min-height: 300px;
         }
     }
 </style>
@@ -538,6 +554,9 @@
                 {% endif %}
             </form>
         </div>
+        <div class="officer-deposit-chart-wrap border-bottom">
+            <canvas id="officerDailyDepositChart"></canvas>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0 align-middle">
                 <thead class="table-light">
@@ -637,6 +656,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     (function () {
         function toNumber(input) {
@@ -663,6 +683,88 @@
                 input.addEventListener('change', function () { recalculate(row); });
             });
             recalculate(row);
+        });
+    })();
+</script>
+<script>
+    (function () {
+        const chartElement = document.getElementById('officerDailyDepositChart');
+        if (!chartElement || typeof Chart === 'undefined') {
+            return;
+        }
+
+        const chartData = JSON.parse('{{ officer_daily_deposit_chart_json|escapejs }}');
+        const hasData = chartData.datasets.some(function (dataset) {
+            return dataset.data.some(function (value) {
+                return Number(value) > 0;
+            });
+        });
+
+        new Chart(chartElement, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            usePointStyle: true,
+                        },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = Number(context.raw || 0).toLocaleString();
+                                return context.dataset.label + ': ' + value;
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Day of month',
+                        },
+                        stacked: false,
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Deposited amount',
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return Number(value).toLocaleString();
+                            },
+                        },
+                    },
+                },
+            },
+            plugins: [{
+                id: 'emptyOfficerDepositChart',
+                afterDraw: function (chart) {
+                    if (hasData) {
+                        return;
+                    }
+                    const ctx = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    ctx.save();
+                    ctx.fillStyle = '#6b7280';
+                    ctx.font = '600 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No officer deposits recorded for this month.', (chartArea.left + chartArea.right) / 2, (chartArea.top + chartArea.bottom) / 2);
+                    ctx.restore();
+                },
+            }],
         });
     })();
 </script>
