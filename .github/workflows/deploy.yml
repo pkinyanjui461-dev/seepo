@@ -72,7 +72,7 @@ jobs:
 
       - name: Deploy to Staging via SSH (attempt 2)
         id: deploy_staging_2
-        if: steps.deploy_staging_1.outcome == 'failure'
+        if: steps.deploy_staging_1.outcome != 'success'
         uses: appleboy/ssh-action@v1.2.2
         continue-on-error: true
         with:
@@ -126,8 +126,9 @@ jobs:
 
       - name: Deploy to Staging via SSH (attempt 3)
         id: deploy_staging_3
-        if: steps.deploy_staging_1.outcome == 'failure' && steps.deploy_staging_2.outcome == 'failure'
+        if: steps.deploy_staging_1.outcome != 'success' && steps.deploy_staging_2.outcome != 'success'
         uses: appleboy/ssh-action@v1.2.2
+        continue-on-error: true
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USERNAME }}
@@ -179,12 +180,14 @@ jobs:
 
       - name: Verify staging deploy succeeded
         if: >-
-          steps.deploy_staging_1.outcome == 'failure' &&
-          steps.deploy_staging_2.outcome == 'failure' &&
-          steps.deploy_staging_3.outcome == 'failure'
+          steps.deploy_staging_1.outcome != 'success' &&
+          steps.deploy_staging_2.outcome != 'success' &&
+          steps.deploy_staging_3.outcome != 'success'
         run: |
-          echo "All SSH deploy attempts failed. This is usually a transient cPanel SSH issue."
-          echo "Re-run the workflow or check cPanel SSH access from GitHub Actions IPs."
+          echo "All SSH deploy attempts failed."
+          echo "Error seen: ssh: unexpected packet in response to channel open"
+          echo "This is a cPanel SSH connectivity issue, not an application code error."
+          echo "Try: re-run workflow, verify SSH in cPanel, or deploy manually via Terminal."
           exit 1
 
   deploy-production:
