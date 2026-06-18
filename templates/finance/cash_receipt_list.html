@@ -280,17 +280,27 @@
         </div>
         <div class="col-lg-7 mt-3 mt-lg-0">
             <form method="GET" class="receipt-filter-bar">
-                <input type="date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()">
-                <select name="month" class="form-select" onchange="this.form.submit()">
+                <select name="report_period" class="form-select" onchange="this.form.submit()">
+                    <option value="month" {% if report_period == 'month' %}selected{% endif %}>Monthly report</option>
+                    <option value="day" {% if report_period == 'day' %}selected{% endif %}>Daily report</option>
+                </select>
+                <input type="date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()" {% if report_period == 'day' %}title="Report date"{% else %}title="Diary / entry date"{% endif %}>
+                <select name="month" class="form-select" onchange="this.form.submit()" {% if report_period == 'day' %}disabled{% endif %}>
                     {% for m_num, m_name in months %}
                         <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
                     {% endfor %}
                 </select>
-                <select name="year" class="form-select" onchange="this.form.submit()">
+                {% if report_period == 'day' %}
+                <input type="hidden" name="month" value="{{ selected_month }}">
+                {% endif %}
+                <select name="year" class="form-select" onchange="this.form.submit()" {% if report_period == 'day' %}disabled{% endif %}>
                     {% for y in available_years %}
                         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
+                {% if report_period == 'day' %}
+                <input type="hidden" name="year" value="{{ selected_year }}">
+                {% endif %}
                 <select name="officer" class="form-select" onchange="this.form.submit()">
                     <option value="">All officers</option>
                     {% for officer in officer_names %}
@@ -491,32 +501,45 @@
         <div class="col-md-4 mb-3">
             <div class="receipt-summary-card h-100 py-2">
                 <div class="card-body">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Deposited</div>
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        {% if report_period == 'day' %}Daily{% else %}Monthly{% endif %} Deposited
+                    </div>
                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_deposited|default_if_none:0|intcomma }}</div>
+                    <div class="small text-muted">{{ report_period_label }}</div>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-3">
             <div class="receipt-summary-card h-100 py-2">
                 <div class="card-body">
-                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Missing</div>
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                        {% if report_period == 'day' %}Daily{% else %}Monthly{% endif %} Missing
+                    </div>
                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_missing|default_if_none:0|intcomma }}</div>
+                    <div class="small text-muted">{{ report_period_label }}</div>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-3">
             <div class="receipt-summary-card h-100 py-2">
                 <div class="card-body">
-                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Expected Deposit</div>
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                        {% if report_period == 'day' %}Daily{% else %}Monthly{% endif %} Expected Deposit
+                    </div>
                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_totals.total_expected|default_if_none:0|intcomma }}</div>
+                    <div class="small text-muted">{{ report_period_label }}</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-light">
-            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie me-1"></i> Monthly Officer Report</h6>
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-user-tie me-1"></i>
+                {% if report_period == 'day' %}Daily Officer Report{% else %}Monthly Officer Report{% endif %}
+            </h6>
+            <span class="badge bg-primary">{{ report_period_label }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0 align-middle">
@@ -547,7 +570,7 @@
                         <td class="text-primary fw-bold">{{ row.total_excess|default_if_none:0|intcomma }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="9" class="text-center py-4 text-muted">No receipt report data for this period.</td></tr>
+                    <tr><td colspan="9" class="text-center py-4 text-muted">No {% if report_period == 'day' %}daily{% else %}monthly{% endif %} receipt report data for this period.</td></tr>
                     {% endfor %}
                 </tbody>
                 <tfoot class="table-light fw-bold">
@@ -568,8 +591,9 @@
     </div>
 
     <div class="card shadow">
-        <div class="card-header py-3 bg-light">
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-1"></i> Recorded Receipts</h6>
+            <span class="badge bg-secondary">{{ report_period_label }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0 align-middle">
@@ -609,7 +633,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="11" class="text-center py-4 text-muted">No receipts recorded for this period.</td></tr>
+                    <tr><td colspan="11" class="text-center py-4 text-muted">No receipts recorded for {% if report_period == 'day' %}this day{% else %}this month{% endif %}.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

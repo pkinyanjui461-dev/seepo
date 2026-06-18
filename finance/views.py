@@ -1003,6 +1003,9 @@ def cash_receipt_list(request):
     selected_officer = request.GET.get('officer', '')
     selected_group = request.GET.get('group', '')
     selected_status = request.GET.get('status', '')
+    report_period = request.GET.get('report_period', 'month')
+    if report_period not in ('month', 'day'):
+        report_period = 'month'
 
     try:
         from datetime import datetime as dt
@@ -1010,6 +1013,17 @@ def cash_receipt_list(request):
     except (TypeError, ValueError):
         receipt_date = today
         selected_date = receipt_date.isoformat()
+
+    if report_period == 'day':
+        selected_month = receipt_date.month
+        selected_year = receipt_date.year
+
+    def _cash_receipt_redirect():
+        return (
+            f"{request.path}?date={receipt_date.isoformat()}"
+            f"&month={selected_month}&year={selected_year}"
+            f"&report_period={report_period}"
+        )
 
     if request.method == 'POST':
         saved_count = 0
@@ -1025,7 +1039,7 @@ def cash_receipt_list(request):
                     amount_deposited = Decimal(str(request.POST.get('manual_amount_deposited', '0') or '0'))
                 except (InvalidOperation, TypeError, ValueError):
                     messages.error(request, 'Invalid amount entered for the manual receipt.')
-                    return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+                    return redirect(_cash_receipt_redirect())
 
                 if CashReceipt.objects.filter(receipt_date=receipt_date, group=manual_group).exists():
                     messages.warning(request, f'Receipt for {manual_group.name} on {receipt_date:%b %d, %Y} already exists.')
@@ -1112,7 +1126,7 @@ def cash_receipt_list(request):
 
         if saved_count:
             messages.success(request, f'{saved_count} cash receipt(s) recorded successfully.')
-        return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+        return redirect(_cash_receipt_redirect())
 
     diary_groups = get_groups_for_receipt_date(receipt_date)
     existing_by_group = {
@@ -1127,10 +1141,14 @@ def cash_receipt_list(request):
             'receipt_number': f"CR-{receipt_date.strftime('%Y%m%d')}-{group.pk}",
         })
 
-    receipts = CashReceipt.objects.select_related('group', 'officer').filter(
-        receipt_date__month=selected_month,
-        receipt_date__year=selected_year,
-    )
+    receipts = CashReceipt.objects.select_related('group', 'officer')
+    if report_period == 'day':
+        receipts = receipts.filter(receipt_date=receipt_date)
+    else:
+        receipts = receipts.filter(
+            receipt_date__month=selected_month,
+            receipt_date__year=selected_year,
+        )
     if selected_officer:
         receipts = receipts.filter(officer_name=selected_officer)
     if selected_group:
@@ -1193,6 +1211,8 @@ def cash_receipt_list(request):
         'selected_officer': selected_officer,
         'selected_group': selected_group,
         'selected_status': selected_status,
+        'report_period': report_period,
+        'report_period_label': receipt_date.strftime('%b %d, %Y') if report_period == 'day' else f'{months[selected_month - 1][1]} {selected_year}',
         'suggested_rows': suggested_rows,
         'receipts': receipts,
         'officer_report': officer_report,
