@@ -1010,7 +1010,6 @@ def cash_receipt_list(request):
     selected_officer = request.GET.get('officer', '')
     selected_group = request.GET.get('group', '')
     selected_status = request.GET.get('status', '')
-    selected_report_day = request.GET.get('report_day', '')
     selected_report_date = request.GET.get('report_date', '')
 
     try:
@@ -1020,28 +1019,10 @@ def cash_receipt_list(request):
         receipt_date = today
         selected_date = receipt_date.isoformat()
 
-    try:
-        selected_report_day_int = int(selected_report_day) if selected_report_day else None
-    except (TypeError, ValueError):
-        selected_report_day_int = None
-        selected_report_day = ''
-
-    _, days_in_selected_month = calendar.monthrange(selected_year, selected_month)
-    report_days = list(range(1, days_in_selected_month + 1))
-    if selected_report_day_int and not 1 <= selected_report_day_int <= days_in_selected_month:
-        selected_report_day_int = None
-        selected_report_day = ''
-
     report_date = None
     if selected_report_date:
         try:
             report_date = dt.strptime(selected_report_date, '%Y-%m-%d').date()
-            selected_report_day_int = report_date.day
-            selected_month = report_date.month
-            selected_year = report_date.year
-            selected_report_day = str(report_date.day)
-            _, days_in_selected_month = calendar.monthrange(selected_year, selected_month)
-            report_days = list(range(1, days_in_selected_month + 1))
         except (TypeError, ValueError):
             selected_report_date = ''
 
@@ -1165,10 +1146,6 @@ def cash_receipt_list(request):
         receipt_date__month=selected_month,
         receipt_date__year=selected_year,
     )
-    if report_date:
-        receipts = receipts.filter(receipt_date=report_date)
-    elif selected_report_day_int:
-        receipts = receipts.filter(receipt_date__day=selected_report_day_int)
     if selected_officer:
         receipts = receipts.filter(officer_name=selected_officer)
     if selected_group:
@@ -1180,7 +1157,26 @@ def cash_receipt_list(request):
     elif selected_status == 'over':
         receipts = receipts.filter(excess_amount__gt=0)
 
-    officer_report = receipts.values('officer_name').annotate(
+    report_receipts = CashReceipt.objects.select_related('group', 'officer')
+    if report_date:
+        report_receipts = report_receipts.filter(receipt_date=report_date)
+    else:
+        report_receipts = report_receipts.filter(
+            receipt_date__month=selected_month,
+            receipt_date__year=selected_year,
+        )
+    if selected_officer:
+        report_receipts = report_receipts.filter(officer_name=selected_officer)
+    if selected_group:
+        report_receipts = report_receipts.filter(group_id=selected_group)
+    if selected_status == 'balanced':
+        report_receipts = report_receipts.filter(missing_amount=0, excess_amount=0)
+    elif selected_status == 'short':
+        report_receipts = report_receipts.filter(missing_amount__gt=0)
+    elif selected_status == 'over':
+        report_receipts = report_receipts.filter(excess_amount__gt=0)
+
+    officer_report = report_receipts.values('officer_name').annotate(
         receipt_count=models.Count('id'),
         total_receipt_amount=models.Sum('receipt_amount'),
         total_expenses=models.Sum('total_expenses'),
@@ -1192,7 +1188,7 @@ def cash_receipt_list(request):
 
     # Calculate refund separately for each officer
     for row in officer_report:
-        refund_amount = receipts.filter(
+        refund_amount = report_receipts.filter(
             officer_name=row['officer_name'],
             receipt_amount=0
         ).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
@@ -1210,6 +1206,16 @@ def cash_receipt_list(request):
     total_refund = receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
     grand_totals['total_refund'] = total_refund
 
+    report_totals = report_receipts.aggregate(
+        total_receipt_amount=models.Sum('receipt_amount'),
+        total_expenses=models.Sum('total_expenses'),
+        total_expected=models.Sum('expected_amount'),
+        total_deposited=models.Sum('amount_deposited'),
+        total_missing=models.Sum('missing_amount'),
+        total_excess=models.Sum('excess_amount'),
+    )
+    report_totals['total_refund'] = report_receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
+
     months = [
         (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
         (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
@@ -1221,10 +1227,6 @@ def cash_receipt_list(request):
     deposit_total_heading = 'Deposited'
     if report_date:
         report_period_label = f"{calendar.month_name[report_date.month]} {report_date.day}, {report_date.year}"
-        report_title = 'Daily Officer Report'
-        deposit_total_heading = 'Daily Deposited'
-    elif selected_report_day_int:
-        report_period_label = f"{report_period_label} {selected_report_day_int}"
         report_title = 'Daily Officer Report'
         deposit_total_heading = 'Daily Deposited'
     if not report_date:
@@ -1244,14 +1246,13 @@ def cash_receipt_list(request):
         'selected_officer': selected_officer,
         'selected_group': selected_group,
         'selected_status': selected_status,
-        'selected_report_day': selected_report_day,
         'selected_report_date': selected_report_date,
         'suggested_rows': suggested_rows,
         'receipts': receipts,
         'officer_report': officer_report,
         'grand_totals': grand_totals,
+        'report_totals': report_totals,
         'months': months,
-        'report_days': report_days,
         'report_period_label': report_period_label,
         'report_title': report_title,
         'deposit_total_heading': deposit_total_heading,

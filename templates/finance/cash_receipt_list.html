@@ -295,10 +295,6 @@
                         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
-                <div class="input-group">
-                    <span class="input-group-text">Report date</span>
-                    <input type="date" name="report_date" value="{{ selected_report_date }}" class="form-control" onchange="this.form.submit()">
-                </div>
                 <select name="officer" class="form-select" onchange="this.form.submit()">
                     <option value="">All officers</option>
                     {% for officer in officer_names %}
@@ -523,9 +519,24 @@
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+        <div class="card-header py-3 bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie me-1"></i> {{ report_title }}</h6>
-            <span class="badge bg-primary">{{ report_period_label }}</span>
+            <form method="GET" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <input type="hidden" name="month" value="{{ selected_month }}">
+                <input type="hidden" name="year" value="{{ selected_year }}">
+                <input type="hidden" name="officer" value="{{ selected_officer }}">
+                <input type="hidden" name="group" value="{{ selected_group }}">
+                <input type="hidden" name="status" value="{{ selected_status }}">
+                <span class="badge bg-primary">{{ report_period_label }}</span>
+                <div class="input-group input-group-sm" style="width: 230px;">
+                    <span class="input-group-text">Daily report</span>
+                    <input type="date" name="report_date" value="{{ selected_report_date }}" class="form-control" onchange="this.form.submit()">
+                </div>
+                {% if selected_report_date %}
+                    <a href="?date={{ selected_date }}&month={{ selected_month }}&year={{ selected_year }}&officer={{ selected_officer|urlencode }}&group={{ selected_group }}&status={{ selected_status }}" class="btn btn-sm btn-outline-secondary">Monthly</a>
+                {% endif %}
+            </form>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0 align-middle">
@@ -563,13 +574,13 @@
                     <tr>
                         <td>Totals</td>
                         <td></td>
-                        <td>{{ grand_totals.total_receipt_amount|default_if_none:0|intcomma }}</td>
-                        <td>{{ grand_totals.total_expenses|default_if_none:0|intcomma }}</td>
-                        <td class="text-warning">{{ grand_totals.total_refund|default_if_none:0|intcomma }}</td>
-                        <td>{{ grand_totals.total_expected|default_if_none:0|intcomma }}</td>
-                        <td>{{ grand_totals.total_deposited|default_if_none:0|intcomma }}</td>
-                        <td class="text-danger">{{ grand_totals.total_missing|default_if_none:0|intcomma }}</td>
-                        <td class="text-primary">{{ grand_totals.total_excess|default_if_none:0|intcomma }}</td>
+                        <td>{{ report_totals.total_receipt_amount|default_if_none:0|intcomma }}</td>
+                        <td>{{ report_totals.total_expenses|default_if_none:0|intcomma }}</td>
+                        <td class="text-warning">{{ report_totals.total_refund|default_if_none:0|intcomma }}</td>
+                        <td>{{ report_totals.total_expected|default_if_none:0|intcomma }}</td>
+                        <td>{{ report_totals.total_deposited|default_if_none:0|intcomma }}</td>
+                        <td class="text-danger">{{ report_totals.total_missing|default_if_none:0|intcomma }}</td>
+                        <td class="text-primary">{{ report_totals.total_excess|default_if_none:0|intcomma }}</td>
                     </tr>
                 </tfoot>
             </table>
