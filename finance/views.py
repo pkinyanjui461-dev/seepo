@@ -1072,6 +1072,7 @@ def cash_receipt_list(request):
                     saved_count += 1
 
         group_ids = request.POST.getlist('group_id')
+        updated_count = 0
         for group_id in group_ids:
             group = Group.objects.filter(pk=group_id).first()
             if not group:
@@ -1099,48 +1100,81 @@ def cash_receipt_list(request):
                 messages.error(request, f'Invalid amount entered for {group.name}.')
                 continue
 
-            if CashReceipt.objects.filter(receipt_date=receipt_date, group=group).exists():
-                messages.warning(request, f'Receipt for {group.name} on {receipt_date:%b %d, %Y} already exists.')
-                continue
-
-            if CashReceipt.objects.filter(receipt_number=receipt_number).exists():
+            existing_receipt = CashReceipt.objects.filter(receipt_date=receipt_date, group=group).first()
+            receipt_number_exists = CashReceipt.objects.filter(receipt_number=receipt_number)
+            if existing_receipt:
+                receipt_number_exists = receipt_number_exists.exclude(pk=existing_receipt.pk)
+            if receipt_number_exists.exists():
                 messages.error(request, f'Receipt number {receipt_number} already exists.')
                 continue
 
             total_expenses = transport + other_expense
-            receipt = CashReceipt.objects.create(
-                receipt_number=receipt_number,
-                receipt_date=receipt_date,
-                officer_name=officer_name,
-                group=group,
-                receipt_amount=receipt_amount,
-                total_expenses=total_expenses,
-                amount_deposited=amount_deposited,
-                notes=notes,
-                created_by=request.user,
-            )
+            if existing_receipt:
+                receipt = existing_receipt
+                receipt.receipt_number = receipt_number
+                receipt.officer_name = officer_name
+                receipt.receipt_amount = receipt_amount
+                receipt.total_expenses = total_expenses
+                receipt.amount_deposited = amount_deposited
+                receipt.notes = notes
+                receipt.expenses.all().delete()
+                updated_count += 1
+            else:
+                receipt = CashReceipt.objects.create(
+                    receipt_number=receipt_number,
+                    receipt_date=receipt_date,
+                    officer_name=officer_name,
+                    group=group,
+                    receipt_amount=receipt_amount,
+                    total_expenses=total_expenses,
+                    amount_deposited=amount_deposited,
+                    notes=notes,
+                    created_by=request.user,
+                )
+                saved_count += 1
             if transport > 0:
                 CashReceiptExpense.objects.create(cash_receipt=receipt, name='Transport', amount=transport)
             if other_expense > 0:
                 CashReceiptExpense.objects.create(cash_receipt=receipt, name=other_expense_name or 'Other', amount=other_expense)
             receipt.save()
-            saved_count += 1
 
         if saved_count:
             messages.success(request, f'{saved_count} cash receipt(s) recorded successfully.')
+        if updated_count:
+            messages.success(request, f'{updated_count} cash receipt(s) updated successfully.')
         return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
 
     diary_groups = get_groups_for_receipt_date(receipt_date)
     existing_by_group = {
         receipt.group_id: receipt
-        for receipt in CashReceipt.objects.filter(receipt_date=receipt_date, group__in=diary_groups)
+        for receipt in CashReceipt.objects.prefetch_related('expenses').filter(receipt_date=receipt_date, group__in=diary_groups)
     }
     suggested_rows = []
     for group in diary_groups:
+        existing = existing_by_group.get(group.pk)
+        transport_expense = Decimal('0')
+        other_expense = Decimal('0')
+        other_expense_name = ''
+        if existing:
+            other_expense_names = []
+            for expense in existing.expenses.all():
+                if expense.name == 'Transport':
+                    transport_expense += expense.amount
+                else:
+                    other_expense += expense.amount
+                    other_expense_names.append(expense.name)
+            other_expense_name = ', '.join(other_expense_names)
         suggested_rows.append({
             'group': group,
-            'existing': existing_by_group.get(group.pk),
-            'receipt_number': f"CR-{receipt_date.strftime('%Y%m%d')}-{group.pk}",
+            'existing': existing,
+            'receipt_number': existing.receipt_number if existing else f"CR-{receipt_date.strftime('%Y%m%d')}-{group.pk}",
+            'officer_name': existing.officer_name if existing else group.officer_name,
+            'receipt_amount': existing.receipt_amount if existing else '',
+            'amount_deposited': existing.amount_deposited if existing else '',
+            'transport': transport_expense,
+            'other_expense_name': other_expense_name,
+            'other_expense': other_expense,
+            'notes': existing.notes if existing else '',
         })
 
     receipts = CashReceipt.objects.select_related('group', 'officer').filter(
