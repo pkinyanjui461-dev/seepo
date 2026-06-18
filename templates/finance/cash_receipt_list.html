@@ -19,6 +19,7 @@
 
     .receipt-filter-bar .form-control,
     .receipt-filter-bar .form-select,
+    .receipt-filter-bar .input-group,
     .receipt-entry-grid .form-control,
     .receipt-entry-grid .form-select,
     .manual-receipt-grid .form-control,
@@ -280,7 +281,10 @@
         </div>
         <div class="col-lg-7 mt-3 mt-lg-0">
             <form method="GET" class="receipt-filter-bar">
-                <input type="date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()">
+                <div class="input-group">
+                    <span class="input-group-text">Diary date</span>
+                    <input type="date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()">
+                </div>
                 <select name="month" class="form-select" onchange="this.form.submit()">
                     {% for m_num, m_name in months %}
                         <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
@@ -291,12 +295,10 @@
                         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
-                <select name="report_day" class="form-select" onchange="this.form.submit()" title="Report day">
-                    <option value="">All days</option>
-                    {% for day in report_days %}
-                        <option value="{{ day }}" {% if day|stringformat:"s" == selected_report_day %}selected{% endif %}>Day {{ day }}</option>
-                    {% endfor %}
-                </select>
+                <div class="input-group">
+                    <span class="input-group-text">Report date</span>
+                    <input type="date" name="report_date" value="{{ selected_report_date }}" class="form-control" onchange="this.form.submit()">
+                </div>
                 <select name="officer" class="form-select" onchange="this.form.submit()">
                     <option value="">All officers</option>
                     {% for officer in officer_names %}
