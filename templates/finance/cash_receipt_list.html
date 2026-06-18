@@ -291,6 +291,12 @@
                         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
+                <select name="report_day" class="form-select" onchange="this.form.submit()" title="Report day">
+                    <option value="">All days</option>
+                    {% for day in report_days %}
+                        <option value="{{ day }}" {% if day|stringformat:"s" == selected_report_day %}selected{% endif %}>Day {{ day }}</option>
+                    {% endfor %}
+                </select>
                 <select name="officer" class="form-select" onchange="this.form.submit()">
                     <option value="">All officers</option>
                     {% for officer in officer_names %}
@@ -515,8 +521,9 @@
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-light">
-            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie me-1"></i> Monthly Officer Report</h6>
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie me-1"></i> {{ report_title }}</h6>
+            <span class="badge bg-primary">{{ report_period_label }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0 align-middle">
@@ -528,7 +535,7 @@
                         <th>Expenses</th>
                         <th>Refund</th>
                         <th>Expected</th>
-                        <th>Deposited</th>
+                        <th>{{ deposit_total_heading }}</th>
                         <th>Missing</th>
                         <th>Excess</th>
                     </tr>

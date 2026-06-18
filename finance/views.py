@@ -987,6 +987,7 @@ def combined_monthly_report_pdf(request, pk):
 
 from finance.models import Expense
 from finance.forms import CashReceiptForm, ExpenseForm
+import calendar
 import datetime
 
 from django.db import models
@@ -1003,6 +1004,7 @@ def cash_receipt_list(request):
     selected_officer = request.GET.get('officer', '')
     selected_group = request.GET.get('group', '')
     selected_status = request.GET.get('status', '')
+    selected_report_day = request.GET.get('report_day', '')
 
     try:
         from datetime import datetime as dt
@@ -1010,6 +1012,18 @@ def cash_receipt_list(request):
     except (TypeError, ValueError):
         receipt_date = today
         selected_date = receipt_date.isoformat()
+
+    try:
+        selected_report_day_int = int(selected_report_day) if selected_report_day else None
+    except (TypeError, ValueError):
+        selected_report_day_int = None
+        selected_report_day = ''
+
+    _, days_in_selected_month = calendar.monthrange(selected_year, selected_month)
+    report_days = list(range(1, days_in_selected_month + 1))
+    if selected_report_day_int and not 1 <= selected_report_day_int <= days_in_selected_month:
+        selected_report_day_int = None
+        selected_report_day = ''
 
     if request.method == 'POST':
         saved_count = 0
@@ -1131,6 +1145,8 @@ def cash_receipt_list(request):
         receipt_date__month=selected_month,
         receipt_date__year=selected_year,
     )
+    if selected_report_day_int:
+        receipts = receipts.filter(receipt_date__day=selected_report_day_int)
     if selected_officer:
         receipts = receipts.filter(officer_name=selected_officer)
     if selected_group:
@@ -1178,6 +1194,14 @@ def cash_receipt_list(request):
         (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
     ]
     available_years = list(range(today.year - 5, today.year + 2))
+    report_period_label = calendar.month_name[selected_month]
+    report_title = 'Monthly Officer Report'
+    deposit_total_heading = 'Deposited'
+    if selected_report_day_int:
+        report_period_label = f"{report_period_label} {selected_report_day_int}"
+        report_title = 'Daily Officer Report'
+        deposit_total_heading = 'Daily Deposited'
+    report_period_label = f"{report_period_label}, {selected_year}"
     receipt_officers = CashReceipt.objects.values_list('officer_name', flat=True)
     group_officers = Group.objects.values_list('officer_name', flat=True)
     officer_names = sorted({
@@ -1193,11 +1217,16 @@ def cash_receipt_list(request):
         'selected_officer': selected_officer,
         'selected_group': selected_group,
         'selected_status': selected_status,
+        'selected_report_day': selected_report_day,
         'suggested_rows': suggested_rows,
         'receipts': receipts,
         'officer_report': officer_report,
         'grand_totals': grand_totals,
         'months': months,
+        'report_days': report_days,
+        'report_period_label': report_period_label,
+        'report_title': report_title,
+        'deposit_total_heading': deposit_total_heading,
         'available_years': available_years,
         'officer_names': officer_names,
         'groups': Group.objects.all(),
