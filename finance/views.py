@@ -1057,7 +1057,10 @@ def cash_receipt_list(request):
                 messages.error(request, 'Daily officer expense amount must be greater than zero.')
                 return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
 
-            attended_groups = list(get_groups_for_receipt_date(receipt_date).filter(officer_name=daily_expense_officer))
+            attended_groups = [
+                group for group in get_groups_for_receipt_date(receipt_date)
+                if group.officer_name == daily_expense_officer
+            ]
             if not attended_groups:
                 messages.warning(request, f'No diary groups found for {daily_expense_officer} on {receipt_date:%b %d, %Y}.')
                 return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
