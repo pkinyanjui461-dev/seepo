@@ -262,9 +262,10 @@ class CashReceipt(models.Model):
 
     def calculate(self):
         self.total_expenses = sum((expense.amount for expense in self.expenses.all()), Decimal('0'))
-        self.expected_amount = max(self.receipt_amount - self.total_expenses, Decimal('0'))
-        self.missing_amount = max(self.expected_amount - self.amount_deposited, Decimal('0'))
-        self.excess_amount = max(self.amount_deposited - self.expected_amount, Decimal('0'))
+        self.expected_amount = self.receipt_amount - self.total_expenses
+        expected_deposit = max(self.expected_amount, Decimal('0'))
+        self.missing_amount = max(expected_deposit - self.amount_deposited, Decimal('0'))
+        self.excess_amount = max(self.amount_deposited - expected_deposit, Decimal('0'))
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields')
@@ -275,9 +276,10 @@ class CashReceipt(models.Model):
             self.calculate()
         else:
             self.total_expenses = self.total_expenses or Decimal('0')
-            self.expected_amount = max(self.receipt_amount - self.total_expenses, Decimal('0'))
-            self.missing_amount = max(self.expected_amount - self.amount_deposited, Decimal('0'))
-            self.excess_amount = max(self.amount_deposited - self.expected_amount, Decimal('0'))
+            self.expected_amount = self.receipt_amount - self.total_expenses
+            expected_deposit = max(self.expected_amount, Decimal('0'))
+            self.missing_amount = max(expected_deposit - self.amount_deposited, Decimal('0'))
+            self.excess_amount = max(self.amount_deposited - expected_deposit, Decimal('0'))
         super().save(*args, **kwargs)
 
 

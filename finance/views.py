@@ -992,6 +992,7 @@ import datetime
 import json
 
 from django.db import models
+from django.db.models import Case, DecimalField, F, Value, When
 from django.utils import timezone
 
 
@@ -1027,8 +1028,64 @@ def cash_receipt_list(request):
         except (TypeError, ValueError):
             selected_report_date = ''
 
+    def refund_total(queryset):
+        return queryset.aggregate(
+            total=models.Sum(
+                Case(
+                    When(expected_amount__lt=0, then=-F('expected_amount')),
+                    default=Value(Decimal('0')),
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
+            )
+        )['total'] or Decimal('0')
+
     if request.method == 'POST':
         saved_count = 0
+        if request.POST.get('action') == 'apply_officer_daily_expenses':
+            daily_expense_officer = request.POST.get('daily_expense_officer', '').strip()
+            daily_expense_name = request.POST.get('daily_expense_name', '').strip() or 'Officer daily expense'
+            try:
+                daily_expense_total = Decimal(str(request.POST.get('daily_expense_total', '0') or '0'))
+            except (InvalidOperation, TypeError, ValueError):
+                messages.error(request, 'Invalid daily officer expense amount.')
+                return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
+            if not daily_expense_officer:
+                messages.error(request, 'Select an officer before applying daily expenses.')
+                return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+            if daily_expense_total <= 0:
+                messages.error(request, 'Daily officer expense amount must be greater than zero.')
+                return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
+            attended_groups = list(get_groups_for_receipt_date(receipt_date).filter(officer_name=daily_expense_officer))
+            if not attended_groups:
+                messages.warning(request, f'No diary groups found for {daily_expense_officer} on {receipt_date:%b %d, %Y}.')
+                return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
+            split_amount = (daily_expense_total / Decimal(len(attended_groups))).quantize(Decimal('0.01'))
+            remainder = daily_expense_total - (split_amount * len(attended_groups))
+            applied_count = 0
+            for index, group in enumerate(attended_groups):
+                receipt = CashReceipt.objects.filter(receipt_date=receipt_date, group=group).first()
+                if not receipt:
+                    continue
+
+                amount = split_amount + (remainder if index == len(attended_groups) - 1 else Decimal('0'))
+                receipt.expenses.filter(name=daily_expense_name).delete()
+                CashReceiptExpense.objects.create(
+                    cash_receipt=receipt,
+                    name=daily_expense_name,
+                    amount=amount,
+                )
+                receipt.save()
+                applied_count += 1
+
+            if applied_count:
+                messages.success(request, f'Applied {daily_expense_total} daily expense across {applied_count} receipt(s) for {daily_expense_officer}.')
+            else:
+                messages.warning(request, f'No saved receipts found for {daily_expense_officer} on {receipt_date:%b %d, %Y}. Save receipts first, then apply daily expenses.')
+            return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
+
         manual_group_id = request.POST.get('manual_group_id')
         if manual_group_id:
             manual_group = Group.objects.filter(pk=manual_group_id).first()
@@ -1223,11 +1280,7 @@ def cash_receipt_list(request):
 
     # Calculate refund separately for each officer
     for row in officer_report:
-        refund_amount = report_receipts.filter(
-            officer_name=row['officer_name'],
-            receipt_amount=0
-        ).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
-        row['total_refund'] = refund_amount
+        row['total_refund'] = refund_total(report_receipts.filter(officer_name=row['officer_name']))
 
     grand_totals = receipts.aggregate(
         total_receipt_amount=models.Sum('receipt_amount'),
@@ -1237,9 +1290,7 @@ def cash_receipt_list(request):
         total_missing=models.Sum('missing_amount'),
         total_excess=models.Sum('excess_amount'),
     )
-    # Calculate total refund separately
-    total_refund = receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
-    grand_totals['total_refund'] = total_refund
+    grand_totals['total_refund'] = refund_total(receipts)
 
     report_totals = report_receipts.aggregate(
         total_receipt_amount=models.Sum('receipt_amount'),
@@ -1249,7 +1300,7 @@ def cash_receipt_list(request):
         total_missing=models.Sum('missing_amount'),
         total_excess=models.Sum('excess_amount'),
     )
-    report_totals['total_refund'] = report_receipts.filter(receipt_amount=0).aggregate(total=models.Sum('total_expenses'))['total'] or Decimal('0')
+    report_totals['total_refund'] = refund_total(report_receipts)
 
     chart_month = report_date.month if report_date else selected_month
     chart_year = report_date.year if report_date else selected_year

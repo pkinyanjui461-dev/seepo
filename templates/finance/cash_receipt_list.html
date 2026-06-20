@@ -209,6 +209,13 @@
         align-items: end;
     }
 
+    .daily-expense-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(160px, 0.8fr) auto;
+        gap: 10px;
+        align-items: end;
+    }
+
     .receipt-summary-card {
         border: 1px solid var(--border-color);
         border-radius: 10px;
@@ -270,6 +277,10 @@
         .receipt-entry-row {
             grid-template-columns: 1fr;
             padding: 12px;
+        }
+
+        .daily-expense-grid {
+            grid-template-columns: 1fr;
         }
 
         .receipt-filter-bar {
@@ -339,6 +350,30 @@
             <span class="badge bg-primary">{{ suggested_rows|length }} found</span>
         </div>
         <div class="card-body p-0">
+            <form method="POST" class="daily-expense-grid p-3 border-bottom bg-white">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="apply_officer_daily_expenses">
+                <div>
+                    <label class="form-label fw-bold">Officer daily expenses</label>
+                    <select name="daily_expense_officer" class="form-select" required>
+                        <option value="">Select officer</option>
+                        {% for officer in officer_names %}
+                            <option value="{{ officer }}">{{ officer }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Expense name</label>
+                    <input name="daily_expense_name" value="Officer daily expense" class="form-control">
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Total expense</label>
+                    <input name="daily_expense_total" type="number" step="0.01" min="0" class="form-control" required>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-divide me-1"></i> Apply to Day</button>
+                </div>
+            </form>
             <form method="POST" id="receipt-entry-form">
                 {% csrf_token %}
                 <div class="receipt-sheet-toolbar">
@@ -671,8 +706,9 @@
             row.querySelectorAll('.js-expense').forEach(function (input) {
                 expenses += toNumber(input);
             });
-            const expected = Math.max(receipt - expenses, 0);
-            const missing = Math.max(expected - deposited, 0);
+            const expected = receipt - expenses;
+            const expectedDeposit = Math.max(expected, 0);
+            const missing = Math.max(expectedDeposit - deposited, 0);
             row.querySelector('.js-expected').textContent = expected.toLocaleString();
             row.querySelector('.js-missing').textContent = missing.toLocaleString();
         }
