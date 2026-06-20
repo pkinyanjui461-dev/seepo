@@ -1057,23 +1057,19 @@ def cash_receipt_list(request):
                 messages.error(request, 'Daily officer expense amount must be greater than zero.')
                 return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
 
-            attended_groups = [
-                group for group in get_groups_for_receipt_date(receipt_date)
-                if group.officer_name == daily_expense_officer
-            ]
-            if not attended_groups:
-                messages.warning(request, f'No diary groups found for {daily_expense_officer} on {receipt_date:%b %d, %Y}.')
+            officer_receipts = list(CashReceipt.objects.filter(
+                receipt_date=receipt_date,
+                officer_name=daily_expense_officer,
+            ).select_related('group').order_by('group__name'))
+            if not officer_receipts:
+                messages.warning(request, f'No saved receipts found for {daily_expense_officer} on {receipt_date:%b %d, %Y}. Save receipts first, then apply daily expenses.')
                 return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
 
-            split_amount = (daily_expense_total / Decimal(len(attended_groups))).quantize(Decimal('0.01'))
-            remainder = daily_expense_total - (split_amount * len(attended_groups))
+            split_amount = (daily_expense_total / Decimal(len(officer_receipts))).quantize(Decimal('0.01'))
+            remainder = daily_expense_total - (split_amount * len(officer_receipts))
             applied_count = 0
-            for index, group in enumerate(attended_groups):
-                receipt = CashReceipt.objects.filter(receipt_date=receipt_date, group=group).first()
-                if not receipt:
-                    continue
-
-                amount = split_amount + (remainder if index == len(attended_groups) - 1 else Decimal('0'))
+            for index, receipt in enumerate(officer_receipts):
+                amount = split_amount + (remainder if index == len(officer_receipts) - 1 else Decimal('0'))
                 receipt.expenses.filter(name=daily_expense_name).delete()
                 CashReceiptExpense.objects.create(
                     cash_receipt=receipt,
@@ -1085,8 +1081,6 @@ def cash_receipt_list(request):
 
             if applied_count:
                 messages.success(request, f'Applied {daily_expense_total} daily expense across {applied_count} receipt(s) for {daily_expense_officer}.')
-            else:
-                messages.warning(request, f'No saved receipts found for {daily_expense_officer} on {receipt_date:%b %d, %Y}. Save receipts first, then apply daily expenses.')
             return redirect(f"{request.path}?date={receipt_date.isoformat()}&month={selected_month}&year={selected_year}")
 
         manual_group_id = request.POST.get('manual_group_id')
